@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { getUserXP } from "../utils/xp.js";
-import { getUserMissions } from "../utils/missions.js";
 import { readJSON } from "../utils/database.js";
+import { getUserStats } from "../utils/userStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("perfil")
@@ -10,16 +9,14 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // XP e nível
-  const { nivel } = getUserXP(userId);
+  // Ler XP e nível diretamente do users.json
+  const users = readJSON("data/users.json");
+  const userXP = users[userId] || { nivel: 1 };
 
-  // Estatísticas do user
-  const stats = readJSON("data/userStats.json")[userId] || {
-    platinas: 0,
-    conquistas: 0,
-    ultimaPlatina: null,
-    ultimaConquista: null
-  };
+  const nivel = userXP.nivel || 1;
+
+  // Estatísticas do user (platinas, conquistas, últimas)
+  const stats = getUserStats(userId);
 
   // Badge por nível
   let badge = "⬜ Iniciante";
@@ -41,15 +38,15 @@ export async function execute(interaction) {
       { name: "🏅 Conquistas", value: `${stats.conquistas}`, inline: true },
       { name: "\u200B", value: "\u200B", inline: true },
 
-      { 
-        name: "Última Platina", 
-        value: stats.ultimaPlatina 
+      {
+        name: "Última Platina",
+        value: stats.ultimaPlatina
           ? `${stats.ultimaPlatina.jogo} (${stats.ultimaPlatina.plataforma})`
           : "Nenhuma ainda",
         inline: true
       },
-      { 
-        name: "Última Conquista", 
+      {
+        name: "Última Conquista",
         value: stats.ultimaConquista
           ? `${stats.ultimaConquista.jogo} (${stats.ultimaConquista.plataforma})`
           : "Nenhuma ainda",
