@@ -11,9 +11,10 @@ export async function execute(interaction) {
 
   // Ler XP e nível diretamente do users.json
   const users = readJSON("data/users.json");
-  const userXP = users[userId] || { nivel: 1 };
+  const userXP = users[userId] || { nivel: 1, totalXP: 0 };
 
   const nivel = userXP.nivel || 1;
+  const totalXP = userXP.totalXP || 0;
 
   // Estatísticas do user (platinas, conquistas, últimas)
   const stats = getUserStats(userId);
@@ -34,21 +35,21 @@ export async function execute(interaction) {
       { name: "🏅 Nível", value: `${nivel}`, inline: true },
       { name: "🔰 Badge", value: badge, inline: true },
 
+      { name: "✨ XP Total", value: `${totalXP} XP`, inline: true },
       { name: "🏆 Platinas", value: `${stats.platinas}`, inline: true },
       { name: "🏅 Conquistas", value: `${stats.conquistas}`, inline: true },
-      { name: "\u200B", value: "\u200B", inline: true },
 
       {
         name: "Última Platina",
         value: stats.ultimaPlatina
-          ? `${stats.ultimaPlatina.jogo} (${stats.ultimaPlatina.plataforma})`
+          ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
           : "Nenhuma ainda",
         inline: true
       },
       {
         name: "Última Conquista",
         value: stats.ultimaConquista
-          ? `${stats.ultimaConquista.jogo} (${stats.ultimaConquista.plataforma})`
+          ? `${stats.ultimaConquista.jogo}${stats.ultimaConquista.plataforma ? ` (${stats.ultimaConquista.plataforma})` : ""}`
           : "Nenhuma ainda",
         inline: true
       }
