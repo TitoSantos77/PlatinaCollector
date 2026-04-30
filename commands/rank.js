@@ -37,14 +37,19 @@ export async function execute(interaction) {
   const total = lista.length;
   const xpUser = lista.find(u => u.id === userId)?.xp || 0;
 
+  // Nome do user
+  const nomeUser = interaction.user.username;
+
   const embed = new EmbedBuilder()
     .setColor("#00FFAA")
-    .setTitle("📊 Ranking")
-    .addFields(
-      { name: "Tipo", value: tipo.charAt(0).toUpperCase() + tipo.slice(1), inline: true },
-      { name: "Posição", value: `#${posicao}`, inline: true },
-      { name: "XP Total", value: `${xpUser} XP`, inline: true },
-      { name: "Total de Jogadores", value: `${total}`, inline: true }
+    .setAuthor({
+      name: `${nomeUser} — Ranking ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`,
+      iconURL: interaction.user.displayAvatarURL()
+    })
+    .setDescription(
+      `**📌 A tua posição:** #${posicao}\n` +
+      `**⭐ XP Total:** ${xpUser} XP\n` +
+      `**👥 Total de Jogadores:** ${total}`
     )
     .setFooter({ text: "Continua a subir no ranking!" });
 
