@@ -7,8 +7,8 @@ dotenv.config();
 // IMPORTAR O SCHEDULER
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
-// IMPORTAR CONFIG
-import config from "./config.json" assert { type: "json" };
+// IMPORTAR CONFIG DA PASTA /data
+import config from "./data/config.json" assert { type: "json" };
 
 const client = new Client({
   intents: [
@@ -88,7 +88,7 @@ client.on("interactionCreate", async interaction => {
 
     // 🔄 RECARREGAR CONFIG SE O /setcanal FOI USADO
     if (interaction.commandName === "setcanal") {
-      const newConfig = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+      const newConfig = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
       config.allowedChannel = newConfig.allowedChannel;
       console.log("✔ Canal atualizado para:", config.allowedChannel);
     }
