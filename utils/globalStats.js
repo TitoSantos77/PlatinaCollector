@@ -1,9 +1,11 @@
-const { readJSON, writeJSON } = require("./database");
+import { readJSON, writeJSON } from "./database.js";
 
-function adicionarJogo(nome) {
+export function adicionarJogo(nome) {
     if (!nome) return;
 
     const stats = readJSON("data/globalStats.json");
+
+    if (!stats.jogos) stats.jogos = {};
 
     if (!stats.jogos[nome]) stats.jogos[nome] = 0;
     stats.jogos[nome]++;
@@ -11,10 +13,12 @@ function adicionarJogo(nome) {
     writeJSON("data/globalStats.json", stats);
 }
 
-function adicionarPlataforma(nome) {
+export function adicionarPlataforma(nome) {
     if (!nome) return;
 
     const stats = readJSON("data/globalStats.json");
+
+    if (!stats.plataformas) stats.plataformas = {};
 
     if (!stats.plataformas[nome]) stats.plataformas[nome] = 0;
     stats.plataformas[nome]++;
@@ -22,19 +26,12 @@ function adicionarPlataforma(nome) {
     writeJSON("data/globalStats.json", stats);
 }
 
-function obterJogos() {
+export function obterJogos() {
     const stats = readJSON("data/globalStats.json");
     return Object.keys(stats.jogos || {});
 }
 
-function obterPlataformas() {
+export function obterPlataformas() {
     const stats = readJSON("data/globalStats.json");
     return Object.keys(stats.plataformas || {});
 }
-
-module.exports = {
-    adicionarJogo,
-    adicionarPlataforma,
-    obterJogos,
-    obterPlataformas
-};
