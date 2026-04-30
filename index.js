@@ -8,7 +8,7 @@ dotenv.config();
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
 // IMPORTAR CONFIG DA PASTA /data (FORMA COMPATÍVEL COM NODE 18)
-const config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
+let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
 const client = new Client({
   intents: [
@@ -71,10 +71,10 @@ client.on("interactionCreate", async interaction => {
   // COMANDOS NORMAIS
   if (!interaction.isChatInputCommand()) return;
 
-  // 🔒 BLOQUEIO DE CANAL
-  if (config.allowedChannel && interaction.channelId !== config.allowedChannel) {
+  // 🔒 BLOQUEIO DE CANAL (AGORA SUPORTA LISTA)
+  if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
     return interaction.reply({
-      content: "❌ Este comando só pode ser usado no canal configurado.",
+      content: "❌ Este comando só pode ser usado nos canais permitidos.",
       ephemeral: true
     });
   }
@@ -88,9 +88,8 @@ client.on("interactionCreate", async interaction => {
 
     // 🔄 RECARREGAR CONFIG SE O /setcanal FOI USADO
     if (interaction.commandName === "setcanal") {
-      const newConfig = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
-      config.allowedChannel = newConfig.allowedChannel;
-      console.log("✔ Canal atualizado para:", config.allowedChannel);
+      config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
+      console.log("✔ Lista de canais atualizada:", config.allowedChannels);
     }
 
   } catch (error) {
