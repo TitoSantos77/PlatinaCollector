@@ -1,21 +1,21 @@
-const { readJSON, writeJSON } = require("./database");
+import { readJSON, writeJSON } from "./database.js";
 
 // XP base
-const XP_PLATINA = 100;
-const XP_CONQUISTA = 50;
+export const XP_PLATINA = 100;
+export const XP_CONQUISTA = 50;
 
 // XP extra das missões
-const XP_FACIL = 20;
-const XP_MEDIA = 25;
-const XP_DIFICIL = 30;
+export const XP_FACIL = 20;
+export const XP_MEDIA = 25;
+export const XP_DIFICIL = 30;
 
 // XP necessário para subir de nível
-function xpNecessario(nivel) {
+export function xpNecessario(nivel) {
     return nivel * 100;
 }
 
 // Adiciona XP ao user
-function adicionarXP(userId, quantidade) {
+export function adicionarXP(userId, quantidade) {
     const users = readJSON("data/users.json");
 
     // Se o user não existir, cria-o
@@ -48,13 +48,3 @@ function adicionarXP(userId, quantidade) {
 
     return users[userId];
 }
-
-module.exports = {
-    XP_PLATINA,
-    XP_CONQUIISTA: XP_CONQUISTA,
-    XP_FACIL,
-    XP_MEDIA,
-    XP_DIFICIL,
-    adicionarXP,
-    xpNecessario
-};
