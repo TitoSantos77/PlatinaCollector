@@ -1,8 +1,6 @@
 import { readJSON, writeJSON } from "./database.js";
 
-export function atualizarStatsPlatina(userId, jogo, plataforma) {
-  const stats = readJSON("data/userStats.json");
-
+function garantirEstruturaUser(stats, userId) {
   if (!stats[userId]) {
     stats[userId] = {
       platinas: 0,
@@ -11,6 +9,12 @@ export function atualizarStatsPlatina(userId, jogo, plataforma) {
       ultimaConquista: null
     };
   }
+}
+
+export function atualizarStatsPlatina(userId, jogo, plataforma) {
+  const stats = readJSON("data/userStats.json");
+
+  garantirEstruturaUser(stats, userId);
 
   stats[userId].platinas++;
   stats[userId].ultimaPlatina = {
@@ -24,14 +28,7 @@ export function atualizarStatsPlatina(userId, jogo, plataforma) {
 export function atualizarStatsConquista(userId, jogo, plataforma) {
   const stats = readJSON("data/userStats.json");
 
-  if (!stats[userId]) {
-    stats[userId] = {
-      platinas: 0,
-      conquistas: 0,
-      ultimaPlatina: null,
-      ultimaConquista: null
-    };
-  }
+  garantirEstruturaUser(stats, userId);
 
   stats[userId].conquistas++;
   stats[userId].ultimaConquista = {
@@ -40,4 +37,17 @@ export function atualizarStatsConquista(userId, jogo, plataforma) {
   };
 
   writeJSON("data/userStats.json", stats);
+}
+
+export function getUserStats(userId) {
+  const stats = readJSON("data/userStats.json");
+  if (!stats[userId]) {
+    return {
+      platinas: 0,
+      conquistas: 0,
+      ultimaPlatina: null,
+      ultimaConquista: null
+    };
+  }
+  return stats[userId];
 }
