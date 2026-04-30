@@ -7,6 +7,9 @@ dotenv.config();
 // IMPORTAR O SCHEDULER
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
+// IMPORTAR CONFIG
+import config from "./config.json" assert { type: "json" };
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds
@@ -68,12 +71,28 @@ client.on("interactionCreate", async interaction => {
   // COMANDOS NORMAIS
   if (!interaction.isChatInputCommand()) return;
 
+  // 🔒 BLOQUEIO DE CANAL
+  if (config.allowedChannel && interaction.channelId !== config.allowedChannel) {
+    return interaction.reply({
+      content: "❌ Este comando só pode ser usado no canal configurado.",
+      ephemeral: true
+    });
+  }
+
   const command = client.commands.get(interaction.commandName);
 
   if (!command) return;
 
   try {
     await command.execute(interaction);
+
+    // 🔄 RECARREGAR CONFIG SE O /setcanal FOI USADO
+    if (interaction.commandName === "setcanal") {
+      const newConfig = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+      config.allowedChannel = newConfig.allowedChannel;
+      console.log("✔ Canal atualizado para:", config.allowedChannel);
+    }
+
   } catch (error) {
     console.error(error);
     await interaction.reply({
