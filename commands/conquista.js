@@ -1,7 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { adicionarXP } from "../utils/xp.js";
-import { atualizarMissoes } from "../utils/missions.js";
+import { XP_CONQUISTA, adicionarXP } from "../utils/xp.js";
+import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma } from "../utils/globalStats.js";
+import { atualizarStatsConquista } from "../utils/userStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("conquista")
@@ -43,22 +44,23 @@ export async function execute(interaction) {
     });
   }
 
-  // XP por conquista
-  const xpGanho = quantidade * 20;
+  // XP total ganho
+  const xpGanho = quantidade * XP_CONQUISTA;
 
   // Atualizar XP
-  const { nivel, progresso } = adicionarXP(interaction.user.id, xpGanho);
+  const user = adicionarXP(interaction.user.id, xpGanho);
 
-  // Atualizar missões
-  atualizarMissoes(interaction.user.id, "conquista", quantidade);
+  // Atualizar missões (progresso)
+  atualizarProgresso(interaction.user.id, "conquista", !!jogo);
 
-  // Atualizar globalStats (só quando quantidade = 1)
+  // Atualizar globalStats e userStats (apenas quando quantidade = 1)
   if (quantidade === 1) {
     if (jogo) adicionarJogo(jogo);
     if (plataforma) adicionarPlataforma(plataforma);
+    atualizarStatsConquista(interaction.user.id, jogo, plataforma);
   }
 
-  // Criar embed estilo A
+  // Criar embed
   const embed = new EmbedBuilder()
     .setColor("#FFD000")
     .setTitle(`🏅 ${quantidade} conquista${quantidade > 1 ? "s" : ""} adicionada${quantidade > 1 ? "s" : ""}!`)
@@ -66,7 +68,7 @@ export async function execute(interaction) {
       { name: "🎮 Jogo", value: jogo || "Não especificado", inline: true },
       { name: "🕹️ Plataforma", value: plataforma || "Não especificado", inline: true },
       { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
-      { name: "📈 Nível Atual", value: `Nível ${nivel} — ${progresso}%`, inline: true }
+      { name: "📈 Nível Atual", value: `Nível ${user.nivel} — ${user.xp}/${user.totalXP} XP`, inline: true }
     )
     .setFooter({ text: "Boa! Continua a colecionar conquistas!" });
 
