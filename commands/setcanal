@@ -1,24 +1,24 @@
-const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
+import { SlashCommandBuilder } from "discord.js";
+import fs from "fs";
+import path from "path";
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("setcanal")
-        .setDescription("Define o canal onde o bot pode ser usado.")
-        .addChannelOption(option =>
-            option
-                .setName("canal")
-                .setDescription("Escolhe o canal permitido")
-                .setRequired(true)
-        ),
+export const data = new SlashCommandBuilder()
+  .setName("setcanal")
+  .setDescription("Define o canal onde o bot pode ser usado.")
+  .addChannelOption(option =>
+    option
+      .setName("canal")
+      .setDescription("Escolhe o canal permitido")
+      .setRequired(true)
+  );
 
-    async execute(interaction) {
-        const canal = interaction.options.getChannel("canal");
+export async function execute(interaction) {
+  const canal = interaction.options.getChannel("canal");
 
-        // Guardar no config.json
-        const config = { allowedChannel: canal.id };
-        fs.writeFileSync("./config.json", JSON.stringify(config, null, 2));
+  const configPath = path.join(process.cwd(), "data", "config.json");
 
-        await interaction.reply(`✔ Canal definido para: ${canal}`);
-    }
-};
+  const config = { allowedChannel: canal.id };
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+  await interaction.reply(`✔ Canal definido para: ${canal}`);
+}
