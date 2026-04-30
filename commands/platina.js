@@ -31,6 +31,29 @@ export const data = new SlashCommandBuilder()
       )
   );
 
+// 🔥 AUTOCOMPLETE PARA JOGO E PLATAFORMA
+export async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+
+  if (focused.name === "jogo") {
+    const jogos = ["GTA V", "God of War", "Horizon", "Spider-Man", "Elden Ring"];
+    const filtrados = jogos
+      .filter(j => j.toLowerCase().includes(focused.value.toLowerCase()))
+      .slice(0, 25);
+
+    return interaction.respond(filtrados.map(j => ({ name: j, value: j })));
+  }
+
+  if (focused.name === "plataforma") {
+    const plataformas = ["PS4", "PS5", "PC", "Xbox", "Switch"];
+    const filtradas = plataformas
+      .filter(p => p.toLowerCase().includes(focused.value.toLowerCase()))
+      .slice(0, 25);
+
+    return interaction.respond(filtradas.map(p => ({ name: p, value: p })));
+  }
+}
+
 export async function execute(interaction) {
   const quantidade = interaction.options.getInteger("quantidade") || 1;
   const jogo = interaction.options.getString("jogo");
@@ -63,14 +86,4 @@ export async function execute(interaction) {
   // Criar embed
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
-    .setTitle(`🏆 ${quantidade} platina${quantidade > 1 ? "s" : ""} adicionada${quantidade > 1 ? "s" : ""}!`)
-    .addFields(
-      { name: "🎮 Jogo", value: jogo || "Não especificado", inline: true },
-      { name: "🕹️ Plataforma", value: plataforma || "Não especificado", inline: true },
-      { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
-      { name: "📈 Nível Atual", value: `Nível ${user.nivel} — ${user.xp}/${user.totalXP} XP`, inline: true }
-    )
-    .setFooter({ text: "Continua a colecionar platinas!" });
-
-  await interaction.reply({ embeds: [embed] });
-}
+    .setTitle(`🏆 ${quantidade} platina${quantidade > 1 ? "s" : ""} adicionada${quantidade >
