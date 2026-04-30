@@ -9,22 +9,16 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Ler XP e nível diretamente do users.json
+  // Ler dados do user
   const users = readJSON("data/users.json");
-  const userXP = users[userId] || { nivel: 1, totalXP: 0 };
+  const userXP = users[userId] || { nivel: 1, totalXP: 0, badge: "⚪ Iniciante" };
 
   const nivel = userXP.nivel || 1;
   const totalXP = userXP.totalXP || 0;
+  const badge = userXP.badge || "⚪ Iniciante";
 
   // Estatísticas do user (platinas, conquistas, últimas)
   const stats = getUserStats(userId);
-
-  // Badge por nível
-  let badge = "⬜ Iniciante";
-  if (nivel >= 5) badge = "🟩 Bronze Hunter";
-  if (nivel >= 10) badge = "🟦 Elite Hunter";
-  if (nivel >= 20) badge = "🟪 Master Hunter";
-  if (nivel >= 30) badge = "🟥 Legendary Hunter";
 
   const embed = new EmbedBuilder()
     .setColor("#0055FF")
