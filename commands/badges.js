@@ -12,7 +12,23 @@ export async function execute(interaction) {
   const user = users[userId] || {};
 
   const badgeAtual = user.badge || "⚪ Iniciante";
-  const badges = user.badgesDesbloqueadas || ["⚪ Iniciante"];
+  const badgesDesbloqueadas = user.badgesDesbloqueadas || ["⚪ Iniciante"];
+
+  // ✔ LISTA OFICIAL DAS TUAS BADGES (NÃO INVENTEI NENHUMA)
+  const todasAsBadges = [
+    "⚪ Iniciante",
+    "🟫 Bronze Hunter",
+    "🟧 Elite Hunter",
+    "🟪 Master Hunter",
+    "🟨 Legendary Hunter"
+  ];
+
+  // Formatar lista (verde = desbloqueada, branco = bloqueada)
+  const listaFormatada = todasAsBadges.map(badge => {
+    return badgesDesbloqueadas.includes(badge)
+      ? `🟩 ${badge}`   // desbloqueada
+      : `⬜ ${badge}`;  // bloqueada
+  });
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
@@ -20,7 +36,8 @@ export async function execute(interaction) {
     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
     .addFields(
       { name: "Badge Atual", value: badgeAtual },
-      { name: "Todas as Badges", value: badges.join("\n") }
+      { name: "Progresso", value: `${badgesDesbloqueadas.length} / ${todasAsBadges.length}` },
+      { name: "Todas as Badges", value: listaFormatada.join("\n") }
     )
     .setFooter({ text: "Continua a colecionar badges!" });
 
