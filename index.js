@@ -7,7 +7,7 @@ dotenv.config();
 // IMPORTAR O SCHEDULER
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
-// IMPORTAR CONFIG DA PASTA /data (FORMA COMPATÍVEL COM NODE 18)
+// IMPORTAR CONFIG DA PASTA /data
 let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
 const client = new Client({
@@ -44,8 +44,20 @@ client.once("ready", () => {
 // Handler de interações (comandos + autocomplete)
 client.on("interactionCreate", async interaction => {
 
-  // AUTOCOMPLETE
+  // 🔵 AUTOCOMPLETE (SUPORTA GLOBAL + POR COMANDO)
   if (interaction.isAutocomplete()) {
+    const command = client.commands.get(interaction.commandName);
+
+    // Se o comando tiver autocomplete próprio → usa-o
+    if (command && typeof command.autocomplete === "function") {
+      try {
+        return await command.autocomplete(interaction);
+      } catch (err) {
+        console.error("Erro no autocomplete do comando:", err);
+      }
+    }
+
+    // Caso contrário → usa o autocomplete global (jogos/plataformas)
     const focused = interaction.options.getFocused();
     const field = interaction.options.getFocused(true).name;
 
@@ -68,10 +80,10 @@ client.on("interactionCreate", async interaction => {
     );
   }
 
-  // COMANDOS NORMAIS
+  // 🔵 COMANDOS NORMAIS
   if (!interaction.isChatInputCommand()) return;
 
-  // 🔒 BLOQUEIO DE CANAL (AGORA SUPORTA LISTA)
+  // 🔒 BLOQUEIO DE CANAL (SUPORTA LISTA)
   if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
     return interaction.reply({
       content: "❌ Este comando só pode ser usado nos canais permitidos.",
@@ -80,7 +92,6 @@ client.on("interactionCreate", async interaction => {
   }
 
   const command = client.commands.get(interaction.commandName);
-
   if (!command) return;
 
   try {
