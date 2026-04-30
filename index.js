@@ -4,6 +4,9 @@ import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
 
+// IMPORTAR O SCHEDULER
+import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds
@@ -30,6 +33,9 @@ for (const file of commandFiles) {
 
 client.once("ready", () => {
   console.log(`Bot online como ${client.user.tag}`);
+
+  // INICIAR O SCHEDULER DE MISSÕES
+  iniciarSchedulerMissoes();
 });
 
 // Handler de interações (comandos + autocomplete)
