@@ -14,6 +14,36 @@ export function xpNecessario(nivel) {
     return nivel * 100;
 }
 
+// BADGES POR NÍVEL (PORTUGUÊS)
+export function getBadgeByLevel(nivel) {
+    if (nivel >= 50) return "🟧 Colecionador Eterno";
+    if (nivel >= 40) return "🟡 Guardião Supremo";
+    if (nivel >= 30) return "🔥 Lenda dos Troféus";
+    if (nivel >= 20) return "🟣 Mestre das Platinas";
+    if (nivel >= 10) return "🔵 Caçador Experiente";
+    if (nivel >= 5)  return "🟢 Caçador Novato";
+    return "⚪ Iniciante";
+}
+
+// Atualiza badge atual + badges desbloqueadas
+function atualizarBadge(user) {
+    const novaBadge = getBadgeByLevel(user.nivel);
+
+    if (user.badge !== novaBadge) {
+        user.badge = novaBadge;
+
+        // Criar array se não existir
+        if (!user.badgesDesbloqueadas) {
+            user.badgesDesbloqueadas = [];
+        }
+
+        // Adicionar badge se ainda não tiver
+        if (!user.badgesDesbloqueadas.includes(novaBadge)) {
+            user.badgesDesbloqueadas.push(novaBadge);
+        }
+    }
+}
+
 // Adiciona XP ao user
 export function adicionarXP(userId, quantidade) {
     const users = readJSON("data/users.json");
@@ -27,24 +57,32 @@ export function adicionarXP(userId, quantidade) {
             platinas: 0,
             conquistas: 0,
             ultimaPlatina: null,
-            ultimaConquista: null
+            ultimaConquista: null,
+            badge: "⚪ Iniciante",
+            badgesDesbloqueadas: ["⚪ Iniciante"]
         };
     }
 
+    const user = users[userId];
+
     // Adiciona XP
-    users[userId].xp += quantidade;
-    users[userId].totalXP += quantidade;
+    user.xp += quantidade;
+    user.totalXP += quantidade;
 
     // Verifica subida de nível
-    let xpNeeded = xpNecessario(users[userId].nivel);
+    let xpNeeded = xpNecessario(user.nivel);
 
-    while (users[userId].xp >= xpNeeded) {
-        users[userId].xp -= xpNeeded;
-        users[userId].nivel++;
-        xpNeeded = xpNecessario(users[userId].nivel);
+    while (user.xp >= xpNeeded) {
+        user.xp -= xpNeeded;
+        user.nivel++;
+
+        // Atualizar badge ao subir nível
+        atualizarBadge(user);
+
+        xpNeeded = xpNecessario(user.nivel);
     }
 
     writeJSON("data/users.json", users);
 
-    return users[userId];
+    return user;
 }
