@@ -20,5 +20,5 @@ export async function execute(interaction) {
   const config = { allowedChannel: canal.id };
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
-  await interaction.reply(`✔ Canal definido para: ${canal}`);
+  await interaction.reply(`✔ Canal definido para: <#${canal.id}>`);
 }
