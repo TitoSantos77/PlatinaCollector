@@ -3,32 +3,37 @@ import { readJSON } from "../utils/database.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ranking")
-  .setDescription("Mostra o top 10 do ranking");
+  .setDescription("Mostra o top 10 do ranking por XP total");
 
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  const stats = readJSON("data/userStats.json");
+  // Carregar XP total dos users
+  const users = readJSON("data/users.json");
 
-  const lista = Object.entries(stats).map(([id, dados]) => ({
+  // Converter users em array
+  const lista = Object.entries(users).map(([id, dados]) => ({
     id,
-    pontos: dados.platinas + dados.conquistas
+    xp: dados.totalXP || 0
   }));
 
-  lista.sort((a, b) => b.pontos - a.pontos);
+  // Ordenar por XP total
+  lista.sort((a, b) => b.xp - a.xp);
 
+  // Top 10
   const top10 = lista.slice(0, 10);
 
   const linhas = top10
-    .map((u, i) => `**#${i + 1}** — <@${u.id}> — **${u.pontos} pts**`)
+    .map((u, i) => `**#${i + 1}** — <@${u.id}> — **${u.xp} XP**`)
     .join("\n");
 
+  // Posição do user
   const posicaoUser = lista.findIndex(u => u.id === userId) + 1;
-  const pontosUser = lista.find(u => u.id === userId)?.pontos || 0;
+  const xpUser = lista.find(u => u.id === userId)?.xp || 0;
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
-    .setTitle("🏆 TOP 10 — Ranking Geral")
+    .setTitle("🏆 TOP 10 — Ranking por XP Total")
     .setDescription(linhas || "Ainda não há jogadores no ranking.")
     .setFooter({ text: "Continua a competir!" });
 
@@ -36,7 +41,7 @@ export async function execute(interaction) {
   if (posicaoUser > 10) {
     embed.addFields({
       name: "A tua posição",
-      value: `#${posicaoUser} — **${pontosUser} pts**`
+      value: `#${posicaoUser} — **${xpUser} XP**`
     });
   }
 
