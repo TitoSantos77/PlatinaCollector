@@ -1,0 +1,24 @@
+const { SlashCommandBuilder } = require("discord.js");
+const fs = require("fs");
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName("setcanal")
+        .setDescription("Define o canal onde o bot pode ser usado.")
+        .addChannelOption(option =>
+            option
+                .setName("canal")
+                .setDescription("Escolhe o canal permitido")
+                .setRequired(true)
+        ),
+
+    async execute(interaction) {
+        const canal = interaction.options.getChannel("canal");
+
+        // Guardar no config.json
+        const config = { allowedChannel: canal.id };
+        fs.writeFileSync("./config.json", JSON.stringify(config, null, 2));
+
+        await interaction.reply(`✔ Canal definido para: ${canal}`);
+    }
+};
