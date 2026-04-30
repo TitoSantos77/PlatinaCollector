@@ -1,13 +1,34 @@
 import fs from "fs";
 import path from "path";
 
-export function readJSON(filePath) {
+function garantirFicheiro(filePath, defaultData = {}) {
   const fullPath = path.join(process.cwd(), filePath);
-  if (!fs.existsSync(fullPath)) return {};
-  return JSON.parse(fs.readFileSync(fullPath, "utf8"));
+
+  const dir = path.dirname(fullPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  if (!fs.existsSync(fullPath)) {
+    fs.writeFileSync(fullPath, JSON.stringify(defaultData, null, 2));
+  }
+
+  return fullPath;
+}
+
+export function readJSON(filePath) {
+  const fullPath = garantirFicheiro(filePath, {});
+
+  try {
+    const raw = fs.readFileSync(fullPath, "utf8");
+    if (!raw.trim()) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 export function writeJSON(filePath, data) {
-  const fullPath = path.join(process.cwd(), filePath);
+  const fullPath = garantirFicheiro(filePath, {});
   fs.writeFileSync(fullPath, JSON.stringify(data, null, 2));
 }
