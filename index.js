@@ -7,8 +7,8 @@ dotenv.config();
 // IMPORTAR O SCHEDULER
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
-// IMPORTAR CONFIG DA PASTA /data
-import config from "./data/config.json" assert { type: "json" };
+// IMPORTAR CONFIG DA PASTA /data (FORMA COMPATÍVEL COM NODE 18)
+const config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
 const client = new Client({
   intents: [
