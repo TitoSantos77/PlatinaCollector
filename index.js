@@ -4,10 +4,16 @@ import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
 
+// 🔵 IMPORTAR BACKUP
+import { restaurarBackup, criarBackup } from "./utils/backup.js";
+
+// 🔵 RESTAURAR BACKUP ANTES DE LER CONFIG
+restaurarBackup();
+
 // IMPORTAR O SCHEDULER
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
-// IMPORTAR CONFIG DA PASTA /data
+// IMPORTAR CONFIG DA PASTA /data (AGORA JÁ RESTAURADA)
 let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
 const client = new Client({
@@ -36,6 +42,9 @@ for (const file of commandFiles) {
 
 client.once("ready", () => {
   console.log(`Bot online como ${client.user.tag}`);
+
+  // 🔵 CRIAR BACKUP AO ARRANCAR
+  criarBackup();
 
   // INICIAR O SCHEDULER DE MISSÕES
   iniciarSchedulerMissoes();
@@ -100,6 +109,10 @@ client.on("interactionCreate", async interaction => {
     // 🔄 RECARREGAR CONFIG SE O /setcanal FOI USADO
     if (interaction.commandName === "setcanal") {
       config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
+
+      // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR CONFIG
+      criarBackup();
+
       console.log("✔ Lista de canais atualizada:", config.allowedChannels);
     }
 
