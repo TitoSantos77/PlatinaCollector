@@ -1,5 +1,5 @@
+import User from "../models/User.js";        // <-- Agora usa o model correto
 import UserStats from "../models/UserStats.js";
-import UserXP from "../models/UserXP.js"; // <-- Vais criar este schema (já explico)
 import { readJSON } from "./database.js";
 
 // Verificar badges com MongoDB
@@ -7,7 +7,7 @@ export async function verificarBadges(userId) {
   const badgesDB = readJSON("data/badges.json");
 
   // Buscar XP + nível + badges do Mongo
-  let user = await UserXP.findOne({ userId });
+  let user = await User.findOne({ userId });
   if (!user) return false;
 
   // Buscar stats (platinas, conquistas, missões)
