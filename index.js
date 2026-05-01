@@ -4,6 +4,19 @@ import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
 
+// 🔵 MONGODB
+import mongoose from "mongoose";
+
+// 🔵 LIGAR AO MONGODB
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log("📦 MongoDB conectado!");
+}).catch(err => {
+  console.error("❌ Erro ao ligar ao MongoDB:", err);
+});
+
 // 🔵 IMPORTAR BACKUP
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
 
@@ -57,7 +70,6 @@ client.once("ready", async () => {
     const guild = client.guilds.cache.get(process.env.GUILD_ID);
 
     if (guild) {
-      // Estamos no teu servidor DEV → comandos instantâneos
       console.log("🔧 MODO DEV ATIVO — A atualizar comandos GUILD...");
       await rest.put(
         Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
@@ -65,7 +77,6 @@ client.once("ready", async () => {
       );
       console.log("✔ Comandos DEV atualizados!");
     } else {
-      // Estamos noutro servidor → comandos globais
       console.log("🌍 MODO PÚBLICO — A atualizar comandos GLOBAIS...");
       await rest.put(
         Routes.applicationCommands(process.env.CLIENT_ID),
@@ -86,7 +97,6 @@ client.on("interactionCreate", async interaction => {
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
 
-    // Se o comando tiver autocomplete próprio → usa-o
     if (command && typeof command.autocomplete === "function") {
       try {
         return await command.autocomplete(interaction);
@@ -95,7 +105,6 @@ client.on("interactionCreate", async interaction => {
       }
     }
 
-    // Caso contrário → usa o autocomplete global (jogos/plataformas)
     const focused = interaction.options.getFocused();
     const field = interaction.options.getFocused(true).name;
 
@@ -135,13 +144,9 @@ client.on("interactionCreate", async interaction => {
   try {
     await command.execute(interaction);
 
-    // 🔄 RECARREGAR CONFIG SE O /setcanal FOI USADO
     if (interaction.commandName === "setcanal") {
       config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
-
-      // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR CONFIG
       criarBackup();
-
       console.log("✔ Lista de canais atualizada:", config.allowedChannels);
     }
 
