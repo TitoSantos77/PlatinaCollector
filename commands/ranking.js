@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import User from "../models/User.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ranking")
@@ -8,18 +8,17 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Carregar XP total dos users
-  const users = readJSON("data/users.json");
+  // Buscar todos os users do Mongo
+  const users = await User.find().lean();
 
-  // Converter users em array
-  const lista = Object.entries(users).map(([id, dados]) => ({
-    id,
-    xp: dados.totalXP || 0,
-    nivel: dados.nivel || 1
-  }));
-
-  // Ordenar por XP total
-  lista.sort((a, b) => b.xp - a.xp);
+  // Converter em lista ordenada
+  const lista = users
+    .map(u => ({
+      id: u.userId,
+      xp: u.totalXP || 0,
+      nivel: u.nivel || 1
+    }))
+    .sort((a, b) => b.xp - a.xp);
 
   // Top 10
   const top10 = lista.slice(0, 10);
@@ -36,8 +35,7 @@ export async function execute(interaction) {
 
   // Posição do user
   const posicaoUser = lista.findIndex(u => u.id === userId) + 1;
-  const xpUser = lista.find(u => u.id === userId)?.xp || 0;
-  const nivelUser = lista.find(u => u.id === userId)?.nivel || 1;
+  const userData = lista.find(u => u.id === userId);
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
@@ -49,7 +47,7 @@ export async function execute(interaction) {
   if (posicaoUser > 10) {
     embed.addFields({
       name: "A tua posição",
-      value: `#${posicaoUser} — **${xpUser} XP** (Nível ${nivelUser})`
+      value: `#${posicaoUser} — **${userData?.xp || 0} XP** (Nível ${userData?.nivel || 1})`
     });
   }
 
