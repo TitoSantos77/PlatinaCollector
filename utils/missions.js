@@ -1,24 +1,23 @@
-import { readJSON, writeJSON } from "./database.js";
-import { XP_FACIL, XP_MEDIA, XP_DIFICIL, adicionarXP } from "./xp.js";
-import { criarBackup } from "./backup.js";
-import { verificarBadges } from "./badges.js"; // <-- ADICIONADO
+import UserMissions from "../models/UserMissions.js";
+import { adicionarXP } from "./xp.js";
+import { verificarBadges } from "./badges.js";
+import { MISSOES } from "./missionsList.js"; // mantém a tua lista original
 
-// Lista oficial das missões
-export const MISSOES = [
-  // ... (tudo igual, não mexi)
-];
-
-// Gera missão semanal para um user
-export function gerarMissao(userId) {
-  const missions = readJSON("data/missions.json");
-
-  const missao = MISSOES[Math.floor(Math.random() * MISSOES.length)];
-
-  if (!missions[userId]) {
-    missions[userId] = { atual: null, historico: [] };
+// Garantir documento
+async function garantirUser(userId) {
+  let doc = await UserMissions.findOne({ userId });
+  if (!doc) {
+    doc = await UserMissions.create({ userId, historico: [] });
   }
+  return doc;
+}
 
-  missions[userId].atual = {
+// Gerar missão semanal
+export async function gerarMissao(userId) {
+  const missao = MISSOES[Math.floor(Math.random() * MISSOES.length)];
+  const doc = await garantirUser(userId);
+
+  doc.atual = {
     id: missao.id,
     descricao: missao.descricao,
     objetivo: missao.objetivo,
@@ -29,59 +28,41 @@ export function gerarMissao(userId) {
     dataInicio: new Date().toISOString().split("T")[0]
   };
 
-  writeJSON("data/missions.json", missions);
-  criarBackup();
-
-  return missions[userId].atual;
+  await doc.save();
+  return doc.atual;
 }
 
-// Atualiza progresso quando user faz platina/conquista
-export function atualizarProgresso(userId, tipo, temJogo) {
-  const missions = readJSON("data/missions.json");
-  if (!missions[userId] || !missions[userId].atual) return;
+// Atualizar progresso
+export async function atualizarProgresso(userId, tipo, temJogo) {
+  const doc = await garantirUser(userId);
+  if (!doc.atual || doc.atual.concluida) return;
 
-  const missao = missions[userId].atual;
+  if (doc.atual.requerJogo && !temJogo) return;
 
-  if (missao.concluida) return;
+  if (tipo === "platina") doc.atual.progresso.platinas++;
+  if (tipo === "conquista") doc.atual.progresso.conquistas++;
 
-  if (missao.requerJogo && !temJogo) return;
-
-  if (tipo === "platina") missao.progresso.platinas++;
-  if (tipo === "conquista") missao.progresso.conquistas++;
-
-  writeJSON("data/missions.json", missions);
-  criarBackup();
-
-  verificarConclusao(userId);
-
-  // 🟣 VERIFICAR BADGES POR PROGRESSO
-  verificarBadges(userId);
+  await doc.save();
+  await verificarConclusao(userId);
+  await verificarBadges(userId);
 }
 
-// Atualiza progresso de XP semanal
-export function adicionarXPsemana(userId, quantidade) {
-  const missions = readJSON("data/missions.json");
-  if (!missions[userId] || !missions[userId].atual) return;
+// XP semanal
+export async function adicionarXPsemana(userId, quantidade) {
+  const doc = await garantirUser(userId);
+  if (!doc.atual || doc.atual.concluida) return;
 
-  const missao = missions[userId].atual;
+  doc.atual.progresso.xp += quantidade;
 
-  if (missao.concluida) return;
-
-  missao.progresso.xp += quantidade;
-
-  writeJSON("data/missions.json", missions);
-  criarBackup();
-
-  verificarConclusao(userId);
-
-  // 🟣 VERIFICAR BADGES POR XP SEMANAL
-  verificarBadges(userId);
+  await doc.save();
+  await verificarConclusao(userId);
+  await verificarBadges(userId);
 }
 
-// Verifica se a missão foi concluída
-export function verificarConclusao(userId) {
-  const missions = readJSON("data/missions.json");
-  const missao = missions[userId]?.atual;
+// Verificar conclusão
+export async function verificarConclusao(userId) {
+  const doc = await garantirUser(userId);
+  const missao = doc.atual;
   if (!missao) return;
 
   const obj = missao.objetivo;
@@ -97,17 +78,13 @@ export function verificarConclusao(userId) {
   missao.concluida = true;
   missao.dataFim = new Date().toISOString().split("T")[0];
 
-  adicionarXP(userId, missao.recompensa);
+  await adicionarXP(userId, missao.recompensa);
 
-  missions[userId].historico.push(missao);
+  doc.historico.push(missao);
+  doc.atual = null;
 
-  missions[userId].atual = null;
-
-  writeJSON("data/missions.json", missions);
-  criarBackup();
-
-  // 🟣 VERIFICAR BADGES POR MISSÃO CONCLUÍDA
-  verificarBadges(userId);
+  await doc.save();
+  await verificarBadges(userId);
 
   return true;
 }
