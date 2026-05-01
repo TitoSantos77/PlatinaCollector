@@ -1,7 +1,12 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { writeJSON } from "../utils/database.js";
 
-// 🔵 IMPORTAR BACKUP
+// MODELS DO MONGO
+import User from "../models/User.js";
+import UserStats from "../models/UserStats.js";
+import GlobalStats from "../models/GlobalStats.js";
+import Missions from "../models/Missions.js"; // só se existir
+
+// BACKUP
 import { criarBackup } from "../utils/backup.js";
 
 export const data = new SlashCommandBuilder()
@@ -18,13 +23,13 @@ export async function execute(interaction) {
     });
   }
 
-  // Limpar todos os ficheiros
-  writeJSON("data/users.json", {});
-  writeJSON("data/missions.json", {});
-  writeJSON("data/userStats.json", {});
-  writeJSON("data/globalStats.json", {}); // se não quiseres limpar isto, diz
+  // APAGAR TODAS AS COLEÇÕES DO MONGO
+  await User.deleteMany({});
+  await UserStats.deleteMany({});
+  await GlobalStats.deleteMany({});
+  if (Missions) await Missions.deleteMany({}); // só se existir
 
-  // 🔵 CRIAR BACKUP DEPOIS DO RESET GLOBAL
+  // CRIAR BACKUP DEPOIS DO RESET GLOBAL
   criarBackup();
 
   const embed = new EmbedBuilder()
@@ -37,7 +42,7 @@ export async function execute(interaction) {
       "• Platinas\n" +
       "• Conquistas\n" +
       "• Missões\n" +
-      "• Estatísticas\n\n" +
+      "• Estatísticas globais\n\n" +
       "⚠️ Esta ação é permanente."
     )
     .setTimestamp();
