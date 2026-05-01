@@ -30,5 +30,11 @@ export function readJSON(filePath) {
 
 export function writeJSON(filePath, data) {
   const fullPath = garantirFicheiro(filePath, {});
-  fs.writeFileSync(fullPath, JSON.stringify(data, null, 2));
+  const tempPath = fullPath + ".tmp";
+
+  // Escreve primeiro num ficheiro temporário
+  fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
+
+  // Substitui o ficheiro original de forma atómica
+  fs.renameSync(tempPath, fullPath);
 }
