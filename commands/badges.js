@@ -8,10 +8,16 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  const users = readJSON("data/users.json");
-  const badgesDB = readJSON("data/badges.json");
+  // Ler ficheiros
+  const users = readJSON("data/users.json") || {};
+  const rawBadges = readJSON("data/badges.json") || [];
 
-  // 🛡️ Garantir que o user existe SEMPRE
+  // Garantir que badgesDB é um array
+  const badgesDB = Array.isArray(rawBadges)
+    ? rawBadges
+    : Object.values(rawBadges);
+
+  // Garantir que o user existe
   if (!users[userId]) {
     users[userId] = {
       xp: 0,
@@ -38,7 +44,7 @@ export async function execute(interaction) {
   // Barra de progresso
   const total = todasOrdenadas.length;
   const qtdDesbloqueadas = desbloqueadas.length;
-  const percent = Math.floor((qtdDesbloqueadas / total) * 100);
+  const percent = total > 0 ? Math.floor((qtdDesbloqueadas / total) * 100) : 0;
 
   const totalBlocos = 20;
   const blocosCheios = Math.round((percent / 100) * totalBlocos);
@@ -46,22 +52,17 @@ export async function execute(interaction) {
 
   const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
 
-  // Formatar lista
+  // Lista de badges
   const lista = todasOrdenadas.map(badge => {
     const unlocked = desbloqueadas.includes(badge.id);
 
-    // Badge secreta ainda bloqueada
     if (badge.secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
-    // Badge desbloqueada
-    if (unlocked) {
-      return `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
-    }
-
-    // Badge bloqueada
-    return `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
+    return unlocked
+      ? `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
+      : `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
