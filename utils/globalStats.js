@@ -16,8 +16,6 @@ export function adicionarJogo(nome) {
     stats.jogos[nome]++;
 
     writeJSON("data/globalStats.json", stats);
-
-    // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR GLOBALSTATS
     criarBackup();
 }
 
@@ -31,8 +29,36 @@ export function adicionarPlataforma(nome) {
     stats.plataformas[nome]++;
 
     writeJSON("data/globalStats.json", stats);
+    criarBackup();
+}
 
-    // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR GLOBALSTATS
+export function removerJogo(nome) {
+    if (!nome) return;
+
+    const stats = readJSON("data/globalStats.json");
+    garantirEstrutura(stats);
+
+    if (stats.jogos[nome] && stats.jogos[nome] > 0) {
+        stats.jogos[nome]--;
+        if (stats.jogos[nome] <= 0) delete stats.jogos[nome];
+    }
+
+    writeJSON("data/globalStats.json", stats);
+    criarBackup();
+}
+
+export function removerPlataforma(nome) {
+    if (!nome) return;
+
+    const stats = readJSON("data/globalStats.json");
+    garantirEstrutura(stats);
+
+    if (stats.plataformas[nome] && stats.plataformas[nome] > 0) {
+        stats.plataformas[nome]--;
+        if (stats.plataformas[nome] <= 0) delete stats.plataformas[nome];
+    }
+
+    writeJSON("data/globalStats.json", stats);
     criarBackup();
 }
 
