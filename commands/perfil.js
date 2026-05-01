@@ -17,14 +17,17 @@ export async function execute(interaction) {
   const totalXP = userXP.totalXP || 0;
   const badge = userXP.badge || "⚪ Iniciante";
 
-  // Estatísticas do user (platinas, conquistas, últimas)
-  const stats = getUserStats(userId);
+  // Estatísticas do user (platinas, conquistas, últimas) — AGORA COM AWAIT
+  const stats = await getUserStats(userId);
 
-  const ultimaPlatinaTexto = stats.ultimaPlatina
+  const platinas = stats.platinas ?? 0;
+  const conquistas = stats.conquistas ?? 0;
+
+  const ultimaPlatinaTexto = stats.ultimaPlatina?.jogo
     ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
     : "Nenhuma ainda";
 
-  const ultimaConquistaTexto = stats.ultimaConquista
+  const ultimaConquistaTexto = stats.ultimaConquista?.jogo
     ? `${stats.ultimaConquista.jogo}${stats.ultimaConquista.plataforma ? ` (${stats.ultimaConquista.plataforma})` : ""}`
     : "Nenhuma ainda";
 
@@ -38,35 +41,13 @@ export async function execute(interaction) {
       { name: "🔰 Badge", value: badge, inline: true },
 
       { name: "✨ XP Total", value: `${totalXP} XP`, inline: true },
-      { name: "🏆 Platinas", value: `${stats.platinas}`, inline: true },
-      { name: "🏅 Conquistas", value: `${stats.conquistas}`, inline: true },
+      { name: "🏆 Platinas", value: `${platinas}`, inline: true },
+      { name: "🥇 Conquistas", value: `${conquistas}`, inline: true },
 
       { name: "Última Platina", value: ultimaPlatinaTexto, inline: false },
       { name: "Última Conquista", value: ultimaConquistaTexto, inline: false }
     )
     .setFooter({ text: "Continua a evoluir, lenda!" });
-
-  // Mostrar imagens (platina e conquista)
-  // Se tiver as duas → mostra as duas
-  if (stats.ultimaPlatinaImagem && stats.ultimaConquistaImagem) {
-    embed.addFields({ name: "📸 Prova da Última Platina", value: " " });
-    embed.setImage(stats.ultimaPlatinaImagem);
-
-    embed.addFields({ name: "📸 Prova da Última Conquista", value: " " });
-    embed.addFields({ name: " ", value: `[Clique aqui para ver a imagem](${stats.ultimaConquistaImagem})` });
-  }
-
-  // Se tiver só platina
-  else if (stats.ultimaPlatinaImagem) {
-    embed.addFields({ name: "📸 Prova da Última Platina", value: " " });
-    embed.setImage(stats.ultimaPlatinaImagem);
-  }
-
-  // Se tiver só conquista
-  else if (stats.ultimaConquistaImagem) {
-    embed.addFields({ name: "📸 Prova da Última Conquista", value: " " });
-    embed.setImage(stats.ultimaConquistaImagem);
-  }
 
   await interaction.reply({ embeds: [embed] });
 }
