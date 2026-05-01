@@ -36,13 +36,18 @@ export async function execute(interaction) {
   const lista = todasOrdenadas.map(badge => {
     const unlocked = desbloqueadas.includes(badge.id);
 
+    // Badge secreta ainda bloqueada
     if (badge.secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
-    return unlocked
-      ? `🟩 **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
-      : `⬜ ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
+    // Badge desbloqueada
+    if (unlocked) {
+      return `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
+    }
+
+    // Badge bloqueada
+    return `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
