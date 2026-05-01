@@ -3,6 +3,9 @@ import { XP_CONQUISTA, adicionarXP } from "../utils/xp.js";
 import { readJSON, writeJSON } from "../utils/database.js";
 import { removerJogo, removerPlataforma } from "../utils/globalStats.js";
 
+// 🔵 IMPORTAR BACKUP
+import { criarBackup } from "../utils/backup.js";
+
 export const data = new SlashCommandBuilder()
   .setName("remover-conquista")
   .setDescription("Remove a última conquista de um utilizador")
@@ -41,6 +44,9 @@ export async function execute(interaction) {
   // Remover globalStats (-1)
   if (ultima?.jogo) removerJogo(ultima.jogo);
   if (ultima?.plataforma) removerPlataforma(ultima.plataforma);
+
+  // 🔵 CRIAR BACKUP DEPOIS DE TODAS AS ALTERAÇÕES
+  criarBackup();
 
   const embed = new EmbedBuilder()
     .setColor("#FFAA00")
