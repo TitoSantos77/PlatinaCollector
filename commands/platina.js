@@ -103,12 +103,12 @@ export const data = new SlashCommandBuilder()
       )
   );
 
-// AUTOCOMPLETE FINAL
+// AUTOCOMPLETE CORRIGIDO
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
   if (focused.name === "jogo") {
-    const aprendidos = obterJogos();
+    const aprendidos = await obterJogos(); // <-- CORRIGIDO
     const lista = [...new Set([...jogosBase, ...aprendidos])]
       .filter(j => j.toLowerCase().includes(focused.value.toLowerCase()))
       .sort()
@@ -118,7 +118,7 @@ export async function autocomplete(interaction) {
   }
 
   if (focused.name === "plataforma") {
-    const aprendidas = obterPlataformas();
+    const aprendidas = await obterPlataformas(); // <-- CORRIGIDO
     const lista = [...new Set([...plataformasBase, ...aprendidas])]
       .filter(p => p.toLowerCase().includes(focused.value.toLowerCase()))
       .sort()
@@ -144,15 +144,15 @@ export async function execute(interaction) {
   // XP ganho
   const xpGanho = XP_PLATINA;
 
-  // Atualizar XP (AGORA COM AWAIT)
+  // Atualizar XP
   const user = await adicionarXP(interaction.user.id, xpGanho);
 
   // Atualizar missões
   await atualizarProgresso(interaction.user.id, "platina", true);
 
   // Atualizar stats
-  adicionarJogo(jogo);
-  adicionarPlataforma(plataforma);
+  await adicionarJogo(jogo);
+  await adicionarPlataforma(plataforma);
   await atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
 
   // Criar backup
