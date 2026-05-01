@@ -1,8 +1,76 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { XP_PLATINA, adicionarXP } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
-import { adicionarJogo, adicionarPlataforma } from "../utils/globalStats.js";
+import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsPlatina } from "../utils/userStats.js";
+
+// LISTA BASE — JOGOS
+const jogosBase = [
+  "Grand Theft Auto",
+  "Grand Theft Auto 2",
+  "Grand Theft Auto III",
+  "Grand Theft Auto: Vice City",
+  "Grand Theft Auto: San Andreas",
+  "Grand Theft Auto IV",
+  "Grand Theft Auto V",
+  "Grand Theft Auto VI",
+  "GTA: Liberty City Stories",
+  "GTA: Vice City Stories",
+  "GTA: Chinatown Wars",
+  "GTA Advance",
+
+  "Red Dead Revolver",
+  "Red Dead Redemption",
+  "Red Dead Redemption: Undead Nightmare",
+  "Red Dead Redemption 2",
+  "Red Dead Redemption (Remastered)",
+
+  "God of War",
+  "God of War Ragnarök",
+  "Horizon Zero Dawn",
+  "Horizon Forbidden West",
+  "Marvel’s Spider-Man",
+  "Marvel’s Spider-Man: Miles Morales",
+  "Marvel’s Spider-Man 2",
+  "The Last of Us Part I",
+  "The Last of Us Part II",
+  "Ghost of Tsushima",
+  "Cyberpunk 2077",
+  "The Witcher 3",
+  "Assassin’s Creed Valhalla",
+  "Assassin’s Creed Odyssey",
+  "Assassin’s Creed Mirage",
+  "Elden Ring",
+  "Fortnite",
+  "Apex Legends",
+  "Valorant",
+  "League of Legends",
+  "Rocket League",
+  "Minecraft",
+  "Gran Turismo 7",
+  "Forza Horizon 5",
+  "Destiny 2",
+  "Overwatch 2",
+  "Rainbow Six Siege",
+  "PUBG",
+  "Warzone",
+  "Diablo IV",
+  "Hades",
+  "Hollow Knight",
+  "Stardew Valley",
+  "Cuphead",
+  "Celeste"
+];
+
+// LISTA BASE — PLATAFORMAS
+const plataformasBase = [
+  "PS4",
+  "PS5",
+  "Xbox One",
+  "Xbox Series X/S",
+  "Nintendo Switch",
+  "PC"
+];
 
 export const data = new SlashCommandBuilder()
   .setName("platina")
@@ -33,26 +101,28 @@ export const data = new SlashCommandBuilder()
       )
   );
 
-// 🔵 AUTOCOMPLETE (temporário — depois trocamos para globalStats)
+// AUTOCOMPLETE FINAL
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
   if (focused.name === "jogo") {
-    const jogos = ["GTA V", "God of War", "Horizon", "Spider-Man", "Elden Ring"];
-    const filtrados = jogos
+    const aprendidos = obterJogos();
+    const lista = [...new Set([...jogosBase, ...aprendidos])]
       .filter(j => j.toLowerCase().includes(focused.value.toLowerCase()))
+      .sort()
       .slice(0, 25);
 
-    return interaction.respond(filtrados.map(j => ({ name: j, value: j })));
+    return interaction.respond(lista.map(j => ({ name: j, value: j })));
   }
 
   if (focused.name === "plataforma") {
-    const plataformas = ["PS4", "PS5", "PC", "Xbox", "Switch"];
-    const filtradas = plataformas
+    const aprendidas = obterPlataformas();
+    const lista = [...new Set([...plataformasBase, ...aprendidas])]
       .filter(p => p.toLowerCase().includes(focused.value.toLowerCase()))
+      .sort()
       .slice(0, 25);
 
-    return interaction.respond(filtradas.map(p => ({ name: p, value: p })));
+    return interaction.respond(lista.map(p => ({ name: p, value: p })));
   }
 }
 
@@ -61,7 +131,7 @@ export async function execute(interaction) {
   const plataforma = interaction.options.getString("plataforma");
   const imagem = interaction.options.getAttachment("imagem");
 
-  // Segurança: garantir que a imagem é mesmo imagem
+  // Validar imagem
   if (!imagem.contentType?.startsWith("image/")) {
     return interaction.reply({
       content: "❌ O ficheiro enviado não é uma imagem válida.",
@@ -69,7 +139,7 @@ export async function execute(interaction) {
     });
   }
 
-  // XP ganho (sempre 1 platina)
+  // XP ganho
   const xpGanho = XP_PLATINA;
 
   // Atualizar XP
@@ -81,7 +151,7 @@ export async function execute(interaction) {
   // Atualizar stats
   adicionarJogo(jogo);
   adicionarPlataforma(plataforma);
-  atualizarStatsPlatina(interaction.user.id, jogo, plataforma);
+  atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
 
   // Embed final
   const embed = new EmbedBuilder()
