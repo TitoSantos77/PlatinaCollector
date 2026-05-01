@@ -143,22 +143,22 @@ export async function execute(interaction) {
   // XP ganho
   const xpGanho = XP_CONQUISTA;
 
-  // Atualizar XP
-  const user = adicionarXP(interaction.user.id, xpGanho);
+  // Atualizar XP (AGORA COM AWAIT, CARALHO)
+  const user = await adicionarXP(interaction.user.id, xpGanho);
 
   // Atualizar missões
-  atualizarProgresso(interaction.user.id, "conquista", true);
+  await atualizarProgresso(interaction.user.id, "conquista", true);
 
   // Atualizar stats
   adicionarJogo(jogo);
   adicionarPlataforma(plataforma);
-  atualizarStatsConquista(interaction.user.id, jogo, plataforma, imagem.url);
+  await atualizarStatsConquista(interaction.user.id, jogo, plataforma, imagem.url);
 
-  // 🔵 CRIAR BACKUP DEPOIS DE TODAS AS ALTERAÇÕES
+  // Criar backup
   criarBackup();
 
-  // 🟣 VERIFICAR BADGES NOVAS
-  verificarBadges(interaction.user.id);
+  // Verificar badges
+  await verificarBadges(interaction.user.id);
 
   // Embed final
   const embed = new EmbedBuilder()
