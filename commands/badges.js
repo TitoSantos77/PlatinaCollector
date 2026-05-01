@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import { readJSON, writeJSON } from "../utils/database.js";
 
 export const data = new SlashCommandBuilder()
   .setName("badges")
@@ -11,7 +11,21 @@ export async function execute(interaction) {
   const users = readJSON("data/users.json");
   const badgesDB = readJSON("data/badges.json");
 
-  const user = users[userId] || {};
+  // 🛡️ Garantir que o user existe SEMPRE
+  if (!users[userId]) {
+    users[userId] = {
+      xp: 0,
+      nivel: 1,
+      totalXP: 0,
+      platinas: 0,
+      conquistas: 0,
+      badge: "⚪ Iniciante",
+      badgesDesbloqueadas: []
+    };
+    writeJSON("data/users.json", users);
+  }
+
+  const user = users[userId];
   const desbloqueadas = user.badgesDesbloqueadas || [];
 
   // Ordenar por raridade
