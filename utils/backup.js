@@ -3,7 +3,9 @@ import fs from "fs";
 const DATA_FILES = [
   "data/users.json",
   "data/userStats.json",
-  "data/globalStats.json"
+  "data/globalStats.json",
+  "data/config.json",
+  "data/missions.json"
 ];
 
 export function criarBackup() {
@@ -14,7 +16,8 @@ export function criarBackup() {
   for (const file of DATA_FILES) {
     if (fs.existsSync(file)) {
       const conteudo = fs.readFileSync(file, "utf8");
-      fs.writeFileSync(`backup/${file.replace("data/", "")}`, conteudo);
+      const nome = file.replace("data/", "");
+      fs.writeFileSync(`backup/${nome}`, conteudo);
     }
   }
 }
