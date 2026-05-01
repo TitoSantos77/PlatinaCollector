@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Collection, REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -40,7 +40,7 @@ for (const file of commandFiles) {
   }
 }
 
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`Bot online como ${client.user.tag}`);
 
   // 🔵 CRIAR BACKUP AO ARRANCAR
@@ -48,6 +48,31 @@ client.once("ready", () => {
 
   // INICIAR O SCHEDULER DE MISSÕES
   iniciarSchedulerMissoes();
+
+  // 🔥 DEPLOY AUTOMÁTICO (DEV + GLOBAL)
+  try {
+    const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+    const comandosJSON = client.commands.map(cmd => cmd.data.toJSON());
+
+    // 🔵 DEV — instantâneo no teu servidor
+    console.log("🔄 A atualizar comandos DEV (GUILD)...");
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+      { body: comandosJSON }
+    );
+    console.log("✔ Comandos DEV atualizados!");
+
+    // 🌍 GLOBAL — para todos os servidores (demora até 1 hora)
+    console.log("🌍 A atualizar comandos GLOBAIS...");
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: comandosJSON }
+    );
+    console.log("✔ Comandos globais enviados!");
+
+  } catch (err) {
+    console.error("❌ Erro ao registar comandos:", err);
+  }
 });
 
 // Handler de interações (comandos + autocomplete)
