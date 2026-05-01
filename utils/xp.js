@@ -1,4 +1,5 @@
 import { readJSON, writeJSON } from "./database.js";
+import { criarBackup } from "./backup.js";
 
 // XP base
 export const XP_PLATINA = 100;
@@ -32,12 +33,10 @@ function atualizarBadge(user) {
     if (user.badge !== novaBadge) {
         user.badge = novaBadge;
 
-        // Criar array se não existir
         if (!user.badgesDesbloqueadas) {
             user.badgesDesbloqueadas = [];
         }
 
-        // Adicionar badge se ainda não tiver
         if (!user.badgesDesbloqueadas.includes(novaBadge)) {
             user.badgesDesbloqueadas.push(novaBadge);
         }
@@ -48,7 +47,6 @@ function atualizarBadge(user) {
 export function adicionarXP(userId, quantidade) {
     const users = readJSON("data/users.json");
 
-    // Se o user não existir, cria-o
     if (!users[userId]) {
         users[userId] = {
             xp: 0,
@@ -65,24 +63,24 @@ export function adicionarXP(userId, quantidade) {
 
     const user = users[userId];
 
-    // Adiciona XP
     user.xp += quantidade;
     user.totalXP += quantidade;
 
-    // Verifica subida de nível
     let xpNeeded = xpNecessario(user.nivel);
 
     while (user.xp >= xpNeeded) {
         user.xp -= xpNeeded;
         user.nivel++;
 
-        // Atualizar badge ao subir nível
         atualizarBadge(user);
 
         xpNeeded = xpNecessario(user.nivel);
     }
 
     writeJSON("data/users.json", users);
+
+    // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR XP
+    criarBackup();
 
     return user;
 }
