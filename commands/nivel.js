@@ -23,14 +23,14 @@ export async function execute(interaction) {
   // Percentagem
   const percent = Math.min(100, Math.floor((xpAtual / xpProximo) * 100));
 
-  // Barra de progresso (30 blocos)
-  const totalBlocos = 30;
+  // Barra de progresso (20 blocos premium)
+  const totalBlocos = 20;
   const blocosCheios = Math.round((percent / 100) * totalBlocos);
   const blocosVazios = totalBlocos - blocosCheios;
 
   const barra =
-    "🟦".repeat(blocosCheios) +
-    "⬛".repeat(blocosVazios);
+    "▰".repeat(blocosCheios) +
+    "▱".repeat(blocosVazios);
 
   const embed = new EmbedBuilder()
     .setColor("#4A90E2")
@@ -41,7 +41,7 @@ export async function execute(interaction) {
       { name: "✨ XP Atual", value: `${xpAtual} XP`, inline: true },
       { name: "🎯 XP Necessário", value: `${xpProximo} XP`, inline: true },
       { name: "📊 Progresso", value: `${percent}%`, inline: true },
-      { name: "🔵 Barra de XP", value: barra }
+      { name: "🔵 Barra de XP", value: `\`${barra}\`` }
     )
     .setFooter({ text: "Continua a evoluir, lenda!" });
 
