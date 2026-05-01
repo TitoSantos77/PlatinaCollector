@@ -1,54 +1,65 @@
-import { readJSON, writeJSON } from "./database.js";
-import { criarBackup } from "./backup.js";
+import UserStats from "../models/UserStats.js";
 
-function garantirEstruturaUser(stats, userId) {
-  if (!stats[userId]) {
-    stats[userId] = {
+// Garantir que o documento existe
+async function garantirUser(userId) {
+  let user = await UserStats.findOne({ userId });
+
+  if (!user) {
+    user = await UserStats.create({
+      userId,
       platinas: 0,
       conquistas: 0,
       ultimaPlatina: null,
       ultimaConquista: null
-    };
+    });
   }
+
+  return user;
 }
 
-export function atualizarStatsPlatina(userId, jogo, plataforma) {
-  const stats = readJSON("data/userStats.json");
+// Atualizar platina
+export async function atualizarStatsPlatina(userId, jogo, plataforma) {
+  await garantirUser(userId);
 
-  garantirEstruturaUser(stats, userId);
-
-  stats[userId].platinas++;
-  stats[userId].ultimaPlatina = {
-    jogo: jogo || "Não especificado",
-    plataforma: plataforma || "Não especificado"
-  };
-
-  writeJSON("data/userStats.json", stats);
-
-  // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR STATS
-  criarBackup();
+  await UserStats.findOneAndUpdate(
+    { userId },
+    {
+      $inc: { platinas: 1 },
+      $set: {
+        ultimaPlatina: {
+          jogo: jogo || "Não especificado",
+          plataforma: plataforma || "Não especificado"
+        }
+      }
+    },
+    { new: true }
+  );
 }
 
-export function atualizarStatsConquista(userId, jogo, plataforma) {
-  const stats = readJSON("data/userStats.json");
+// Atualizar conquista
+export async function atualizarStatsConquista(userId, jogo, plataforma) {
+  await garantirUser(userId);
 
-  garantirEstruturaUser(stats, userId);
-
-  stats[userId].conquistas++;
-  stats[userId].ultimaConquista = {
-    jogo: jogo || "Não especificado",
-    plataforma: plataforma || "Não especificado"
-  };
-
-  writeJSON("data/userStats.json", stats);
-
-  // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR STATS
-  criarBackup();
+  await UserStats.findOneAndUpdate(
+    { userId },
+    {
+      $inc: { conquistas: 1 },
+      $set: {
+        ultimaConquista: {
+          jogo: jogo || "Não especificado",
+          plataforma: plataforma || "Não especificado"
+        }
+      }
+    },
+    { new: true }
+  );
 }
 
-export function getUserStats(userId) {
-  const stats = readJSON("data/userStats.json");
-  if (!stats[userId]) {
+// Obter stats do utilizador
+export async function getUserStats(userId) {
+  const user = await UserStats.findOne({ userId });
+
+  if (!user) {
     return {
       platinas: 0,
       conquistas: 0,
@@ -56,5 +67,6 @@ export function getUserStats(userId) {
       ultimaConquista: null
     };
   }
-  return stats[userId];
+
+  return user;
 }
