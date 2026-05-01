@@ -10,28 +10,30 @@ export const data = new SlashCommandBuilder()
   .addSubcommand(sub =>
     sub
       .setName("add")
-      .setDescription("Adicionar uma ou várias platinas")
-      .addIntegerOption(opt =>
-        opt
-          .setName("quantidade")
-          .setDescription("Quantidade de platinas")
-          .setMinValue(1)
-      )
+      .setDescription("Adicionar uma platina")
       .addStringOption(opt =>
         opt
           .setName("jogo")
           .setDescription("Nome do jogo")
+          .setRequired(true)
           .setAutocomplete(true)
       )
       .addStringOption(opt =>
         opt
           .setName("plataforma")
           .setDescription("Plataforma usada")
+          .setRequired(true)
           .setAutocomplete(true)
+      )
+      .addAttachmentOption(opt =>
+        opt
+          .setName("imagem")
+          .setDescription("Prova da platina (screenshot)")
+          .setRequired(true)
       )
   );
 
-// 🔵 AUTOCOMPLETE
+// 🔵 AUTOCOMPLETE (temporário — depois trocamos para globalStats)
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
@@ -55,45 +57,44 @@ export async function autocomplete(interaction) {
 }
 
 export async function execute(interaction) {
-  const quantidade = interaction.options.getInteger("quantidade") || 1;
   const jogo = interaction.options.getString("jogo");
   const plataforma = interaction.options.getString("plataforma");
+  const imagem = interaction.options.getAttachment("imagem");
 
-  // ❌ Bloquear jogo quando quantidade > 1
-  if (quantidade > 1 && jogo) {
+  // Segurança: garantir que a imagem é mesmo imagem
+  if (!imagem.contentType?.startsWith("image/")) {
     return interaction.reply({
-      content: "❌ Não podes adicionar várias platinas com o mesmo jogo. Remove o jogo ou define quantidade: 1.",
+      content: "❌ O ficheiro enviado não é uma imagem válida.",
       ephemeral: true
     });
   }
 
-  // XP total ganho
-  const xpGanho = quantidade * XP_PLATINA;
+  // XP ganho (sempre 1 platina)
+  const xpGanho = XP_PLATINA;
 
   // Atualizar XP
   const user = adicionarXP(interaction.user.id, xpGanho);
 
   // Atualizar missões
-  atualizarProgresso(interaction.user.id, "platina", !!jogo);
+  atualizarProgresso(interaction.user.id, "platina", true);
 
-  // Atualizar stats (apenas quando quantidade = 1)
-  if (quantidade === 1) {
-    if (jogo) adicionarJogo(jogo);
-    if (plataforma) adicionarPlataforma(plataforma);
-    atualizarStatsPlatina(interaction.user.id, jogo, plataforma);
-  }
+  // Atualizar stats
+  adicionarJogo(jogo);
+  adicionarPlataforma(plataforma);
+  atualizarStatsPlatina(interaction.user.id, jogo, plataforma);
 
-  // Embed
+  // Embed final
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
-    .setTitle(`🏆 ${quantidade} platina${quantidade > 1 ? "s" : ""} adicionada${quantidade > 1 ? "s" : ""}!`)
+    .setTitle("🏆 Platina adicionada!")
+    .setImage(imagem.url)
     .addFields(
-      { name: "🎮 Jogo", value: jogo || "Não especificado", inline: true },
-      { name: "🕹️ Plataforma", value: plataforma || "Não especificado", inline: true },
+      { name: "🎮 Jogo", value: jogo, inline: true },
+      { name: "🕹️ Plataforma", value: plataforma, inline: true },
       { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
       { name: "📈 Nível Atual", value: `Nível ${user.nivel} — ${user.xp}/${user.totalXP} XP`, inline: true }
     )
-    .setFooter({ text: "Continua a colecionar platinas!" });
+    .setFooter({ text: "Boa! Continua a colecionar platinas!" });
 
   await interaction.reply({ embeds: [embed] });
 }
