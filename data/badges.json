@@ -1,1 +1,133 @@
-[]
+[
+  {
+    "id": "primeira_platina",
+    "nome": "Primeira Platina",
+    "emoji": "🏆",
+    "raridade": "Comum",
+    "descricao": "Ganhaste a tua primeira platina!",
+    "secreta": false
+  },
+  {
+    "id": "cinco_platinas",
+    "nome": "Caçador de Platinas",
+    "emoji": "🥇",
+    "raridade": "Incomum",
+    "descricao": "Atingiste 5 platinas.",
+    "secreta": false
+  },
+  {
+    "id": "dez_platinas",
+    "nome": "Viciado em Platinas",
+    "emoji": "💠",
+    "raridade": "Rara",
+    "descricao": "Atingiste 10 platinas.",
+    "secreta": false
+  },
+  {
+    "id": "vinte_platinas",
+    "nome": "Lenda das Platinas",
+    "emoji": "🔥",
+    "raridade": "Épica",
+    "descricao": "Atingiste 20 platinas.",
+    "secreta": false
+  },
+  {
+    "id": "cinquenta_platinas",
+    "nome": "Deus das Platinas",
+    "emoji": "👑",
+    "raridade": "Lendária",
+    "descricao": "Atingiste 50 platinas.",
+    "secreta": false
+  },
+
+  {
+    "id": "primeira_conquista",
+    "nome": "Primeira Conquista",
+    "emoji": "🎖️",
+    "raridade": "Comum",
+    "descricao": "Ganhaste a tua primeira conquista.",
+    "secreta": false
+  },
+  {
+    "id": "dez_conquistas",
+    "nome": "Colecionador",
+    "emoji": "📀",
+    "raridade": "Incomum",
+    "descricao": "Atingiste 10 conquistas.",
+    "secreta": false
+  },
+  {
+    "id": "vinte_cinco_conquistas",
+    "nome": "Caçador de Conquistas",
+    "emoji": "💎",
+    "raridade": "Rara",
+    "descricao": "Atingiste 25 conquistas.",
+    "secreta": false
+  },
+  {
+    "id": "cinquenta_conquistas",
+    "nome": "Mestre das Conquistas",
+    "emoji": "⚡",
+    "raridade": "Épica",
+    "descricao": "Atingiste 50 conquistas.",
+    "secreta": false
+  },
+
+  {
+    "id": "nivel_5",
+    "nome": "Subiste ao Nível 5",
+    "emoji": "🟦",
+    "raridade": "Comum",
+    "descricao": "Atingiste o nível 5.",
+    "secreta": false
+  },
+  {
+    "id": "nivel_10",
+    "nome": "Subiste ao Nível 10",
+    "emoji": "🟪",
+    "raridade": "Incomum",
+    "descricao": "Atingiste o nível 10.",
+    "secreta": false
+  },
+  {
+    "id": "nivel_20",
+    "nome": "Subiste ao Nível 20",
+    "emoji": "🟥",
+    "raridade": "Rara",
+    "descricao": "Atingiste o nível 20.",
+    "secreta": false
+  },
+  {
+    "id": "nivel_30",
+    "nome": "Subiste ao Nível 30",
+    "emoji": "🟧",
+    "raridade": "Épica",
+    "descricao": "Atingiste o nível 30.",
+    "secreta": false
+  },
+  {
+    "id": "nivel_50",
+    "nome": "Subiste ao Nível 50",
+    "emoji": "🟨",
+    "raridade": "Lendária",
+    "descricao": "Atingiste o nível 50.",
+    "secreta": false
+  },
+
+  {
+    "id": "secreta_primeira",
+    "nome": "???",
+    "emoji": "❓",
+    "raridade": "Mítica",
+    "descricao": "Uma badge secreta misteriosa.",
+    "secreta": true
+  },
+  {
+    "id": "secreta_mestre",
+    "nome": "???",
+    "emoji": "🧿",
+    "raridade": "Exótica",
+    "descricao": "Apenas os verdadeiros mestres a desbloqueiam.",
+    "secreta": true
+  }
+]
