@@ -4,6 +4,9 @@ import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsPlatina } from "../utils/userStats.js";
 
+// 🔵 IMPORTAR BACKUP
+import { criarBackup } from "../utils/backup.js";
+
 // LISTA BASE — JOGOS
 const jogosBase = [
   "Grand Theft Auto",
@@ -152,6 +155,9 @@ export async function execute(interaction) {
   adicionarJogo(jogo);
   adicionarPlataforma(plataforma);
   atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
+
+  // 🔵 CRIAR BACKUP DEPOIS DE TODAS AS ALTERAÇÕES
+  criarBackup();
 
   // Embed final
   const embed = new EmbedBuilder()
