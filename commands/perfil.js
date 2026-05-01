@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import User from "../models/User.js"; // <-- AGORA LÊ DO MONGO
 import { getUserStats } from "../utils/userStats.js";
 
 export const data = new SlashCommandBuilder()
@@ -9,15 +9,29 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Ler dados do user (XP, nível, badge)
-  const users = readJSON("data/users.json");
-  const userXP = users[userId] || { nivel: 1, totalXP: 0, badge: "⚪ Iniciante" };
+  // Buscar XP, nível, badge e badges desbloqueadas do Mongo
+  let user = await User.findOne({ userId });
 
-  const nivel = userXP.nivel || 1;
-  const totalXP = userXP.totalXP || 0;
-  const badge = userXP.badge || "⚪ Iniciante";
+  if (!user) {
+    user = await User.create({
+      userId,
+      xp: 0,
+      totalXP: 0,
+      nivel: 1,
+      badge: "⚪ Iniciante",
+      badgesDesbloqueadas: ["⚪ Iniciante"],
+      platinas: 0,
+      conquistas: 0,
+      ultimaPlatina: null,
+      ultimaConquista: null
+    });
+  }
 
-  // Estatísticas do user (platinas, conquistas, últimas) — AGORA COM AWAIT
+  const nivel = user.nivel;
+  const totalXP = user.totalXP;
+  const badge = user.badge;
+
+  // Estatísticas do user (platinas, conquistas, últimas)
   const stats = await getUserStats(userId);
 
   const platinas = stats.platinas ?? 0;
