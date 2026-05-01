@@ -1,4 +1,5 @@
 import { readJSON, writeJSON } from "./database.js";
+import { criarBackup } from "./backup.js";
 
 function garantirEstruturaUser(stats, userId) {
   if (!stats[userId]) {
@@ -23,6 +24,9 @@ export function atualizarStatsPlatina(userId, jogo, plataforma) {
   };
 
   writeJSON("data/userStats.json", stats);
+
+  // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR STATS
+  criarBackup();
 }
 
 export function atualizarStatsConquista(userId, jogo, plataforma) {
@@ -37,6 +41,9 @@ export function atualizarStatsConquista(userId, jogo, plataforma) {
   };
 
   writeJSON("data/userStats.json", stats);
+
+  // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR STATS
+  criarBackup();
 }
 
 export function getUserStats(userId) {
