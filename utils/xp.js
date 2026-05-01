@@ -1,5 +1,6 @@
 import { readJSON, writeJSON } from "./database.js";
 import { criarBackup } from "./backup.js";
+import { verificarBadges } from "./badges.js"; // <-- ADICIONADO
 
 // XP base
 export const XP_PLATINA = 100;
@@ -81,6 +82,9 @@ export function adicionarXP(userId, quantidade) {
 
     // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR XP
     criarBackup();
+
+    // 🟣 VERIFICAR BADGES NOVAS
+    verificarBadges(userId);
 
     return user;
 }
