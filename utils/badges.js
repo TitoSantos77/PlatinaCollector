@@ -1,14 +1,22 @@
-import { readJSON, writeJSON } from "./database.js";
+import UserStats from "../models/UserStats.js";
+import UserXP from "../models/UserXP.js"; // <-- Vais criar este schema (já explico)
+import { readJSON } from "./database.js";
 
-export function verificarBadges(userId) {
+// Verificar badges com MongoDB
+export async function verificarBadges(userId) {
   const badgesDB = readJSON("data/badges.json");
-  const users = readJSON("data/users.json");
-  const stats = readJSON("data/userStats.json");
 
-  const user = users[userId] || {};
-  const userStats = stats[userId] || {};
+  // Buscar XP + nível + badges do Mongo
+  let user = await UserXP.findOne({ userId });
+  if (!user) return false;
 
-  if (!user.badgesDesbloqueadas) user.badgesDesbloqueadas = [];
+  // Buscar stats (platinas, conquistas, missões)
+  let stats = await UserStats.findOne({ userId });
+  if (!stats) return false;
+
+  if (!user.badgesDesbloqueadas) {
+    user.badgesDesbloqueadas = [];
+  }
 
   let ganhouNova = false;
 
@@ -20,11 +28,11 @@ export function verificarBadges(userId) {
 
     const req = badge.requisito || {};
 
-    const cumpreNivel = req.nivel ? (user.nivel || 1) >= req.nivel : true;
-    const cumpreXP = req.xp ? (user.totalXP || 0) >= req.xp : true;
-    const cumprePlatinas = req.platinas ? (userStats.platinas || 0) >= req.platinas : true;
-    const cumpreConquistas = req.conquistas ? (userStats.conquistas || 0) >= req.conquistas : true;
-    const cumpreMissoes = req.missoes ? (userStats.missoesConcluidas || 0) >= req.missoes : true;
+    const cumpreNivel = req.nivel ? user.nivel >= req.nivel : true;
+    const cumpreXP = req.xp ? user.totalXP >= req.xp : true;
+    const cumprePlatinas = req.platinas ? stats.platinas >= req.platinas : true;
+    const cumpreConquistas = req.conquistas ? stats.conquistas >= req.conquistas : true;
+    const cumpreMissoes = req.missoes ? (stats.missoesConcluidas || 0) >= req.missoes : true;
 
     if (cumpreNivel && cumpreXP && cumprePlatinas && cumpreConquistas && cumpreMissoes) {
       user.badgesDesbloqueadas.push(id);
@@ -32,8 +40,6 @@ export function verificarBadges(userId) {
     }
   }
 
-  users[userId] = user;
-  writeJSON("data/users.json", users);
-
+  await user.save();
   return ganhouNova;
 }
