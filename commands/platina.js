@@ -3,77 +3,14 @@ import { XP_PLATINA, adicionarXP } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsPlatina } from "../utils/userStats.js";
-
-// 🔵 IMPORTAR BACKUP
 import { criarBackup } from "../utils/backup.js";
+import { verificarBadges } from "../utils/badges.js"; // <-- ADICIONADO
 
 // LISTA BASE — JOGOS
-const jogosBase = [
-  "Grand Theft Auto",
-  "Grand Theft Auto 2",
-  "Grand Theft Auto III",
-  "Grand Theft Auto: Vice City",
-  "Grand Theft Auto: San Andreas",
-  "Grand Theft Auto IV",
-  "Grand Theft Auto V",
-  "Grand Theft Auto VI",
-  "GTA: Liberty City Stories",
-  "GTA: Vice City Stories",
-  "GTA: Chinatown Wars",
-  "GTA Advance",
-
-  "Red Dead Revolver",
-  "Red Dead Redemption",
-  "Red Dead Redemption: Undead Nightmare",
-  "Red Dead Redemption 2",
-  "Red Dead Redemption (Remastered)",
-
-  "God of War",
-  "God of War Ragnarök",
-  "Horizon Zero Dawn",
-  "Horizon Forbidden West",
-  "Marvel’s Spider-Man",
-  "Marvel’s Spider-Man: Miles Morales",
-  "Marvel’s Spider-Man 2",
-  "The Last of Us Part I",
-  "The Last of Us Part II",
-  "Ghost of Tsushima",
-  "Cyberpunk 2077",
-  "The Witcher 3",
-  "Assassin’s Creed Valhalla",
-  "Assassin’s Creed Odyssey",
-  "Assassin’s Creed Mirage",
-  "Elden Ring",
-  "Fortnite",
-  "Apex Legends",
-  "Valorant",
-  "League of Legends",
-  "Rocket League",
-  "Minecraft",
-  "Gran Turismo 7",
-  "Forza Horizon 5",
-  "Destiny 2",
-  "Overwatch 2",
-  "Rainbow Six Siege",
-  "PUBG",
-  "Warzone",
-  "Diablo IV",
-  "Hades",
-  "Hollow Knight",
-  "Stardew Valley",
-  "Cuphead",
-  "Celeste"
-];
+const jogosBase = [ /* ... */ ];
 
 // LISTA BASE — PLATAFORMAS
-const plataformasBase = [
-  "PS4",
-  "PS5",
-  "Xbox One",
-  "Xbox Series X/S",
-  "Nintendo Switch",
-  "PC"
-];
+const plataformasBase = [ /* ... */ ];
 
 export const data = new SlashCommandBuilder()
   .setName("platina")
@@ -104,7 +41,6 @@ export const data = new SlashCommandBuilder()
       )
   );
 
-// AUTOCOMPLETE FINAL
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
@@ -158,6 +94,9 @@ export async function execute(interaction) {
 
   // 🔵 CRIAR BACKUP DEPOIS DE TODAS AS ALTERAÇÕES
   criarBackup();
+
+  // 🟣 VERIFICAR BADGES NOVAS
+  verificarBadges(interaction.user.id);
 
   // Embed final
   const embed = new EmbedBuilder()
