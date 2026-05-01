@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import User from "../models/User.js";
 import { xpNecessario } from "../utils/xp.js";
 
 export const data = new SlashCommandBuilder()
@@ -21,15 +21,15 @@ export async function execute(interaction) {
   const tipo = interaction.options.getString("tipo");
   const userId = interaction.user.id;
 
-  // Carregar XP total dos users
-  const users = readJSON("data/users.json");
+  // Buscar users do Mongo
+  const users = await User.find().lean();
 
   // Converter users em array
-  const lista = Object.entries(users).map(([id, dados]) => ({
-    id,
-    xp: dados.totalXP || 0,
-    nivel: dados.nivel || 1,
-    xpAtual: dados.xp || 0
+  const lista = users.map(u => ({
+    id: u.userId,
+    xp: u.totalXP || 0,
+    nivel: u.nivel || 1,
+    xpAtual: u.xp || 0
   }));
 
   // Ordenar por XP total
@@ -40,7 +40,6 @@ export async function execute(interaction) {
   const total = lista.length;
   const userData = lista.find(u => u.id === userId);
 
-  const xpUser = userData?.xp || 0;
   const nivelUser = userData?.nivel || 1;
   const xpAtual = userData?.xpAtual || 0;
   const xpProximo = xpNecessario(nivelUser);
@@ -60,24 +59,21 @@ export async function execute(interaction) {
   const miniRanking = lista.slice(inicio, fim).map((u, i) => {
     const pos = inicio + i + 1;
     const marcador = u.id === userId ? "👉 **TU**" : "";
-    return `**#${pos}** — <@${u.id}> — ${u.xp} XP ${marcador}`;
+    return `**#${pos}** — <@${u.id}> — **${u.xp} XP** ${marcador}`;
   }).join("\n");
 
   const embed = new EmbedBuilder()
     .setColor("#00FFAA")
-    .setAuthor({
-      name: `${interaction.user.username} — Ranking ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`,
-      iconURL: interaction.user.displayAvatarURL()
-    })
+    .setTitle("📊 Ranking")
     .addFields(
-      { name: "📌 Posição", value: `#${posicao} de ${total}`, inline: true },
-      { name: "🏅 Nível", value: `${nivelUser}`, inline: true },
-      { name: "⭐ XP Total", value: `${xpUser} XP`, inline: true },
+      { name: "Tipo", value: tipo.charAt(0).toUpperCase() + tipo.slice(1), inline: true },
+      { name: "Posição", value: `#${posicao} de ${total}`, inline: true },
+      { name: "Nível", value: `${nivelUser}`, inline: true },
 
-      { name: "📊 Progresso para o próximo nível", value: `${percent}%`, inline: true },
-      { name: "🔵 Barra de XP", value: `\`${barra}\`` },
+      { name: "XP Atual", value: `${xpAtual} / ${xpProximo}`, inline: true },
+      { name: "Progresso", value: `${barra}\n${percent}%`, inline: false },
 
-      { name: "📈 Mini Ranking", value: miniRanking }
+      { name: "Mini Ranking", value: miniRanking, inline: false }
     )
     .setFooter({ text: "Continua a subir no ranking!" });
 
