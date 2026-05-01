@@ -30,13 +30,15 @@ export async function execute(interaction) {
   // Remover XP
   adicionarXP(target.id, -XP_PLATINA);
 
-  // Remover stats
+  // Remover stats do user
   stats[target.id].platinas--;
   stats[target.id].ultimaPlatina = null;
+  stats[target.id].ultimaPlatinaImagem = null; // remover imagem
+  stats[target.id].ultimaPlatinaTimestamp = null; // caso exista
 
   writeJSON("data/userStats.json", stats);
 
-  // Remover globalStats
+  // Remover globalStats (apenas -1)
   if (ultima?.jogo) removerJogo(ultima.jogo);
   if (ultima?.plataforma) removerPlataforma(ultima.plataforma);
 
