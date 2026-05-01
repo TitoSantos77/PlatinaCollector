@@ -3,6 +3,9 @@ import { XP_PLATINA, adicionarXP } from "../utils/xp.js";
 import { readJSON, writeJSON } from "../utils/database.js";
 import { removerJogo, removerPlataforma } from "../utils/globalStats.js";
 
+// 🔵 IMPORTAR BACKUP
+import { criarBackup } from "../utils/backup.js";
+
 export const data = new SlashCommandBuilder()
   .setName("remover-platina")
   .setDescription("Remove a última platina de um utilizador")
@@ -33,14 +36,17 @@ export async function execute(interaction) {
   // Remover stats do user
   stats[target.id].platinas--;
   stats[target.id].ultimaPlatina = null;
-  stats[target.id].ultimaPlatinaImagem = null; // remover imagem
-  stats[target.id].ultimaPlatinaTimestamp = null; // caso exista
+  stats[target.id].ultimaPlatinaImagem = null;
+  stats[target.id].ultimaPlatinaTimestamp = null;
 
   writeJSON("data/userStats.json", stats);
 
-  // Remover globalStats (apenas -1)
+  // Remover globalStats
   if (ultima?.jogo) removerJogo(ultima.jogo);
   if (ultima?.plataforma) removerPlataforma(ultima.plataforma);
+
+  // 🔵 CRIAR BACKUP DEPOIS DE TODAS AS ALTERAÇÕES
+  criarBackup();
 
   const embed = new EmbedBuilder()
     .setColor("#FF5555")
