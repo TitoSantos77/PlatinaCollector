@@ -49,26 +49,30 @@ client.once("ready", async () => {
   // INICIAR O SCHEDULER DE MISSÕES
   iniciarSchedulerMissoes();
 
-  // 🔥 DEPLOY AUTOMÁTICO (DEV + GLOBAL)
+  // 🔥 MODO DEV INTELIGENTE
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
     const comandosJSON = client.commands.map(cmd => cmd.data.toJSON());
 
-    // 🔵 DEV — instantâneo no teu servidor
-    console.log("🔄 A atualizar comandos DEV (GUILD)...");
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-      { body: comandosJSON }
-    );
-    console.log("✔ Comandos DEV atualizados!");
+    const guild = client.guilds.cache.get(process.env.GUILD_ID);
 
-    // 🌍 GLOBAL — para todos os servidores (demora até 1 hora)
-    console.log("🌍 A atualizar comandos GLOBAIS...");
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: comandosJSON }
-    );
-    console.log("✔ Comandos globais enviados!");
+    if (guild) {
+      // Estamos no teu servidor DEV → comandos instantâneos
+      console.log("🔧 MODO DEV ATIVO — A atualizar comandos GUILD...");
+      await rest.put(
+        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+        { body: comandosJSON }
+      );
+      console.log("✔ Comandos DEV atualizados!");
+    } else {
+      // Estamos noutro servidor → comandos globais
+      console.log("🌍 MODO PÚBLICO — A atualizar comandos GLOBAIS...");
+      await rest.put(
+        Routes.applicationCommands(process.env.CLIENT_ID),
+        { body: comandosJSON }
+      );
+      console.log("✔ Comandos globais enviados!");
+    }
 
   } catch (err) {
     console.error("❌ Erro ao registar comandos:", err);
