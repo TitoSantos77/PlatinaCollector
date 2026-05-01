@@ -1,66 +1,64 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import User from "../models/User.js";
+import UserStats from "../models/UserStats.js";
+import GlobalStats from "../models/GlobalStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("estatisticas")
   .setDescription("Mostra estatísticas gerais do servidor (XP total, jogos mais feitos, etc)");
 
 export async function execute(interaction) {
-  const users = readJSON("data/users.json");
-  const stats = readJSON("data/userStats.json");
-  const globalStats = readJSON("data/globalStats.json");
+
+  // Buscar dados do Mongo
+  const users = await User.find().lean();
+  const stats = await UserStats.find().lean();
+  const globalStats = await GlobalStats.findOne().lean();
 
   // Total de jogadores
-  const totalJogadores = Object.keys(users).length;
+  const totalJogadores = users.length;
 
   // Total de XP do servidor
-  const totalXP = Object.values(users)
-    .reduce((acc, u) => acc + (u.totalXP || 0), 0);
+  const totalXP = users.reduce((acc, u) => acc + (u.totalXP || 0), 0);
 
   // Total de platinas
-  const totalPlatinas = Object.values(stats)
-    .reduce((acc, u) => acc + (u.platinas || 0), 0);
+  const totalPlatinas = stats.reduce((acc, u) => acc + (u.platinas || 0), 0);
 
   // Total de conquistas
-  const totalConquistas = Object.values(stats)
-    .reduce((acc, u) => acc + (u.conquistas || 0), 0);
+  const totalConquistas = stats.reduce((acc, u) => acc + (u.conquistas || 0), 0);
 
   // Jogo mais platinado
   let jogoMaisFeito = "Nenhum";
-  if (globalStats.jogos && Object.keys(globalStats.jogos).length > 0) {
-    jogoMaisFeito = Object.entries(globalStats.jogos)
+  if (globalStats?.jogos && globalStats.jogos.size > 0) {
+    jogoMaisFeito = [...globalStats.jogos.entries()]
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Plataforma mais usada
   let plataformaMaisUsada = "Nenhuma";
-  if (globalStats.plataformas && Object.keys(globalStats.plataformas).length > 0) {
-    plataformaMaisUsada = Object.entries(globalStats.plataformas)
+  if (globalStats?.plataformas && globalStats.plataformas.size > 0) {
+    plataformaMaisUsada = [...globalStats.plataformas.entries()]
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // User com mais XP
   let topXP = "Nenhum";
-  if (Object.keys(users).length > 0) {
-    const sortedXP = Object.entries(users)
-      .sort((a, b) => (b[1].totalXP || 0) - (a[1].totalXP || 0));
-    topXP = `<@${sortedXP[0][0]}> (${sortedXP[0][1].totalXP} XP)`;
+  if (users.length > 0) {
+    const sortedXP = [...users].sort((a, b) => (b.totalXP || 0) - (a.totalXP || 0));
+    topXP = `<@${sortedXP[0].userId}> (${sortedXP[0].totalXP} XP)`;
   }
 
   // User com mais platinas
   let topPlatinas = "Nenhum";
-  if (Object.keys(stats).length > 0) {
-    const sortedPlatinas = Object.entries(stats)
-      .sort((a, b) => (b[1].platinas || 0) - (a[1].platinas || 0));
-    topPlatinas = `<@${sortedPlatinas[0][0]}> (${sortedPlatinas[0][1].platinas} platinas)`;
+  if (stats.length > 0) {
+    const sortedPlatinas = [...stats].sort((a, b) => (b.platinas || 0) - (a.platinas || 0));
+    topPlatinas = `<@${sortedPlatinas[0].userId}> (${sortedPlatinas[0].platinas} platinas)`;
   }
 
   // User com mais conquistas
   let topConquistas = "Nenhum";
-  if (Object.keys(stats).length > 0) {
-    const sortedConquistas = Object.entries(stats)
-      .sort((a, b) => (b[1].conquistas || 0) - (a[1].conquistas || 0));
-    topConquistas = `<@${sortedConquistas[0][0]}> (${sortedConquistas[0][1].conquistas} conquistas)`;
+  if (stats.length > 0) {
+    const sortedConquistas = [...stats].sort((a, b) => (b.conquistas || 0) - (a.conquistas || 0));
+    topConquistas = `<@${sortedConquistas[0].userId}> (${sortedConquistas[0].conquistas} conquistas)`;
   }
 
   const embed = new EmbedBuilder()
