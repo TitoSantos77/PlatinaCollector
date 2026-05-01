@@ -1,5 +1,6 @@
 import { readJSON, writeJSON } from "../utils/database.js";
 import { gerarMissao } from "../utils/missions.js";
+import { criarBackup } from "../utils/backup.js";
 
 export function iniciarSchedulerMissoes() {
   console.log("⏱️ Scheduler de missões iniciado...");
@@ -32,6 +33,9 @@ export function iniciarSchedulerMissoes() {
 
       meta.ultimaSemanaGerada = chaveSemana;
       writeJSON("data/meta.json", meta);
+
+      // 🔵 CRIAR BACKUP DEPOIS DE ATUALIZAR META
+      criarBackup();
 
       console.log("✅ Missões semanais geradas com sucesso!");
 
