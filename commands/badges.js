@@ -9,24 +9,22 @@ export async function execute(interaction) {
   const userId = interaction.user.id;
 
   const users = readJSON("data/users.json");
+  const badgesDB = readJSON("data/badges.json");
+
   const user = users[userId] || {};
+  const desbloqueadas = user.badgesDesbloqueadas || [];
 
-  const badgeAtual = user.badge || "⚪ Iniciante";
-  const badgesDesbloqueadas = user.badgesDesbloqueadas || ["⚪ Iniciante"];
+  // Ordenar por raridade
+  const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
-  // ✔ LISTA OFICIAL DAS TUAS BADGES
-  const todasAsBadges = [
-    "⚪ Iniciante",
-    "🟫 Bronze Hunter",
-    "🟧 Elite Hunter",
-    "🟪 Master Hunter",
-    "🟨 Legendary Hunter"
-  ];
+  const todasOrdenadas = badgesDB.sort((a, b) =>
+    raridadeOrdem.indexOf(a.raridade) - raridadeOrdem.indexOf(b.raridade)
+  );
 
-  // Barra de progresso (20 blocos)
-  const total = todasAsBadges.length;
-  const desbloqueadas = badgesDesbloqueadas.length;
-  const percent = Math.floor((desbloqueadas / total) * 100);
+  // Barra de progresso
+  const total = todasOrdenadas.length;
+  const qtdDesbloqueadas = desbloqueadas.length;
+  const percent = Math.floor((qtdDesbloqueadas / total) * 100);
 
   const totalBlocos = 20;
   const blocosCheios = Math.round((percent / 100) * totalBlocos);
@@ -34,24 +32,27 @@ export async function execute(interaction) {
 
   const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
 
-  // Formatar lista (verde = desbloqueada, cinza = bloqueada)
-  const listaFormatada = todasAsBadges.map(badge => {
-    const desbloqueada = badgesDesbloqueadas.includes(badge);
+  // Formatar lista
+  const lista = todasOrdenadas.map(badge => {
+    const unlocked = desbloqueadas.includes(badge.id);
 
-    return desbloqueada
-      ? `🟩 **${badge}**`
-      : `⬜ ${badge}`;
+    if (badge.secreta && !unlocked) {
+      return `🔒 **Badge Secreta** — ???`;
+    }
+
+    return unlocked
+      ? `🟩 **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
+      : `⬜ ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
-    .setTitle("🏅 Sistema de Badges")
+    .setTitle(`🏅 Badges de ${interaction.user.username}`)
     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
     .addFields(
-      { name: "🏆 Badge Atual", value: `**${badgeAtual}**`, inline: true },
-      { name: "📊 Progresso", value: `${desbloqueadas} / ${total} (${percent}%)`, inline: true },
+      { name: "📊 Progresso", value: `${qtdDesbloqueadas} / ${total} (${percent}%)`, inline: true },
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
-      { name: "📜 Todas as Badges", value: listaFormatada.join("\n") }
+      { name: "📜 Badges", value: lista.join("\n\n") }
     )
     .setFooter({ text: "Continua a colecionar badges, lenda!" });
 
