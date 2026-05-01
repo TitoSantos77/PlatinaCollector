@@ -167,6 +167,7 @@ export async function execute(interaction) {
     .setTitle("🏆 Platina adicionada!")
     .setImage(imagem.url)
     .addFields(
+      { name: "👤 Jogador", value: `${interaction.user}`, inline: false },
       { name: "🎮 Jogo", value: jogo, inline: true },
       { name: "🕹️ Plataforma", value: plataforma, inline: true },
       { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
