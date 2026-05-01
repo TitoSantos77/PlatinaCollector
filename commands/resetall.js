@@ -4,7 +4,6 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.
 import User from "../models/User.js";
 import UserStats from "../models/UserStats.js";
 import GlobalStats from "../models/GlobalStats.js";
-import Missions from "../models/Missions.js"; // só se existir
 
 // BACKUP
 import { criarBackup } from "../utils/backup.js";
@@ -15,7 +14,6 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
-  // Segurança extra
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
       content: "❌ Apenas administradores podem usar este comando.",
@@ -27,7 +25,6 @@ export async function execute(interaction) {
   await User.deleteMany({});
   await UserStats.deleteMany({});
   await GlobalStats.deleteMany({});
-  if (Missions) await Missions.deleteMany({}); // só se existir
 
   // CRIAR BACKUP DEPOIS DO RESET GLOBAL
   criarBackup();
@@ -41,7 +38,6 @@ export async function execute(interaction) {
       "• Badges\n" +
       "• Platinas\n" +
       "• Conquistas\n" +
-      "• Missões\n" +
       "• Estatísticas globais\n\n" +
       "⚠️ Esta ação é permanente."
     )
