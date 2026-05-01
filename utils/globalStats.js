@@ -1,4 +1,5 @@
 import { readJSON, writeJSON } from "./database.js";
+import { criarBackup } from "./backup.js";
 
 function garantirEstrutura(stats) {
     if (!stats.jogos) stats.jogos = {};
@@ -15,6 +16,9 @@ export function adicionarJogo(nome) {
     stats.jogos[nome]++;
 
     writeJSON("data/globalStats.json", stats);
+
+    // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR GLOBALSTATS
+    criarBackup();
 }
 
 export function adicionarPlataforma(nome) {
@@ -27,6 +31,9 @@ export function adicionarPlataforma(nome) {
     stats.plataformas[nome]++;
 
     writeJSON("data/globalStats.json", stats);
+
+    // 🔵 CRIAR BACKUP DEPOIS DE ALTERAR GLOBALSTATS
+    criarBackup();
 }
 
 export function obterJogos() {
