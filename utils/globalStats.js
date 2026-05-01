@@ -1,77 +1,70 @@
-import { readJSON, writeJSON } from "./database.js";
-import { criarBackup } from "./backup.js";
+import GlobalStats from "../models/GlobalStats.js";
 
-function garantirEstrutura(stats) {
-    if (!stats.jogos) stats.jogos = {};
-    if (!stats.plataformas) stats.plataformas = {};
+// Garantir documento único
+async function garantirStats() {
+  let stats = await GlobalStats.findOne();
+  if (!stats) {
+    stats = await GlobalStats.create({});
+  }
+  return stats;
 }
 
-export function adicionarJogo(nome) {
-    if (!nome) return;
+export async function adicionarJogo(nome) {
+  if (!nome) return;
 
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
+  const stats = await garantirStats();
 
-    if (!stats.jogos[nome]) stats.jogos[nome] = 0;
-    stats.jogos[nome]++;
+  const atual = stats.jogos.get(nome) || 0;
+  stats.jogos.set(nome, atual + 1);
 
-    writeJSON("data/globalStats.json", stats);
-    criarBackup();
+  await stats.save();
 }
 
-export function adicionarPlataforma(nome) {
-    if (!nome) return;
+export async function adicionarPlataforma(nome) {
+  if (!nome) return;
 
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
+  const stats = await garantirStats();
 
-    if (!stats.plataformas[nome]) stats.plataformas[nome] = 0;
-    stats.plataformas[nome]++;
+  const atual = stats.plataformas.get(nome) || 0;
+  stats.plataformas.set(nome, atual + 1);
 
-    writeJSON("data/globalStats.json", stats);
-    criarBackup();
+  await stats.save();
 }
 
-export function removerJogo(nome) {
-    if (!nome) return;
+export async function removerJogo(nome) {
+  if (!nome) return;
 
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
+  const stats = await garantirStats();
 
-    if (stats.jogos[nome] && stats.jogos[nome] > 0) {
-        stats.jogos[nome]--;
-        if (stats.jogos[nome] <= 0) delete stats.jogos[nome];
-    }
+  const atual = stats.jogos.get(nome);
+  if (!atual) return;
 
-    writeJSON("data/globalStats.json", stats);
-    criarBackup();
+  if (atual <= 1) stats.jogos.delete(nome);
+  else stats.jogos.set(nome, atual - 1);
+
+  await stats.save();
 }
 
-export function removerPlataforma(nome) {
-    if (!nome) return;
+export async function removerPlataforma(nome) {
+  if (!nome) return;
 
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
+  const stats = await garantirStats();
 
-    if (stats.plataformas[nome] && stats.plataformas[nome] > 0) {
-        stats.plataformas[nome]--;
-        if (stats.plataformas[nome] <= 0) delete stats.plataformas[nome];
-    }
+  const atual = stats.plataformas.get(nome);
+  if (!atual) return;
 
-    writeJSON("data/globalStats.json", stats);
-    criarBackup();
+  if (atual <= 1) stats.plataformas.delete(nome);
+  else stats.plataformas.set(nome, atual - 1);
+
+  await stats.save();
 }
 
-export function obterJogos() {
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
-
-    return Object.keys(stats.jogos);
+export async function obterJogos() {
+  const stats = await garantirStats();
+  return Array.from(stats.jogos.keys());
 }
 
-export function obterPlataformas() {
-    const stats = readJSON("data/globalStats.json");
-    garantirEstrutura(stats);
-
-    return Object.keys(stats.plataformas);
+export async function obterPlataformas() {
+  const stats = await garantirStats();
+  return Array.from(stats.plataformas.keys());
 }
