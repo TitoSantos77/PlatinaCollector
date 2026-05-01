@@ -1,5 +1,6 @@
 import { readJSON, writeJSON } from "./database.js";
 import { XP_FACIL, XP_MEDIA, XP_DIFICIL, adicionarXP } from "./xp.js";
+import { criarBackup } from "./backup.js";
 
 // Lista oficial das missões
 export const MISSOES = [
@@ -49,6 +50,7 @@ export function gerarMissao(userId) {
   };
 
   writeJSON("data/missions.json", missions);
+  criarBackup();
 
   return missions[userId].atual;
 }
@@ -62,13 +64,13 @@ export function atualizarProgresso(userId, tipo, temJogo) {
 
   if (missao.concluida) return;
 
-  // Requer jogo mencionado
   if (missao.requerJogo && !temJogo) return;
 
   if (tipo === "platina") missao.progresso.platinas++;
   if (tipo === "conquista") missao.progresso.conquistas++;
 
   writeJSON("data/missions.json", missions);
+  criarBackup();
 
   verificarConclusao(userId);
 }
@@ -85,6 +87,7 @@ export function adicionarXPsemana(userId, quantidade) {
   missao.progresso.xp += quantidade;
 
   writeJSON("data/missions.json", missions);
+  criarBackup();
 
   verificarConclusao(userId);
 }
@@ -108,16 +111,14 @@ export function verificarConclusao(userId) {
   missao.concluida = true;
   missao.dataFim = new Date().toISOString().split("T")[0];
 
-  // Dar XP extra
   adicionarXP(userId, missao.recompensa);
 
-  // Mover para histórico
   missions[userId].historico.push(missao);
 
-  // Limpar missão atual
   missions[userId].atual = null;
 
   writeJSON("data/missions.json", missions);
+  criarBackup();
 
   return true;
 }
