@@ -118,7 +118,12 @@ export async function handleSelect(interaction) {
 export async function handleSelectCampo(interaction) {
   if (!interaction.customId.startsWith("editar_opcao_")) return;
 
-  const [_, userId, tipo, index] = interaction.customId.split("_");
+  // editar_opcao_<userId>_<tipo>_<index>
+  const parts = interaction.customId.split("_");
+  const userId = parts[2];
+  const tipo = parts[3];
+  const index = parts[4];
+
   const campo = interaction.values[0];
 
   if (campo === "imagem") {
@@ -150,7 +155,13 @@ export async function handleSelectCampo(interaction) {
 export async function handleModal(interaction) {
   if (!interaction.customId.startsWith("editar_modal_")) return;
 
-  const [_, userId, tipo, index, campo] = interaction.customId.split("_");
+  // editar_modal_<userId>_<tipo>_<index>_<campo>
+  const parts = interaction.customId.split("_");
+  const userId = parts[2];
+  const tipo = parts[3];
+  const index = parseInt(parts[4], 10);
+  const campo = parts[5];
+
   const valor = interaction.fields.getTextInputValue("valor");
 
   const games = await UserGames.findOne({ userId });
@@ -159,6 +170,13 @@ export async function handleModal(interaction) {
   const lista = tipo === "platina" ? games.platinas : games.conquistas;
   const item = lista[index];
 
+  if (!item) {
+    return interaction.reply({
+      content: "❌ Entrada inválida.",
+      ephemeral: true
+    });
+  }
+
   const antes = `${item.jogo} (${item.plataforma})`;
 
   if (campo === "jogo") item.jogo = valor;
@@ -166,8 +184,8 @@ export async function handleModal(interaction) {
 
   await games.save();
 
-  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1];
-  else stats.ultimaConquista = lista[lista.length - 1];
+  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
+  else stats.ultimaConquista = lista[lista.length - 1] || null;
 
   await stats.save();
 
@@ -191,40 +209,26 @@ export async function handleImage(interaction) {
   if (!interaction.isMessage()) return;
   if (!interaction.reference) return;
 
-  const replied = await interaction.channel.messages.fetch(interaction.reference.messageId);
+  const replied = await interaction.channel.messages.fetch(
+    interaction.reference.messageId
+  );
 
   const match = replied.content.match(/UserID: (\d+), Tipo: (platina|conquista), Index: (\d+)/);
   if (!match) return;
 
   const userId = match[1];
   const tipo = match[2];
-  const index = parseInt(match[3]);
+  const index = parseInt(match[3], 10);
 
   const attachment = interaction.attachments.first();
-  if (!attachment || !attachment.contentType.startsWith("image/")) {
-    return interaction.reply({ content: "❌ Isso não é uma imagem válida.", ephemeral: true });
+  if (!attachment || !attachment.contentType?.startsWith("image/")) {
+    return interaction.reply({
+      content: "❌ Isso não é uma imagem válida.",
+      ephemeral: true
+    });
   }
 
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
-  const item = lista[index];
-
-  item.imagem = attachment.url;
-
-  await games.save();
-
-  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1];
-  else stats.ultimaConquista = lista[lista.length - 1];
-
-  await stats.save();
-
-  const embed = new EmbedBuilder()
-    .setColor("#00A3FF")
-    .setTitle("🛠 Imagem atualizada!")
-    .setDescription(`A imagem da entrada **${index + 1}** foi atualizada.`)
-    .setImage(attachment.url);
-
-  await interaction.reply({ embeds: [embed] });
-}
+  const lista
