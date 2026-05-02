@@ -5,6 +5,7 @@ import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from
 import { atualizarStatsPlatina } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
+import UserGames from "../models/UserGames.js"; // <-- ADICIONADO
 
 // LISTA BASE — JOGOS
 const jogosBase = [
@@ -103,12 +104,12 @@ export const data = new SlashCommandBuilder()
       )
   );
 
-// AUTOCOMPLETE CORRIGIDO
+// AUTOCOMPLETE
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
   if (focused.name === "jogo") {
-    const aprendidos = await obterJogos(); // <-- CORRIGIDO
+    const aprendidos = await obterJogos();
     const lista = [...new Set([...jogosBase, ...aprendidos])]
       .filter(j => j.toLowerCase().includes(focused.value.toLowerCase()))
       .sort()
@@ -118,7 +119,7 @@ export async function autocomplete(interaction) {
   }
 
   if (focused.name === "plataforma") {
-    const aprendidas = await obterPlataformas(); // <-- CORRIGIDO
+    const aprendidas = await obterPlataformas();
     const lista = [...new Set([...plataformasBase, ...aprendidas])]
       .filter(p => p.toLowerCase().includes(focused.value.toLowerCase()))
       .sort()
@@ -154,6 +155,22 @@ export async function execute(interaction) {
   await adicionarJogo(jogo);
   await adicionarPlataforma(plataforma);
   await atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
+
+  // 🔥 NOVO: Guardar a platina no histórico real
+  await UserGames.findOneAndUpdate(
+    { userId: interaction.user.id },
+    {
+      $push: {
+        platinas: {
+          jogo,
+          plataforma,
+          imagem: imagem.url,
+          xpGanhos: xpGanho
+        }
+      }
+    },
+    { upsert: true }
+  );
 
   // Criar backup
   criarBackup();
