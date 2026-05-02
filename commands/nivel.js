@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
 
 export const data = new SlashCommandBuilder()
@@ -9,15 +9,18 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Ler XP do user
-  const users = readJSON("data/users.json");
-  const user = users[userId] || { xp: 0, nivel: 1, totalXP: 0 };
+  // Buscar stats do user no Mongo
+  const user = await UserStats.findOne({ userId });
 
-  const nivel = user.nivel;
-  const xpAtual = user.xp;
-  const xpTotal = user.totalXP;
+  if (!user) {
+    return interaction.reply({
+      content: "❌ Ainda não tens XP registado. Adiciona uma platina ou conquista primeiro!",
+      ephemeral: true
+    });
+  }
 
-  // XP necessário para o próximo nível
+  const nivel = user.nivel || 1;
+  const xpAtual = user.xp || 0;
   const xpProximo = xpNecessario(nivel);
 
   // Percentagem
@@ -32,6 +35,7 @@ export async function execute(interaction) {
     "▰".repeat(blocosCheios) +
     "▱".repeat(blocosVazios);
 
+  // Embed (mantive exatamente o teu estilo)
   const embed = new EmbedBuilder()
     .setColor("#4A90E2")
     .setTitle("📈 Progresso de Nível")
