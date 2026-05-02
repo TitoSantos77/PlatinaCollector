@@ -29,10 +29,11 @@ export const data = new SlashCommandBuilder()
       .setDescription("Utilizador alvo")
       .setRequired(true)
   )
-  .addIntegerOption(opt =>
+  .addStringOption(opt =>
     opt
       .setName("numero")
       .setDescription("Número da entrada a remover")
+      .setAutocomplete(true) // <-- ATUALIZADO
   )
   .addStringOption(opt =>
     opt
@@ -45,6 +46,41 @@ export const data = new SlashCommandBuilder()
       .setDescription("Remover TODAS as entradas do utilizador")
   );
 
+// 🔥 AUTOCOMPLETE
+export async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+
+  if (focused.name !== "numero") return;
+
+  const tipo = interaction.options.getString("tipo");
+  const user = interaction.options.getUser("user");
+
+  // Só funciona se já escolheram tipo e user
+  if (!tipo || !user) return interaction.respond([]);
+
+  const games = await UserGames.findOne({ userId: user.id });
+  if (!games) return interaction.respond([]);
+
+  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+
+  if (!lista || lista.length === 0) return interaction.respond([]);
+
+  const opcoes = lista.map((item, index) => {
+    const numero = index + 1;
+    return {
+      name: `${numero} — ${item.jogo} (${item.plataforma})`,
+      value: String(numero)
+    };
+  });
+
+  const filtrados = opcoes
+    .filter(o => o.name.toLowerCase().includes(focused.value.toLowerCase()))
+    .slice(0, 25);
+
+  return interaction.respond(filtrados);
+}
+
+// 🔥 EXECUÇÃO DO COMANDO
 export async function execute(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
@@ -55,7 +91,7 @@ export async function execute(interaction) {
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-  const numero = interaction.options.getInteger("numero");
+  const numero = interaction.options.getString("numero"); // <-- agora é string
   const numerosStr = interaction.options.getString("numeros");
   const tudo = interaction.options.getBoolean("tudo");
 
@@ -91,7 +127,7 @@ export async function execute(interaction) {
       .map(n => parseInt(n.trim()) - 1)
       .filter(i => i >= 0 && i < lista.length);
   } else if (numero) {
-    const idx = numero - 1;
+    const idx = parseInt(numero) - 1;
     if (idx >= 0 && idx < lista.length) indices = [idx];
   }
 
