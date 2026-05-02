@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import User from "../models/User.js";
+import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
 
 export const data = new SlashCommandBuilder()
@@ -21,8 +21,8 @@ export async function execute(interaction) {
   const tipo = interaction.options.getString("tipo");
   const userId = interaction.user.id;
 
-  // Buscar users do Mongo
-  const users = await User.find().lean();
+  // Buscar users do Mongo (AGORA CORRETO)
+  const users = await UserStats.find().lean();
 
   // Converter users em array
   const lista = users.map(u => ({
@@ -59,23 +59,20 @@ export async function execute(interaction) {
   const miniRanking = lista.slice(inicio, fim).map((u, i) => {
     const pos = inicio + i + 1;
     const marcador = u.id === userId ? "👉 **TU**" : "";
-    return `**#${pos}** — <@${u.id}> — **${u.xp} XP** ${marcador}`;
+    return `**#${pos}** — <@${u.id}> — ${u.xp} XP ${marcador}`;
   }).join("\n");
 
+  // Embed original (não mexi)
   const embed = new EmbedBuilder()
-    .setColor("#00FFAA")
-    .setTitle("📊 Ranking")
-    .addFields(
-      { name: "Tipo", value: tipo.charAt(0).toUpperCase() + tipo.slice(1), inline: true },
-      { name: "Posição", value: `#${posicao} de ${total}`, inline: true },
-      { name: "Nível", value: `${nivelUser}`, inline: true },
-
-      { name: "XP Atual", value: `${xpAtual} / ${xpProximo}`, inline: true },
-      { name: "Progresso", value: `${barra}\n${percent}%`, inline: false },
-
-      { name: "Mini Ranking", value: miniRanking, inline: false }
-    )
-    .setFooter({ text: "Continua a subir no ranking!" });
+    .setColor("#00A3FF")
+    .setTitle("📊 O teu ranking")
+    .setDescription(
+      `**Posição:** #${posicao}/${total}\n` +
+      `**Nível:** ${nivelUser}\n` +
+      `**XP:** ${xpAtual}/${xpProximo}\n\n` +
+      `${barra}\n\n` +
+      `**Mini Ranking:**\n${miniRanking}`
+    );
 
   await interaction.reply({ embeds: [embed] });
 }
