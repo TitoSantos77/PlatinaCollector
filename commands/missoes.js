@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON } from "../utils/database.js";
+import UserMissions from "../models/UserMissions.js";
 
 export const data = new SlashCommandBuilder()
   .setName("missoes")
@@ -8,8 +8,10 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  const missions = readJSON("data/missions.json");
-  const missao = missions[userId]?.atual || null;
+  // Buscar missões do Mongo
+  const doc = await UserMissions.findOne({ userId });
+
+  const missao = doc?.atual || null;
 
   // Sem missão ativa
   if (!missao) {
