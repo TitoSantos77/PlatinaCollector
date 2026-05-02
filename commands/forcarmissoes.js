@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { readJSON, writeJSON } from "../utils/database.js";
+import UserStats from "../models/UserStats.js";
 import { gerarMissao } from "../utils/missions.js";
 
 export const data = new SlashCommandBuilder()
@@ -16,19 +16,12 @@ export async function execute(interaction) {
   }
 
   try {
-    const users = readJSON("data/users.json");
-    const meta = readJSON("data/meta.json") || {};
+    // Buscar todos os users registados no Mongo
+    const users = await UserStats.find().lean();
 
-    for (const userId of Object.keys(users)) {
-      gerarMissao(userId);
+    for (const user of users) {
+      await gerarMissao(user.userId); // AGORA USA O SISTEMA NOVO
     }
-
-    // Atualiza meta para evitar conflito com a terça-feira
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const semana = Math.floor((hoje - new Date(ano, 0, 1)) / (1000 * 60 * 60 * 24 * 7));
-    meta.ultimaSemanaGerada = `${ano}-${semana}`;
-    writeJSON("data/meta.json", meta);
 
     const embed = new EmbedBuilder()
       .setColor("#00CC88")
