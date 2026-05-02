@@ -1,12 +1,12 @@
 import {
   SlashCommandBuilder,
-  PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  EmbedBuilder
+  EmbedBuilder,
+  PermissionFlagsBits
 } from "discord.js";
 
 import UserGames from "../models/UserGames.js";
@@ -14,8 +14,7 @@ import UserStats from "../models/UserStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("editar")
-  .setDescription("Editar uma platina ou conquista (ADMIN)")
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .setDescription("Editar uma platina ou conquista")
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -29,8 +28,8 @@ export const data = new SlashCommandBuilder()
   .addUserOption(opt =>
     opt
       .setName("user")
-      .setDescription("Utilizador alvo")
-      .setRequired(true)
+      .setDescription("Utilizador alvo (deixa vazio para editar as tuas)")
+      .setRequired(false)
   );
 
 // =========================
@@ -38,8 +37,19 @@ export const data = new SlashCommandBuilder()
 // =========================
 export async function execute(interaction) {
   const tipo = interaction.options.getString("tipo");
-  const user = interaction.options.getUser("user");
-  const userId = user.id;
+  const targetUser = interaction.options.getUser("user") || interaction.user;
+
+  const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+
+  // Se tentar editar outro user sem ser admin → bloquear
+  if (targetUser.id !== interaction.user.id && !isAdmin) {
+    return interaction.reply({
+      content: "❌ Só podes editar as TUAS próprias platinas/conquistas.",
+      ephemeral: true
+    });
+  }
+
+  const userId = targetUser.id;
 
   const games = await UserGames.findOne({ userId });
   if (!games) {
@@ -71,7 +81,7 @@ export async function execute(interaction) {
   );
 
   await interaction.reply({
-    content: `Escolhe a ${tipo} que queres editar do utilizador **${user.username}**:`,
+    content: `Escolhe a ${tipo} que queres editar de **${targetUser.username}**:`,
     components: [row],
     ephemeral: true
   });
