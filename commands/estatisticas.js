@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import User from "../models/User.js";
 import UserStats from "../models/UserStats.js";
 import GlobalStats from "../models/GlobalStats.js";
 
@@ -10,15 +9,14 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
 
   // Buscar dados do Mongo
-  const users = await User.find().lean();
   const stats = await UserStats.find().lean();
   const globalStats = await GlobalStats.findOne().lean();
 
   // Total de jogadores
-  const totalJogadores = users.length;
+  const totalJogadores = stats.length;
 
   // Total de XP do servidor
-  const totalXP = users.reduce((acc, u) => acc + (u.totalXP || 0), 0);
+  const totalXP = stats.reduce((acc, u) => acc + (u.totalXP || 0), 0);
 
   // Total de platinas
   const totalPlatinas = stats.reduce((acc, u) => acc + (u.platinas || 0), 0);
@@ -28,22 +26,22 @@ export async function execute(interaction) {
 
   // Jogo mais platinado
   let jogoMaisFeito = "Nenhum";
-  if (globalStats?.jogos && globalStats.jogos.size > 0) {
-    jogoMaisFeito = [...globalStats.jogos.entries()]
+  if (globalStats?.jogos && Object.keys(globalStats.jogos).length > 0) {
+    jogoMaisFeito = Object.entries(globalStats.jogos)
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Plataforma mais usada
   let plataformaMaisUsada = "Nenhuma";
-  if (globalStats?.plataformas && globalStats.plataformas.size > 0) {
-    plataformaMaisUsada = [...globalStats.plataformas.entries()]
+  if (globalStats?.plataformas && Object.keys(globalStats.plataformas).length > 0) {
+    plataformaMaisUsada = Object.entries(globalStats.plataformas)
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // User com mais XP
   let topXP = "Nenhum";
-  if (users.length > 0) {
-    const sortedXP = [...users].sort((a, b) => (b.totalXP || 0) - (a.totalXP || 0));
+  if (stats.length > 0) {
+    const sortedXP = [...stats].sort((a, b) => (b.totalXP || 0) - (a.totalXP || 0));
     topXP = `<@${sortedXP[0].userId}> (${sortedXP[0].totalXP} XP)`;
   }
 
