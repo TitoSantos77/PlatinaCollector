@@ -4,6 +4,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.
 import User from "../models/User.js";
 import UserStats from "../models/UserStats.js";
 import GlobalStats from "../models/GlobalStats.js";
+import UserGames from "../models/UserGames.js"; // <-- ADICIONADO
 
 // BACKUP
 import { criarBackup } from "../utils/backup.js";
@@ -25,6 +26,7 @@ export async function execute(interaction) {
   await User.deleteMany({});
   await UserStats.deleteMany({});
   await GlobalStats.deleteMany({});
+  await UserGames.deleteMany({}); // <-- ADICIONADO
 
   // CRIAR BACKUP DEPOIS DO RESET GLOBAL
   criarBackup();
@@ -38,7 +40,8 @@ export async function execute(interaction) {
       "• Badges\n" +
       "• Platinas\n" +
       "• Conquistas\n" +
-      "• Estatísticas globais\n\n" +
+      "• Estatísticas globais\n" +
+      "• Histórico completo\n\n" +
       "⚠️ Esta ação é permanente."
     )
     .setTimestamp();
