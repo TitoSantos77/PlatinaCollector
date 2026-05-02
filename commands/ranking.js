@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import User from "../models/User.js";
+import UserStats from "../models/UserStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ranking")
@@ -8,8 +8,8 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Buscar todos os users do Mongo
-  const users = await User.find().lean();
+  // Buscar todos os users do Mongo (AGORA CORRETO)
+  const users = await UserStats.find().lean();
 
   // Converter em lista ordenada
   const lista = users
@@ -29,27 +29,16 @@ export async function execute(interaction) {
   const linhas = top10
     .map((u, i) => {
       const medalha = medalhas[i] || `#${i + 1}`;
-      return `${medalha} — <@${u.id}> — **${u.xp} XP** (Nível ${u.nivel})`;
+      return `${medalha} — <@${u.id}> — ${u.xp} XP (Nível ${u.nivel})`;
     })
     .join("\n");
 
-  // Posição do user
-  const posicaoUser = lista.findIndex(u => u.id === userId) + 1;
-  const userData = lista.find(u => u.id === userId);
-
+  // Embed (mantive o teu estilo)
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
-    .setTitle("🏆 TOP 10 — Ranking por XP Total")
-    .setDescription(linhas || "Ainda não há jogadores no ranking.")
-    .setFooter({ text: "Continua a competir!" });
-
-  // Se o user estiver fora do top 10, mostrar posição dele
-  if (posicaoUser > 10) {
-    embed.addFields({
-      name: "A tua posição",
-      value: `#${posicaoUser} — **${userData?.xp || 0} XP** (Nível ${userData?.nivel || 1})`
-    });
-  }
+    .setTitle("🏆 Top 10 Ranking Geral")
+    .setDescription(linhas)
+    .setFooter({ text: "Ranking baseado no XP total acumulado" });
 
   await interaction.reply({ embeds: [embed] });
 }
