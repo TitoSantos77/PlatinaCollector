@@ -61,8 +61,9 @@ export async function execute(interaction) {
 
     const texto = slice
       .map((item, i) => {
-        const numero = inicio + i + 1;
-        return `${numero} — ${item.jogo} (${item.plataforma}) — ${item.data}`;
+        const idReal = inicio + i; // <-- ID REAL (0-based)
+        const numero = idReal + 1; // <-- ID VISUAL (1-based)
+        return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data}`;
       })
       .join("\n");
 
@@ -97,9 +98,8 @@ export async function execute(interaction) {
     fetchReply: true
   });
 
-  // Collector para botões
   const collector = msg.createMessageComponentCollector({
-    time: 1000 * 60 * 5 // 5 minutos
+    time: 1000 * 60 * 5
   });
 
   collector.on("collect", async btn => {
