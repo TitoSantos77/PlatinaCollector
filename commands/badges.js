@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { readJSON, writeJSON } from "../utils/database.js";
+import UserStats from "../models/UserStats.js";
+import { readJSON } from "../utils/database.js";
 
 export const data = new SlashCommandBuilder()
   .setName("badges")
@@ -8,30 +9,23 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Ler ficheiros
-  const users = readJSON("data/users.json") || {};
+  // Ler badges do ficheiro
   const rawBadges = readJSON("data/badges.json") || [];
 
-  // Garantir que badgesDB é um array
   const badgesDB = Array.isArray(rawBadges)
     ? rawBadges
     : Object.values(rawBadges);
 
-  // Garantir que o user existe
-  if (!users[userId]) {
-    users[userId] = {
-      xp: 0,
-      nivel: 1,
-      totalXP: 0,
-      platinas: 0,
-      conquistas: 0,
-      badge: "⚪ Iniciante",
-      badgesDesbloqueadas: []
-    };
-    writeJSON("data/users.json", users);
+  // Buscar user do Mongo (AGORA CORRETO)
+  let user = await UserStats.findOne({ userId });
+
+  if (!user) {
+    return interaction.reply({
+      content: "❌ Ainda não tens perfil criado. Usa /perfil primeiro!",
+      ephemeral: true
+    });
   }
 
-  const user = users[userId];
   const desbloqueadas = user.badgesDesbloqueadas || [];
 
   // Ordenar por raridade
@@ -56,13 +50,14 @@ export async function execute(interaction) {
   const lista = todasOrdenadas.map(badge => {
     const unlocked = desbloqueadas.includes(badge.id);
 
+    // Badge secreta
     if (badge.secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
     return unlocked
-      ? `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
-      : `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
+      ? `🟩 **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
+      : `⬜ ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
