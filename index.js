@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Collection, REST, Routes, Events } from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -31,7 +31,9 @@ let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
   ]
 });
 
@@ -53,16 +55,15 @@ for (const file of commandFiles) {
   }
 }
 
+// IMPORTAR HANDLERS DO /EDITAR
+import * as editar from "./commands/editar.js";
+
 client.once("ready", async () => {
   console.log(`Bot online como ${client.user.tag}`);
 
-  // 🔵 CRIAR BACKUP AO ARRANCAR
   criarBackup();
-
-  // INICIAR O SCHEDULER DE MISSÕES
   iniciarSchedulerMissoes();
 
-  // 🔥 MODO DEV INTELIGENTE
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
     const comandosJSON = client.commands.map(cmd => cmd.data.toJSON());
@@ -90,10 +91,12 @@ client.once("ready", async () => {
   }
 });
 
-// Handler de interações (comandos + autocomplete)
-client.on("interactionCreate", async interaction => {
+// ===============================
+// 🔵 HANDLER DE INTERAÇÕES
+// ===============================
+client.on(Events.InteractionCreate, async interaction => {
 
-  // 🔵 AUTOCOMPLETE (SUPORTA GLOBAL + POR COMANDO)
+  // AUTOCOMPLETE
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
 
@@ -112,11 +115,8 @@ client.on("interactionCreate", async interaction => {
 
     let lista = [];
 
-    if (field === "jogo") {
-      lista = obterJogos();
-    } else if (field === "plataforma") {
-      lista = obterPlataformas();
-    }
+    if (field === "jogo") lista = obterJogos();
+    if (field === "plataforma") lista = obterPlataformas();
 
     const filtrados = lista
       .filter(item => item.toLowerCase().includes(focused.toLowerCase()))
@@ -127,36 +127,63 @@ client.on("interactionCreate", async interaction => {
     );
   }
 
-  // 🔵 COMANDOS NORMAIS
-  if (!interaction.isChatInputCommand()) return;
-
-  // 🔒 BLOQUEIO DE CANAL (SUPORTA LISTA)
-  if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
-    return interaction.reply({
-      content: "❌ Este comando só pode ser usado nos canais permitidos.",
-      ephemeral: true
-    });
-  }
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction);
-
-    if (interaction.commandName === "setcanal") {
-      config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
-      criarBackup();
-      console.log("✔ Lista de canais atualizada:", config.allowedChannels);
+  // SELECT MENU 1
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === "editar_escolher_item") {
+      return editar.handleSelect(interaction);
     }
 
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: "❌ Ocorreu um erro ao executar este comando.",
-      ephemeral: true
-    });
+    if (interaction.customId.startsWith("editar_opcao_")) {
+      return editar.handleSelectCampo(interaction);
+    }
   }
+
+  // MODAL
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith("editar_modal_")) {
+      return editar.handleModal(interaction);
+    }
+  }
+
+  // SLASH COMMANDS
+  if (interaction.isChatInputCommand()) {
+
+    if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
+      return interaction.reply({
+        content: "❌ Este comando só pode ser usado nos canais permitidos.",
+        ephemeral: true
+      });
+    }
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+      await command.execute(interaction);
+
+      if (interaction.commandName === "setcanal") {
+        config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
+        criarBackup();
+        console.log("✔ Lista de canais atualizada:", config.allowedChannels);
+      }
+
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "❌ Ocorreu um erro ao executar este comando.",
+        ephemeral: true
+      });
+    }
+  }
+});
+
+// ===============================
+// 🔵 HANDLER DE MENSAGENS (IMAGEM DO /EDITAR)
+// ===============================
+client.on(Events.MessageCreate, async message => {
+  if (message.author.bot) return;
+
+  editar.handleImage(message);
 });
 
 client.login(process.env.DISCORD_TOKEN);
