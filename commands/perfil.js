@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import User from "../models/User.js"; // <-- AGORA LÊ DO MONGO
+import UserStats from "../models/UserStats.js";
 import { getUserStats } from "../utils/userStats.js";
 
 export const data = new SlashCommandBuilder()
@@ -9,11 +9,12 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Buscar XP, nível, badge e badges desbloqueadas do Mongo
-  let user = await User.findOne({ userId });
+  // Buscar stats do user no Mongo (AGORA CORRETO)
+  let user = await UserStats.findOne({ userId });
 
+  // Se não existir, criar
   if (!user) {
-    user = await User.create({
+    user = await UserStats.create({
       userId,
       xp: 0,
       totalXP: 0,
