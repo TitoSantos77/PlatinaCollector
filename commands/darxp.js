@@ -6,7 +6,7 @@ import {
 
 import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
-import { atualizarBadge } from "../utils/badges.js";
+import { verificarBadges } from "../utils/badges.js"; // <-- CORRIGIDO
 
 export const data = new SlashCommandBuilder()
   .setName("darxp")
@@ -71,10 +71,10 @@ export async function execute(interaction) {
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  // Atualizar badge
-  atualizarBadge(stats);
-
   await stats.save();
+
+  // Atualizar badges (Mongo)
+  await verificarBadges(user.id); // <-- CORRIGIDO
 
   const embed = new EmbedBuilder()
     .setColor("#00FF88")
@@ -85,8 +85,7 @@ export async function execute(interaction) {
       { name: "📊 XP Total Antes", value: `${xpAntes}`, inline: true },
       { name: "📈 XP Total Agora", value: `${stats.totalXP}`, inline: true },
       { name: "🏅 Nível Antes", value: `${nivelAntes}`, inline: true },
-      { name: "🚀 Nível Agora", value: `${stats.nivel}`, inline: true },
-      { name: "🔰 Badge Atual", value: stats.badge, inline: true }
+      { name: "🚀 Nível Agora", value: `${stats.nivel}`, inline: true }
     )
     .setTimestamp();
 
