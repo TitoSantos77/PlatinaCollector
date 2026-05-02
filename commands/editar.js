@@ -41,7 +41,6 @@ export async function execute(interaction) {
 
   const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
-  // Se tentar editar outro user sem ser admin → bloquear
   if (targetUser.id !== interaction.user.id && !isAdmin) {
     return interaction.reply({
       content: "❌ Só podes editar as TUAS próprias platinas/conquistas.",
@@ -118,7 +117,6 @@ export async function handleSelect(interaction) {
 export async function handleSelectCampo(interaction) {
   if (!interaction.customId.startsWith("editar_opcao_")) return;
 
-  // editar_opcao_<userId>_<tipo>_<index>
   const parts = interaction.customId.split("_");
   const userId = parts[2];
   const tipo = parts[3];
@@ -155,7 +153,6 @@ export async function handleSelectCampo(interaction) {
 export async function handleModal(interaction) {
   if (!interaction.customId.startsWith("editar_modal_")) return;
 
-  // editar_modal_<userId>_<tipo>_<index>_<campo>
   const parts = interaction.customId.split("_");
   const userId = parts[2];
   const tipo = parts[3];
@@ -231,4 +228,30 @@ export async function handleImage(interaction) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista
+  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const item = lista[index];
+
+  if (!item) {
+    return interaction.reply({
+      content: "❌ Entrada inválida.",
+      ephemeral: true
+    });
+  }
+
+  item.imagem = attachment.url;
+
+  await games.save();
+
+  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
+  else stats.ultimaConquista = lista[lista.length - 1] || null;
+
+  await stats.save();
+
+  const embed = new EmbedBuilder()
+    .setColor("#00A3FF")
+    .setTitle("🛠 Imagem atualizada!")
+    .setDescription(`A imagem da entrada **${index + 1}** foi atualizada.`)
+    .setImage(attachment.url);
+
+  await interaction.reply({ embeds: [embed] });
+}
