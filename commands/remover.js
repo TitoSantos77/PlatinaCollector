@@ -1,15 +1,20 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  EmbedBuilder
+} from "discord.js";
+
+import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
-import UserGames from "../models/UserGames.js"; // platinas e conquistas
-import { atualizarBadge } from "../utils/badges.js";
 import { xpNecessario } from "../utils/xp.js";
+import { atualizarBadge } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
   .setDescription("Remove platinas ou conquistas de um utilizador (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-  .addStringOption(option =>
-    option
+  .addStringOption(opt =>
+    opt
       .setName("tipo")
       .setDescription("O que queres remover?")
       .setRequired(true)
@@ -18,26 +23,26 @@ export const data = new SlashCommandBuilder()
         { name: "Conquista", value: "conquista" }
       )
   )
-  .addUserOption(option =>
-    option
+  .addUserOption(opt =>
+    opt
       .setName("user")
       .setDescription("Utilizador alvo")
       .setRequired(true)
   )
-  .addIntegerOption(option =>
-    option
+  .addIntegerOption(opt =>
+    opt
       .setName("numero")
-      .setDescription("Número da platina/conquista a remover")
+      .setDescription("Número da entrada a remover")
   )
-  .addStringOption(option =>
-    option
+  .addStringOption(opt =>
+    opt
       .setName("numeros")
       .setDescription("Lista de números (ex: 2,4,7)")
   )
-  .addBooleanOption(option =>
-    option
+  .addBooleanOption(opt =>
+    opt
       .setName("tudo")
-      .setDescription("Remover TODAS as platinas/conquistas do utilizador")
+      .setDescription("Remover TODAS as entradas do utilizador")
   );
 
 export async function execute(interaction) {
@@ -56,18 +61,16 @@ export async function execute(interaction) {
 
   const userId = user.id;
 
-  // Buscar dados do user
-  const stats = await UserStats.findOne({ userId });
   const games = await UserGames.findOne({ userId });
+  const stats = await UserStats.findOne({ userId });
 
-  if (!stats || !games) {
+  if (!games || !stats) {
     return interaction.reply({
-      content: "❌ Este utilizador ainda não tem registos.",
+      content: "❌ Este utilizador não tem registos.",
       ephemeral: true
     });
   }
 
-  // Selecionar lista correta
   const lista = tipo === "platina" ? games.platinas : games.conquistas;
 
   if (!lista || lista.length === 0) {
@@ -77,7 +80,7 @@ export async function execute(interaction) {
     });
   }
 
-  // Determinar IDs a remover
+  // Determinar índices a remover
   let indices = [];
 
   if (tudo) {
@@ -99,7 +102,7 @@ export async function execute(interaction) {
     });
   }
 
-  // Ordenar desc para remover sem estragar índices
+  // Ordenar desc para não estragar índices
   indices.sort((a, b) => b - a);
 
   let removidos = [];
@@ -108,10 +111,7 @@ export async function execute(interaction) {
   for (const idx of indices) {
     const item = lista[idx];
     removidos.push(item);
-
     xpPerdido += item.xpGanhos || 0;
-
-    // Remover da lista
     lista.splice(idx, 1);
   }
 
@@ -143,14 +143,18 @@ export async function execute(interaction) {
   await stats.save();
   await games.save();
 
-  // Embed detalhado
+  // Criar embed detalhado
   const detalhes = removidos
     .map(r => `• **${r.jogo}** (${r.plataforma}) — ${r.data}`)
     .join("\n");
 
   const embed = new EmbedBuilder()
     .setColor("#FF4444")
-    .setTitle(`🗑 ${tipo === "platina" ? "Platinas" : "Conquistas"} removidas`)
+    .setTitle(
+      tipo === "platina"
+        ? "🗑 Platinas removidas"
+        : "🗑 Conquistas removidas"
+    )
     .setDescription(`Foram removidas **${removidos.length}** entradas do utilizador **${user.username}**.`)
     .addFields(
       { name: "📋 Detalhes", value: detalhes },
