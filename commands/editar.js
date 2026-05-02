@@ -68,7 +68,7 @@ export async function execute(interaction) {
   }
 
   const options = lista.map((item, index) => ({
-    label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
+    label: `🎮 [${index + 1}] ${item.jogo} (${item.plataforma})`,
     value: `${userId}_${tipo}_${index}`
   }));
 
@@ -202,13 +202,10 @@ export async function handleModal(interaction) {
 // =========================
 // IMAGEM — APLICAR EDIÇÃO
 // =========================
-export async function handleImage(interaction) {
-  if (!interaction.isMessage()) return;
-  if (!interaction.reference) return;
+export async function handleImage(message) {
+  if (!message.reference) return;
 
-  const replied = await interaction.channel.messages.fetch(
-    interaction.reference.messageId
-  );
+  const replied = await message.channel.messages.fetch(message.reference.messageId);
 
   const match = replied.content.match(/UserID: (\d+), Tipo: (platina|conquista), Index: (\d+)/);
   if (!match) return;
@@ -217,12 +214,9 @@ export async function handleImage(interaction) {
   const tipo = match[2];
   const index = parseInt(match[3], 10);
 
-  const attachment = interaction.attachments.first();
+  const attachment = message.attachments.first();
   if (!attachment || !attachment.contentType?.startsWith("image/")) {
-    return interaction.reply({
-      content: "❌ Isso não é uma imagem válida.",
-      ephemeral: true
-    });
+    return message.reply({ content: "❌ Isso não é uma imagem válida." });
   }
 
   const games = await UserGames.findOne({ userId });
@@ -232,10 +226,7 @@ export async function handleImage(interaction) {
   const item = lista[index];
 
   if (!item) {
-    return interaction.reply({
-      content: "❌ Entrada inválida.",
-      ephemeral: true
-    });
+    return message.reply({ content: "❌ Entrada inválida." });
   }
 
   item.imagem = attachment.url;
@@ -253,5 +244,5 @@ export async function handleImage(interaction) {
     .setDescription(`A imagem da entrada **${index + 1}** foi atualizada.`)
     .setImage(attachment.url);
 
-  await interaction.reply({ embeds: [embed] });
+  await message.reply({ embeds: [embed] });
 }
