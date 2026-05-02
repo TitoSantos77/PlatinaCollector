@@ -6,8 +6,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  EmbedBuilder,
-  AttachmentBuilder
+  EmbedBuilder
 } from "discord.js";
 
 import UserGames from "../models/UserGames.js";
@@ -26,6 +25,12 @@ export const data = new SlashCommandBuilder()
         { name: "Platina", value: "platina" },
         { name: "Conquista", value: "conquista" }
       )
+  )
+  .addUserOption(opt =>
+    opt
+      .setName("user")
+      .setDescription("Utilizador alvo")
+      .setRequired(true)
   );
 
 // =========================
@@ -33,12 +38,13 @@ export const data = new SlashCommandBuilder()
 // =========================
 export async function execute(interaction) {
   const tipo = interaction.options.getString("tipo");
-  const userId = interaction.user.id;
+  const user = interaction.options.getUser("user");
+  const userId = user.id;
 
   const games = await UserGames.findOne({ userId });
   if (!games) {
     return interaction.reply({
-      content: "❌ Ainda não tens registos.",
+      content: "❌ Este utilizador não tem registos.",
       ephemeral: true
     });
   }
@@ -47,15 +53,14 @@ export async function execute(interaction) {
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
-      content: `📭 Não tens nenhuma ${tipo} para editar.`,
+      content: `📭 O utilizador não tem nenhuma ${tipo} para editar.`,
       ephemeral: true
     });
   }
 
-  // Criar select menu com todas as entradas
   const options = lista.map((item, index) => ({
     label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
-    value: `${tipo}_${index}`
+    value: `${userId}_${tipo}_${index}`
   }));
 
   const row = new ActionRowBuilder().addComponents(
@@ -66,7 +71,7 @@ export async function execute(interaction) {
   );
 
   await interaction.reply({
-    content: `Escolhe a ${tipo} que queres editar:`,
+    content: `Escolhe a ${tipo} que queres editar do utilizador **${user.username}**:`,
     components: [row],
     ephemeral: true
   });
@@ -78,11 +83,11 @@ export async function execute(interaction) {
 export async function handleSelect(interaction) {
   if (interaction.customId !== "editar_escolher_item") return;
 
-  const [tipo, index] = interaction.values[0].split("_");
+  const [userId, tipo, index] = interaction.values[0].split("_");
 
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
-      .setCustomId(`editar_opcao_${tipo}_${index}`)
+      .setCustomId(`editar_opcao_${userId}_${tipo}_${index}`)
       .setPlaceholder("O que queres editar?")
       .addOptions([
         { label: "Jogo", value: "jogo" },
@@ -103,21 +108,19 @@ export async function handleSelect(interaction) {
 export async function handleSelectCampo(interaction) {
   if (!interaction.customId.startsWith("editar_opcao_")) return;
 
-  const [_, __, tipo, index] = interaction.customId.split("_");
+  const [_, userId, tipo, index] = interaction.customId.split("_");
   const campo = interaction.values[0];
 
-  // IMAGEM → pedir upload
   if (campo === "imagem") {
     return interaction.update({
-      content: "Envia a nova imagem da platina/conquista:",
+      content: `Envia a nova imagem da entrada (UserID: ${userId}, Tipo: ${tipo}, Index: ${index})`,
       components: [],
       ephemeral: true
     });
   }
 
-  // JOGO / PLATAFORMA → modal
   const modal = new ModalBuilder()
-    .setCustomId(`editar_modal_${tipo}_${index}_${campo}`)
+    .setCustomId(`editar_modal_${userId}_${tipo}_${index}_${campo}`)
     .setTitle("Editar");
 
   const input = new TextInputBuilder()
@@ -137,10 +140,8 @@ export async function handleSelectCampo(interaction) {
 export async function handleModal(interaction) {
   if (!interaction.customId.startsWith("editar_modal_")) return;
 
-  const [_, __, tipo, index, campo] = interaction.customId.split("_");
+  const [_, userId, tipo, index, campo] = interaction.customId.split("_");
   const valor = interaction.fields.getTextInputValue("valor");
-
-  const userId = interaction.user.id;
 
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
@@ -155,7 +156,6 @@ export async function handleModal(interaction) {
 
   await games.save();
 
-  // Atualizar última platina/conquista
   if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1];
   else stats.ultimaConquista = lista[lista.length - 1];
 
@@ -182,29 +182,24 @@ export async function handleImage(interaction) {
   if (!interaction.reference) return;
 
   const replied = await interaction.channel.messages.fetch(interaction.reference.messageId);
-  if (!replied.content.includes("Envia a nova imagem")) return;
+
+  const match = replied.content.match(/UserID: (\d+), Tipo: (platina|conquista), Index: (\d+)/);
+  if (!match) return;
+
+  const userId = match[1];
+  const tipo = match[2];
+  const index = parseInt(match[3]);
 
   const attachment = interaction.attachments.first();
   if (!attachment || !attachment.contentType.startsWith("image/")) {
     return interaction.reply({ content: "❌ Isso não é uma imagem válida.", ephemeral: true });
   }
 
-  const userId = interaction.author.id;
-
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  // Encontrar qual item estava a ser editado
-  const match = replied.content.match(/editar_opcao_(platina|conquista)_(\d+)/);
-  if (!match) return;
-
-  const tipo = match[1];
-  const index = parseInt(match[2]);
-
   const lista = tipo === "platina" ? games.platinas : games.conquistas;
   const item = lista[index];
-
-  const antes = `${item.jogo} (${item.plataforma})`;
 
   item.imagem = attachment.url;
 
