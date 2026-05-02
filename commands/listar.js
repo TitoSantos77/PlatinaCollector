@@ -1,0 +1,131 @@
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} from "discord.js";
+import UserGames from "../models/UserGames.js";
+
+export const data = new SlashCommandBuilder()
+  .setName("listar")
+  .setDescription("Lista platinas ou conquistas de um utilizador")
+  .addStringOption(opt =>
+    opt
+      .setName("tipo")
+      .setDescription("O que queres listar?")
+      .setRequired(true)
+      .addChoices(
+        { name: "Platina", value: "platina" },
+        { name: "Conquista", value: "conquista" }
+      )
+  )
+  .addUserOption(opt =>
+    opt
+      .setName("user")
+      .setDescription("Utilizador alvo")
+      .setRequired(true)
+  );
+
+export async function execute(interaction) {
+  const tipo = interaction.options.getString("tipo");
+  const user = interaction.options.getUser("user");
+
+  const games = await UserGames.findOne({ userId: user.id });
+
+  if (!games) {
+    return interaction.reply({
+      content: "❌ Este utilizador ainda não tem registos.",
+      ephemeral: true
+    });
+  }
+
+  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+
+  if (!lista || lista.length === 0) {
+    return interaction.reply({
+      content: `📭 O utilizador não tem nenhuma ${tipo}.`,
+      ephemeral: true
+    });
+  }
+
+  // Paginação
+  let pagina = 0;
+  const porPagina = 10;
+  const totalPaginas = Math.ceil(lista.length / porPagina);
+
+  const gerarEmbed = () => {
+    const inicio = pagina * porPagina;
+    const fim = inicio + porPagina;
+    const slice = lista.slice(inicio, fim);
+
+    const texto = slice
+      .map((item, i) => {
+        const numero = inicio + i + 1;
+        return `${numero} — ${item.jogo} (${item.plataforma}) — ${item.data}`;
+      })
+      .join("\n");
+
+    return new EmbedBuilder()
+      .setColor("#00A3FF")
+      .setTitle(
+        tipo === "platina"
+          ? `📘 Platinas de ${user.username}`
+          : `📙 Conquistas de ${user.username}`
+      )
+      .setDescription(texto)
+      .setFooter({ text: `Página ${pagina + 1} de ${totalPaginas}` });
+  };
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("anterior")
+      .setLabel("⬅️ Anterior")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(pagina === 0),
+
+    new ButtonBuilder()
+      .setCustomId("seguinte")
+      .setLabel("Seguinte ➡️")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(pagina === totalPaginas - 1)
+  );
+
+  const msg = await interaction.reply({
+    embeds: [gerarEmbed()],
+    components: [row],
+    fetchReply: true
+  });
+
+  // Collector para botões
+  const collector = msg.createMessageComponentCollector({
+    time: 1000 * 60 * 5 // 5 minutos
+  });
+
+  collector.on("collect", async btn => {
+    if (btn.user.id !== interaction.user.id)
+      return btn.reply({ content: "❌ Não és tu que abriste isto.", ephemeral: true });
+
+    if (btn.customId === "anterior" && pagina > 0) pagina--;
+    if (btn.customId === "seguinte" && pagina < totalPaginas - 1) pagina++;
+
+    const newRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("anterior")
+        .setLabel("⬅️ Anterior")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === 0),
+
+      new ButtonBuilder()
+        .setCustomId("seguinte")
+        .setLabel("Seguinte ➡️")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === totalPaginas - 1)
+    );
+
+    await btn.update({
+      embeds: [gerarEmbed()],
+      components: [newRow]
+    });
+  });
+}
