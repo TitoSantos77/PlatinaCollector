@@ -7,7 +7,7 @@ import {
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
-import { atualizarBadge } from "../utils/badges.js";
+import { verificarBadges } from "../utils/badges.js"; // <-- CORRIGIDO
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
@@ -33,7 +33,7 @@ export const data = new SlashCommandBuilder()
     opt
       .setName("numero")
       .setDescription("Número da entrada a remover")
-      .setAutocomplete(true) // <-- ATUALIZADO
+      .setAutocomplete(true)
   )
   .addStringOption(opt =>
     opt
@@ -46,7 +46,7 @@ export const data = new SlashCommandBuilder()
       .setDescription("Remover TODAS as entradas do utilizador")
   );
 
-// 🔥 AUTOCOMPLETE
+// AUTOCOMPLETE
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
@@ -55,7 +55,6 @@ export async function autocomplete(interaction) {
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
 
-  // Só funciona se já escolheram tipo e user
   if (!tipo || !user) return interaction.respond([]);
 
   const games = await UserGames.findOne({ userId: user.id });
@@ -80,7 +79,7 @@ export async function autocomplete(interaction) {
   return interaction.respond(filtrados);
 }
 
-// 🔥 EXECUÇÃO DO COMANDO
+// EXECUÇÃO DO COMANDO
 export async function execute(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
@@ -91,7 +90,7 @@ export async function execute(interaction) {
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-  const numero = interaction.options.getString("numero"); // <-- agora é string
+  const numero = interaction.options.getString("numero");
   const numerosStr = interaction.options.getString("numeros");
   const tudo = interaction.options.getBoolean("tudo");
 
@@ -116,7 +115,6 @@ export async function execute(interaction) {
     });
   }
 
-  // Determinar índices a remover
   let indices = [];
 
   if (tudo) {
@@ -138,7 +136,6 @@ export async function execute(interaction) {
     });
   }
 
-  // Ordenar desc para não estragar índices
   indices.sort((a, b) => b - a);
 
   let removidos = [];
@@ -151,10 +148,8 @@ export async function execute(interaction) {
     lista.splice(idx, 1);
   }
 
-  // Atualizar XP total
   stats.totalXP = Math.max(0, stats.totalXP - xpPerdido);
 
-  // Recalcular nível
   let nivel = 1;
   let xpTemp = stats.totalXP;
 
@@ -166,10 +161,9 @@ export async function execute(interaction) {
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  // Atualizar badge
-  atualizarBadge(stats);
+  // <-- CORRIGIDO
+  await verificarBadges(userId);
 
-  // Atualizar última platina/conquista
   if (tipo === "platina") {
     stats.ultimaPlatina = lista[lista.length - 1] || null;
   } else {
@@ -179,7 +173,6 @@ export async function execute(interaction) {
   await stats.save();
   await games.save();
 
-  // Criar embed detalhado
   const detalhes = removidos
     .map(r => `• **${r.jogo}** (${r.plataforma}) — ${r.data}`)
     .join("\n");
@@ -195,8 +188,7 @@ export async function execute(interaction) {
     .addFields(
       { name: "📋 Detalhes", value: detalhes },
       { name: "❌ XP Perdido", value: `${xpPerdido} XP`, inline: true },
-      { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true },
-      { name: "🔰 Nova Badge", value: stats.badge, inline: true }
+      { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true }
     )
     .setTimestamp();
 
