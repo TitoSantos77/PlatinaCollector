@@ -1,13 +1,22 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import UserStats from "../models/UserStats.js";
 import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("fixbadges")
-  .setDescription("Corrige o sistema de badges do utilizador");
+  .setDescription("Corrige o sistema de badges do utilizador")
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
   const userId = interaction.user.id;
+
+  // Verificar se é admin
+  if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return interaction.reply({
+      content: "❌ Apenas administradores podem usar este comando.",
+      ephemeral: true
+    });
+  }
 
   let user = await UserStats.findOne({ userId });
 
@@ -23,7 +32,7 @@ export async function execute(interaction) {
     delete user.badge;
   }
 
-  // 2) Garantir que badgesDesbloqueadas existe e é um array
+  // 2) Garantir que badgesDesbloqueadas existe e é array
   if (!Array.isArray(user.badgesDesbloqueadas)) {
     user.badgesDesbloqueadas = [];
   }
@@ -39,7 +48,7 @@ export async function execute(interaction) {
   await verificarBadges(userId);
 
   return interaction.reply({
-    content: "✅ Sistema de badges corrigido com sucesso! Corre /badges outra vez.",
+    content: "✅ Badges corrigidas com sucesso! Corre /badges para confirmar.",
     ephemeral: true
   });
 }
