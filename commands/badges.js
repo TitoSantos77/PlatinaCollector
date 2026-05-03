@@ -34,7 +34,8 @@ export async function execute(interaction) {
   const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
   const todasOrdenadas = badgesDB.sort((a, b) =>
-    raridadeOrdem.indexOf(a.raridade) - raridadeOrdem.indexOf(b.raridade)
+    raridadeOrdem.indexOf(a.raridade || "Comum") -
+    raridadeOrdem.indexOf(b.raridade || "Comum")
   );
 
   // Barra de progresso
@@ -52,21 +53,25 @@ export async function execute(interaction) {
   const lista = todasOrdenadas.map(badge => {
     const id = badge.id || null;
     const emoji = badge.emoji || "🔸";
+    const nome = badge.nome || "Badge Sem Nome";
+    const raridade = badge.raridade || "Comum";
+    const descricao = badge.descricao || "Descrição curta indisponível.";
+    const secreta = badge.secreta || false;
 
     const unlocked = id && desbloqueadas.includes(id);
 
     // Badge secreta bloqueada
-    if (badge.secreta && !unlocked) {
+    if (secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
     // Badge normal desbloqueada
     if (unlocked) {
-      return `✔️ **${emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
+      return `✔️ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
     }
 
     // Badge normal bloqueada
-    return `🔒 ${emoji} **${badge.nome}** — *${badge.raridade}*`;
+    return `🔒 ${emoji} **${nome}** — *${raridade}*`;
   });
 
   const embed = new EmbedBuilder()
