@@ -9,14 +9,11 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Ler badges do ficheiro
   const rawBadges = readJSON("data/badges.json") || [];
-
   const badgesDB = Array.isArray(rawBadges)
     ? rawBadges
     : Object.values(rawBadges);
 
-  // Buscar user do Mongo
   let user = await UserStats.findOne({ userId });
 
   if (!user) {
@@ -30,7 +27,6 @@ export async function execute(interaction) {
     ? user.badgesDesbloqueadas
     : [];
 
-  // Ordenar por raridade
   const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
   const todasOrdenadas = badgesDB.sort((a, b) =>
@@ -38,7 +34,6 @@ export async function execute(interaction) {
     raridadeOrdem.indexOf(b.raridade || "Comum")
   );
 
-  // Barra de progresso
   const total = todasOrdenadas.length;
   const qtdDesbloqueadas = desbloqueadas.length;
   const percent = total > 0 ? Math.floor((qtdDesbloqueadas / total) * 100) : 0;
@@ -49,7 +44,6 @@ export async function execute(interaction) {
 
   const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
 
-  // Lista de badges formatada
   const lista = todasOrdenadas.map(badge => {
     const id = badge.id || null;
     const emoji = badge.emoji || "🔸";
@@ -65,13 +59,12 @@ export async function execute(interaction) {
     }
 
     if (unlocked) {
-      return `✔️ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
+      return `✨ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
     }
 
     return `🔒 ${emoji} **${nome}** — *${raridade}*`;
   });
 
-  // DIVIDIR EM CAMPOS DE 1024 CARACTERES
   const fields = [];
   let buffer = "";
 
@@ -97,7 +90,7 @@ export async function execute(interaction) {
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
       ...fields
     )
-    .setFooter({ text: "✔️ = desbloqueada | 🔒 = bloqueada" });
+    .setFooter({ text: "✨ = desbloqueada | 🔒 = bloqueada" });
 
   await interaction.reply({ embeds: [embed] });
 }
