@@ -1,7 +1,7 @@
 import UserMissions from "../models/UserMissions.js";
 import { adicionarXP } from "./xp.js";
 import { verificarBadges } from "./badges.js";
-import { MISSOES } from "./missionsList.js"; // mantém a tua lista original
+import { MISSOES } from "./missionsList.js";
 
 // Garantir documento
 async function garantirUser(userId) {
@@ -9,6 +9,16 @@ async function garantirUser(userId) {
   if (!doc) {
     doc = await UserMissions.create({ userId, historico: [] });
   }
+
+  // Garantir estrutura válida (anti-NaN)
+  if (!doc.atual) return doc;
+
+  doc.atual.progresso = {
+    platinas: Number(doc.atual.progresso?.platinas) || 0,
+    conquistas: Number(doc.atual.progresso?.conquistas) || 0,
+    xp: Number(doc.atual.progresso?.xp) || 0
+  };
+
   return doc;
 }
 
@@ -39,8 +49,12 @@ export async function atualizarProgresso(userId, tipo, temJogo) {
 
   if (doc.atual.requerJogo && !temJogo) return;
 
-  if (tipo === "platina") doc.atual.progresso.platinas++;
-  if (tipo === "conquista") doc.atual.progresso.conquistas++;
+  // Garantir números válidos
+  doc.atual.progresso.platinas = Number(doc.atual.progresso.platinas) || 0;
+  doc.atual.progresso.conquistas = Number(doc.atual.progresso.conquistas) || 0;
+
+  if (tipo === "platina") doc.atual.progresso.platinas += 1;
+  if (tipo === "conquista") doc.atual.progresso.conquistas += 1;
 
   await doc.save();
   await verificarConclusao(userId);
@@ -52,6 +66,7 @@ export async function adicionarXPsemana(userId, quantidade) {
   const doc = await garantirUser(userId);
   if (!doc.atual || doc.atual.concluida) return;
 
+  doc.atual.progresso.xp = Number(doc.atual.progresso.xp) || 0;
   doc.atual.progresso.xp += quantidade;
 
   await doc.save();
