@@ -26,7 +26,9 @@ export async function execute(interaction) {
     });
   }
 
-  const desbloqueadas = user.badgesDesbloqueadas || [];
+  const desbloqueadas = Array.isArray(user.badgesDesbloqueadas)
+    ? user.badgesDesbloqueadas
+    : [];
 
   // Ordenar por raridade
   const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
@@ -48,7 +50,10 @@ export async function execute(interaction) {
 
   // Lista de badges
   const lista = todasOrdenadas.map(badge => {
-    const unlocked = desbloqueadas.includes(badge.id);
+    const id = badge.id || null;
+    const emoji = badge.emoji || "🔸";
+
+    const unlocked = id && desbloqueadas.includes(id);
 
     // Badge secreta bloqueada
     if (badge.secreta && !unlocked) {
@@ -57,11 +62,11 @@ export async function execute(interaction) {
 
     // Badge normal desbloqueada
     if (unlocked) {
-      return `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
+      return `✔️ **${emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
     }
 
     // Badge normal bloqueada
-    return `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
+    return `🔒 ${emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
@@ -71,7 +76,7 @@ export async function execute(interaction) {
     .addFields(
       { name: "📊 Progresso", value: `${qtdDesbloqueadas} / ${total} (${percent}%)`, inline: true },
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
-      { name: "📜 Badges", value: lista.join("\n\n") }
+      { name: "📜 Badges", value: lista.join("\n\n") || "Ainda não desbloqueaste nenhuma badge." }
     )
     .setFooter({ text: "✔️ = desbloqueada | 🔒 = bloqueada" });
 
