@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import UserStats from "../models/UserStats.js";
+import { readJSON } from "../utils/database.js";
 import { getUserStats } from "../utils/userStats.js";
 
 export const data = new SlashCommandBuilder()
@@ -9,28 +10,38 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Buscar stats do user no Mongo (AGORA CORRETO)
+  // Buscar stats do user no Mongo
   let user = await UserStats.findOne({ userId });
 
-  // Se não existir, criar
+  // Criar se não existir
   if (!user) {
     user = await UserStats.create({
       userId,
       xp: 0,
       totalXP: 0,
       nivel: 1,
-      badge: "⚪ Iniciante",
-      badgesDesbloqueadas: ["⚪ Iniciante"],
       platinas: 0,
       conquistas: 0,
-      ultimaPlatina: null,
-      ultimaConquista: null
+      badgesDesbloqueadas: []
     });
   }
 
-  const nivel = user.nivel;
-  const totalXP = user.totalXP;
-  const badge = user.badge;
+  const badgesDB = readJSON("data/badges.json");
+
+  // BADGE PRINCIPAL = a mais rara desbloqueada
+  let badgePrincipal = "Nenhuma";
+
+  if (user.badgesDesbloqueadas.length > 0) {
+    const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
+
+    const desbloqueadasInfo = user.badgesDesbloqueadas
+      .map(id => badgesDB.find(b => b.id === id))
+      .filter(Boolean)
+      .sort((a, b) => raridadeOrdem.indexOf(b.raridade) - raridadeOrdem.indexOf(a.raridade));
+
+    const top = desbloqueadasInfo[0];
+    badgePrincipal = `${top.emoji} ${top.nome}`;
+  }
 
   // Estatísticas do user (platinas, conquistas, últimas)
   const stats = await getUserStats(userId);
@@ -52,10 +63,10 @@ export async function execute(interaction) {
     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
     .addFields(
       { name: "👤 Jogador", value: interaction.user.username, inline: true },
-      { name: "🏅 Nível", value: `${nivel}`, inline: true },
-      { name: "🔰 Badge", value: badge, inline: true },
+      { name: "🏅 Nível", value: `${user.nivel}`, inline: true },
+      { name: "🔰 Badge Principal", value: badgePrincipal, inline: true },
 
-      { name: "✨ XP Total", value: `${totalXP} XP`, inline: true },
+      { name: "✨ XP Total", value: `${user.totalXP} XP`, inline: true },
       { name: "🏆 Platinas", value: `${platinas}`, inline: true },
       { name: "🥇 Conquistas", value: `${conquistas}`, inline: true },
 
