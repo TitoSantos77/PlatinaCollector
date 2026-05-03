@@ -5,7 +5,8 @@
     "emoji": "🏆",
     "raridade": "Comum",
     "descricao": "Ganhaste a tua primeira platina!",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "platinas": 1 }
   },
   {
     "id": "cinco_platinas",
@@ -13,7 +14,8 @@
     "emoji": "🥇",
     "raridade": "Incomum",
     "descricao": "Atingiste 5 platinas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "platinas": 5 }
   },
   {
     "id": "dez_platinas",
@@ -21,7 +23,8 @@
     "emoji": "💠",
     "raridade": "Rara",
     "descricao": "Atingiste 10 platinas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "platinas": 10 }
   },
   {
     "id": "vinte_platinas",
@@ -29,7 +32,8 @@
     "emoji": "🔥",
     "raridade": "Épica",
     "descricao": "Atingiste 20 platinas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "platinas": 20 }
   },
   {
     "id": "cinquenta_platinas",
@@ -37,7 +41,8 @@
     "emoji": "👑",
     "raridade": "Lendária",
     "descricao": "Atingiste 50 platinas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "platinas": 50 }
   },
 
   {
@@ -46,7 +51,8 @@
     "emoji": "🎖️",
     "raridade": "Comum",
     "descricao": "Ganhaste a tua primeira conquista.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "conquistas": 1 }
   },
   {
     "id": "dez_conquistas",
@@ -54,7 +60,8 @@
     "emoji": "📀",
     "raridade": "Incomum",
     "descricao": "Atingiste 10 conquistas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "conquistas": 10 }
   },
   {
     "id": "vinte_cinco_conquistas",
@@ -62,7 +69,8 @@
     "emoji": "💎",
     "raridade": "Rara",
     "descricao": "Atingiste 25 conquistas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "conquistas": 25 }
   },
   {
     "id": "cinquenta_conquistas",
@@ -70,7 +78,8 @@
     "emoji": "⚡",
     "raridade": "Épica",
     "descricao": "Atingiste 50 conquistas.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "conquistas": 50 }
   },
 
   {
@@ -79,7 +88,8 @@
     "emoji": "🟦",
     "raridade": "Comum",
     "descricao": "Atingiste o nível 5.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "nivel": 5 }
   },
   {
     "id": "nivel_10",
@@ -87,7 +97,8 @@
     "emoji": "🟪",
     "raridade": "Incomum",
     "descricao": "Atingiste o nível 10.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "nivel": 10 }
   },
   {
     "id": "nivel_20",
@@ -95,7 +106,8 @@
     "emoji": "🟥",
     "raridade": "Rara",
     "descricao": "Atingiste o nível 20.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "nivel": 20 }
   },
   {
     "id": "nivel_30",
@@ -103,7 +115,8 @@
     "emoji": "🟧",
     "raridade": "Épica",
     "descricao": "Atingiste o nível 30.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "nivel": 30 }
   },
   {
     "id": "nivel_50",
@@ -111,7 +124,8 @@
     "emoji": "🟨",
     "raridade": "Lendária",
     "descricao": "Atingiste o nível 50.",
-    "secreta": false
+    "secreta": false,
+    "requisito": { "nivel": 50 }
   },
 
   {
@@ -120,7 +134,8 @@
     "emoji": "❓",
     "raridade": "Mítica",
     "descricao": "Uma badge secreta misteriosa.",
-    "secreta": true
+    "secreta": true,
+    "requisito": { "platinas": 30 }
   },
   {
     "id": "secreta_mestre",
@@ -128,6 +143,7 @@
     "emoji": "🧿",
     "raridade": "Exótica",
     "descricao": "Apenas os verdadeiros mestres a desbloqueiam.",
-    "secreta": true
+    "secreta": true,
+    "requisito": { "nivel": 40 }
   }
 ]
