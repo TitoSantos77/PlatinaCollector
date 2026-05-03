@@ -22,7 +22,7 @@ export async function execute(interaction) {
   if (!user) {
     return interaction.reply({
       content: "❌ Ainda não tens perfil criado. Usa /perfil primeiro!",
-      ephemeral: true
+      flags: 64
     });
   }
 
@@ -49,7 +49,7 @@ export async function execute(interaction) {
 
   const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
 
-  // Lista de badges
+  // Lista de badges formatada
   const lista = todasOrdenadas.map(badge => {
     const id = badge.id || null;
     const emoji = badge.emoji || "🔸";
@@ -60,19 +60,33 @@ export async function execute(interaction) {
 
     const unlocked = id && desbloqueadas.includes(id);
 
-    // Badge secreta bloqueada
     if (secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
-    // Badge normal desbloqueada
     if (unlocked) {
       return `✔️ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
     }
 
-    // Badge normal bloqueada
     return `🔒 ${emoji} **${nome}** — *${raridade}*`;
   });
+
+  // DIVIDIR EM CAMPOS DE 1024 CARACTERES
+  const fields = [];
+  let buffer = "";
+
+  for (const line of lista) {
+    if ((buffer + "\n\n" + line).length > 1024) {
+      fields.push({ name: "📜 Badges", value: buffer });
+      buffer = line;
+    } else {
+      buffer += (buffer ? "\n\n" : "") + line;
+    }
+  }
+
+  if (buffer.length > 0) {
+    fields.push({ name: "📜 Badges", value: buffer });
+  }
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
@@ -81,7 +95,7 @@ export async function execute(interaction) {
     .addFields(
       { name: "📊 Progresso", value: `${qtdDesbloqueadas} / ${total} (${percent}%)`, inline: true },
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
-      { name: "📜 Badges", value: lista.join("\n\n") || "Ainda não desbloqueaste nenhuma badge." }
+      ...fields
     )
     .setFooter({ text: "✔️ = desbloqueada | 🔒 = bloqueada" });
 
