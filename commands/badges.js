@@ -58,8 +58,9 @@ export async function execute(interaction) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
+    // 🔥 AQUI ESTÁ A ÚNICA ALTERAÇÃO
     if (unlocked) {
-      return `✨ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
+      return `🟩☑️ **${emoji} ${nome}** — *${raridade}*\n> ${descricao}`;
     }
 
     return `🔒 ${emoji} **${nome}** — *${raridade}*`;
@@ -90,7 +91,7 @@ export async function execute(interaction) {
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
       ...fields
     )
-    .setFooter({ text: "✨ = desbloqueada | 🔒 = bloqueada" });
+    .setFooter({ text: "🟩☑️ = desbloqueada | 🔒 = bloqueada" });
 
   await interaction.reply({ embeds: [embed] });
 }
