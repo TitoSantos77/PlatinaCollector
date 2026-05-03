@@ -16,7 +16,7 @@ export async function execute(interaction) {
     ? rawBadges
     : Object.values(rawBadges);
 
-  // Buscar user do Mongo (AGORA CORRETO)
+  // Buscar user do Mongo
   let user = await UserStats.findOne({ userId });
 
   if (!user) {
@@ -50,14 +50,18 @@ export async function execute(interaction) {
   const lista = todasOrdenadas.map(badge => {
     const unlocked = desbloqueadas.includes(badge.id);
 
-    // Badge secreta
+    // Badge secreta bloqueada
     if (badge.secreta && !unlocked) {
       return `🔒 **Badge Secreta** — ???`;
     }
 
-    return unlocked
-      ? `🟩 **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`
-      : `⬜ ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
+    // Badge normal desbloqueada
+    if (unlocked) {
+      return `✔️ **${badge.emoji} ${badge.nome}** — *${badge.raridade}*\n> ${badge.descricao}`;
+    }
+
+    // Badge normal bloqueada
+    return `🔒 ${badge.emoji} **${badge.nome}** — *${badge.raridade}*`;
   });
 
   const embed = new EmbedBuilder()
@@ -69,7 +73,7 @@ export async function execute(interaction) {
       { name: "🔵 Barra de Progresso", value: `\`${barra}\`` },
       { name: "📜 Badges", value: lista.join("\n\n") }
     )
-    .setFooter({ text: "Continua a colecionar badges, lenda!" });
+    .setFooter({ text: "✔️ = desbloqueada | 🔒 = bloqueada" });
 
   await interaction.reply({ embeds: [embed] });
 }
