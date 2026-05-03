@@ -27,6 +27,9 @@ export async function execute(interaction) {
     });
   }
 
+  // 0) LIMPAR TODAS AS BADGES ANTES DE REVERIFICAR
+  user.badgesDesbloqueadas = [];
+
   // 1) Remover campo antigo "badge"
   if (user.badge) {
     delete user.badge;
@@ -44,11 +47,11 @@ export async function execute(interaction) {
 
   await user.save();
 
-  // 4) Recalcular badges automaticamente
+  // 4) Recalcular badges automaticamente (agora com requisitos)
   await verificarBadges(userId);
 
   return interaction.reply({
-    content: "✅ Badges corrigidas com sucesso! Corre /badges para confirmar.",
+    content: "🔧 Badges recalculadas com sucesso! Corre /badges para confirmar.",
     ephemeral: true
   });
 }
