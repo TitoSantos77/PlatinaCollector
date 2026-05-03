@@ -10,7 +10,6 @@ export async function execute(interaction) {
 
   // Buscar missões do Mongo
   const doc = await UserMissions.findOne({ userId });
-
   const missao = doc?.atual || null;
 
   // Sem missão ativa
@@ -21,9 +20,31 @@ export async function execute(interaction) {
     });
   }
 
-  // Calcular progresso
+  // Proteção anti-NaN / valores undefined
+  const prog = {
+    platinas: Number(missao.progresso?.platinas) || 0,
+    conquistas: Number(missao.progresso?.conquistas) || 0,
+    xp: Number(missao.progresso?.xp) || 0
+  };
+
   const obj = missao.objetivo;
-  const prog = missao.progresso;
+
+  // Contador até terça-feira 00:00
+  function tempoRestante() {
+    const agora = new Date();
+    const proximaTerca = new Date();
+
+    // 2 = terça-feira
+    proximaTerca.setDate(agora.getDate() + ((2 - agora.getDay() + 7) % 7));
+    proximaTerca.setHours(0, 0, 0, 0);
+
+    const diff = proximaTerca - agora;
+
+    const horas = Math.floor(diff / 1000 / 60 / 60);
+    const minutos = Math.floor((diff / 1000 / 60) % 60);
+
+    return `${horas}h ${minutos}m`;
+  }
 
   const progressoTexto = [
     `🏆 Platinas: **${prog.platinas}/${obj.platinas}**`,
@@ -39,6 +60,7 @@ export async function execute(interaction) {
     .addFields(
       { name: "📝 Descrição", value: missao.descricao },
       { name: "📅 Início", value: missao.dataInicio, inline: true },
+      { name: "⏳ Tempo restante", value: tempoRestante(), inline: true },
       { name: "🎁 Recompensa", value: `${missao.recompensa} XP`, inline: true },
       { name: "📊 Progresso", value: progressoTexto }
     )
