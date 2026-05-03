@@ -8,7 +8,8 @@ export async function verificarBadges(userId) {
   let stats = await UserStats.findOne({ userId });
   if (!stats) return false;
 
-  if (!stats.badgesDesbloqueadas) {
+  // Garantir que existe o array
+  if (!Array.isArray(stats.badgesDesbloqueadas)) {
     stats.badgesDesbloqueadas = [];
   }
 
@@ -20,6 +21,7 @@ export async function verificarBadges(userId) {
     // Já tem esta badge?
     if (stats.badgesDesbloqueadas.includes(id)) continue;
 
+    // Requisitos vindos do JSON
     const req = badge.requisito || {};
 
     const cumpreNivel = req.nivel ? stats.nivel >= req.nivel : true;
@@ -28,6 +30,7 @@ export async function verificarBadges(userId) {
     const cumpreConquistas = req.conquistas ? stats.conquistas >= req.conquistas : true;
     const cumpreMissoes = req.missoes ? (stats.missoesConcluidas || 0) >= req.missoes : true;
 
+    // Só desbloqueia se cumprir TODOS os requisitos definidos
     if (cumpreNivel && cumpreXP && cumprePlatinas && cumpreConquistas && cumpreMissoes) {
       stats.badgesDesbloqueadas.push(id);
       ganhouNova = true;
