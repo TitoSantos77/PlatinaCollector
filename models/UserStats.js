@@ -25,9 +25,11 @@ const userStatsSchema = new mongoose.Schema({
   totalXP: { type: Number, default: 0 },
   nivel: { type: Number, default: 1 },
 
-  // BADGES
-  badge: { type: String, default: "⚪ Iniciante" },
-  badgesDesbloqueadas: { type: [String], default: ["⚪ Iniciante"] }
+  // BADGES (CORRIGIDO)
+  badgesDesbloqueadas: {
+    type: [String],   // IDs das badges
+    default: []       // começa vazio
+  }
 });
 
 export default mongoose.model("UserStats", userStatsSchema);
