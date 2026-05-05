@@ -13,7 +13,7 @@ export async function execute(interaction) {
   const missaoAtual = doc?.atual || null;
   const ultima = doc?.ultimaConcluida || null;
 
-  // Tempo até terça 07:00 PT
+  // Tempo até terça 07:00 PT (CORRIGIDO)
   function tempoRestante() {
     const agora = new Date();
     const agoraPT = new Date(agora.getTime() + 60 * 60 * 1000);
@@ -21,6 +21,11 @@ export async function execute(interaction) {
     const proximaTerca = new Date(agoraPT);
     proximaTerca.setDate(agoraPT.getDate() + ((2 - agoraPT.getDay() + 7) % 7));
     proximaTerca.setHours(7, 0, 0, 0);
+
+    // SE JÁ PASSOU DAS 07:00 NA TERÇA → AVANÇA 7 DIAS
+    if (agoraPT > proximaTerca) {
+      proximaTerca.setDate(proximaTerca.getDate() + 7);
+    }
 
     const diff = proximaTerca - agoraPT;
 
