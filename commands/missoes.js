@@ -69,11 +69,11 @@ export async function execute(interaction) {
       .setColor(cores[raridade] || "#00AAFF")
       .setTitle(`${icones[raridade]} ${raridade} — Missão Concluída`)
       .addFields(
-        { name: "📝 Descrição", value: ultima.descricao },
+        { name: "📝 Descrição", value: ultima.descricao || "Sem descrição" },
         { name: "🏷️ Categoria", value: categoria, inline: true },
         { name: "📅 Início", value: ultima.dataInicio || "N/A", inline: true },
         { name: "📅 Fim", value: ultima.dataFim || "N/A", inline: true },
-        { name: "🎁 Recompensa", value: `${ultima.recompensa} XP`, inline: true }
+        { name: "🎁 Recompensa", value: `${ultima.recompensa || 0} XP`, inline: true }
       )
       .setDescription(
         `🕒 A próxima missão será atribuída em **${tempoRestante()}**.`
@@ -124,12 +124,12 @@ export async function execute(interaction) {
     .setColor(cores[raridade] || "#00CC88")
     .setTitle(`${icones[raridade]} ${raridade} — Missão Semanal`)
     .addFields(
-      { name: "📝 Descrição", value: missaoAtual.descricao },
+      { name: "📝 Descrição", value: missaoAtual.descricao || "Sem descrição" },
       { name: "🏷️ Categoria", value: categoria, inline: true },
-      { name: "📅 Início", value: missaoAtual.dataInicio, inline: true },
+      { name: "📅 Início", value: missaoAtual.dataInicio || "N/A", inline: true },
       { name: "⏳ Tempo restante", value: tempoRestante(), inline: true },
-      { name: "🎁 Recompensa", value: `${missaoAtual.recompensa} XP`, inline: true },
-      { name: "📊 Progresso", value: progressoTexto }
+      { name: "🎁 Recompensa", value: `${missaoAtual.recompensa || 0} XP`, inline: true },
+      { name: "📊 Progresso", value: progressoTexto || "Sem progresso registado." }
     )
     .setFooter({ text: "A missão reseta automaticamente todas as semanas." });
 
