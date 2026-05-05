@@ -19,9 +19,17 @@ const missionSchema = new mongoose.Schema({
     recompensa: Number,
     requerJogo: { type: Boolean, default: false },
     concluida: { type: Boolean, default: false },
+
+    // ADICIONADO — porque o gerador premium usa isto
+    raridade: String,
+    categoria: String,
+
     dataInicio: String,
     dataFim: String
   },
+
+  // ADICIONADO — o que faltava para o /missoes funcionar
+  ultimaConcluida: { type: Object, default: null },
 
   historico: { type: Array, default: [] }
 });
