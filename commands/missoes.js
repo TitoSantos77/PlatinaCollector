@@ -62,12 +62,20 @@ export async function execute(interaction) {
   // CASO 1 — MISSÃO CONCLUÍDA
   // ============================
   if (!missaoAtual && ultima) {
+    const raridade = ultima.raridade || "Comum";
+    const categoria = ultima.categoria || "N/A";
+
     const embed = new EmbedBuilder()
-      .setColor("#00AAFF")
-      .setTitle("🏁 Missão semanal concluída!")
+      .setColor(cores[raridade] || "#00AAFF")
+      .setTitle(`${icones[raridade]} ${raridade} — Missão Concluída`)
+      .addFields(
+        { name: "📝 Descrição", value: ultima.descricao },
+        { name: "🏷️ Categoria", value: categoria, inline: true },
+        { name: "📅 Início", value: ultima.dataInicio || "N/A", inline: true },
+        { name: "📅 Fim", value: ultima.dataFim || "N/A", inline: true },
+        { name: "🎁 Recompensa", value: `${ultima.recompensa} XP`, inline: true }
+      )
       .setDescription(
-        `**Missão:** ${ultima.descricao}\n` +
-        `**Recompensa:** ${ultima.recompensa} XP\n\n` +
         `🕒 A próxima missão será atribuída em **${tempoRestante()}**.`
       );
 
