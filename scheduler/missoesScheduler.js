@@ -14,9 +14,10 @@ export function iniciarSchedulerMissoes() {
 
       const dia = agoraPT.getDay(); // 0=Dom, 1=Seg, 2=Terça
       const hora = agoraPT.getHours();
+      const minuto = agoraPT.getMinutes();
 
-      // Só corre à terça às 00:00 PT
-      if (dia !== 2 || hora !== 0) return;
+      // Só corre à terça às 07:00 PT
+      if (dia !== 2 || hora !== 7 || minuto !== 0) return;
 
       console.log("📘 A gerar missões semanais para todos os jogadores...");
 
