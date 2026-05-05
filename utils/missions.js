@@ -30,17 +30,17 @@ const PROB_PREMIUM = {
 };
 
 // ===============================
-// MULTIPLICADORES DE XP
+// BÓNUS DE XP POR RARIDADE
 // ===============================
-const MULTIPLICADOR = {
-  Comum: 1,
-  Incomum: 1.5,
-  Rara: 2,
-  Épica: 3,
-  Lendária: 4,
-  Mítica: 6,
-  Exótica: 8,
-  Premium: 12
+const BONUS_RARIDADE = {
+  Comum: 20,
+  Incomum: 40,
+  Rara: 75,
+  Épica: 120,
+  Lendária: 180,
+  Mítica: 250,
+  Exótica: 350,
+  Premium: 500
 };
 
 // ===============================
@@ -61,15 +61,10 @@ function escolherRaridade(nivel) {
 }
 
 // ===============================
-// CALCULAR RECOMPENSA XP
+// CALCULAR RECOMPENSA XP (CORRIGIDO)
 // ===============================
 function calcularRecompensa(obj, raridade) {
-  const base =
-    (obj.platinas * 100) +
-    (obj.conquistas * 5) +
-    (obj.xp * 0.1);
-
-  return Math.floor(base * MULTIPLICADOR[raridade]);
+  return BONUS_RARIDADE[raridade] || 20;
 }
 
 // ===============================
@@ -93,7 +88,7 @@ async function garantirUser(userId) {
 }
 
 // ===============================
-// GERAR MISSÃO PREMIUM INTELIGENTE
+// GERAR MISSÃO
 // ===============================
 export async function gerarMissao(userId) {
   const stats = await UserStats.findOne({ userId });
@@ -164,7 +159,7 @@ export async function adicionarXPsemana(userId, quantidade) {
 }
 
 // ===============================
-// VERIFICAR CONCLUSÃO (ATUALIZADO)
+// VERIFICAR CONCLUSÃO
 // ===============================
 export async function verificarConclusao(userId) {
   const doc = await garantirUser(userId);
@@ -186,7 +181,6 @@ export async function verificarConclusao(userId) {
 
   await adicionarXP(userId, missao.recompensa);
 
-  // 🔥 AQUI ESTÁ O QUE FALTAVA 🔥
   doc.ultimaConcluida = missao;
 
   doc.historico.push(missao);
