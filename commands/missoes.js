@@ -8,22 +8,21 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Buscar missões do Mongo
   const doc = await UserMissions.findOne({ userId });
 
   const missaoAtual = doc?.atual || null;
   const ultima = doc?.ultimaConcluida || null;
 
-  // Função para calcular tempo até terça-feira 00:00
+  // Tempo até terça 07:00 PT
   function tempoRestante() {
     const agora = new Date();
-    const proximaTerca = new Date();
+    const agoraPT = new Date(agora.getTime() + 60 * 60 * 1000);
 
-    // 2 = terça-feira
-    proximaTerca.setDate(agora.getDate() + ((2 - agora.getDay() + 7) % 7));
-    proximaTerca.setHours(0, 0, 0, 0);
+    const proximaTerca = new Date(agoraPT);
+    proximaTerca.setDate(agoraPT.getDate() + ((2 - agoraPT.getDay() + 7) % 7));
+    proximaTerca.setHours(7, 0, 0, 0);
 
-    const diff = proximaTerca - agora;
+    const diff = proximaTerca - agoraPT;
 
     const horas = Math.floor(diff / 1000 / 60 / 60);
     const minutos = Math.floor((diff / 1000 / 60) % 60);
@@ -32,15 +31,43 @@ export async function execute(interaction) {
   }
 
   // ============================
-  // CASO 1 — NÃO TEM MISSÃO ATUAL MAS TEM UMA CONCLUÍDA
+  // CORES POR RARIDADE
+  // ============================
+  const cores = {
+    "Comum": "#A0A0A0",
+    "Incomum": "#2ECC71",
+    "Rara": "#3498DB",
+    "Épica": "#9B59B6",
+    "Lendária": "#F1C40F",
+    "Mítica": "#E84393",
+    "Exótica": "#00FFFF",
+    "Premium": "#E74C3C"
+  };
+
+  // ============================
+  // ÍCONES POR RARIDADE
+  // ============================
+  const icones = {
+    "Comum": "⚪",
+    "Incomum": "🟢",
+    "Rara": "🔵",
+    "Épica": "🟣",
+    "Lendária": "🟡",
+    "Mítica": "💠",
+    "Exótica": "🌀",
+    "Premium": "🔥"
+  };
+
+  // ============================
+  // CASO 1 — MISSÃO CONCLUÍDA
   // ============================
   if (!missaoAtual && ultima) {
     const embed = new EmbedBuilder()
       .setColor("#00AAFF")
       .setTitle("🏁 Missão semanal concluída!")
       .setDescription(
-        `**Missão:** ${ultima.descricao || "Sem descrição"}\n` +
-        `**Recompensa:** ${ultima.recompensa || 0} XP\n\n` +
+        `**Missão:** ${ultima.descricao}\n` +
+        `**Recompensa:** ${ultima.recompensa} XP\n\n` +
         `🕒 A próxima missão será atribuída em **${tempoRestante()}**.`
       );
 
@@ -48,7 +75,7 @@ export async function execute(interaction) {
   }
 
   // ============================
-  // CASO 2 — NÃO TEM MISSÃO ATUAL E NUNCA TEVE
+  // CASO 2 — NUNCA TEVE MISSÃO
   // ============================
   if (!missaoAtual && !ultima) {
     const embed = new EmbedBuilder()
@@ -63,10 +90,12 @@ export async function execute(interaction) {
   }
 
   // ============================
-  // CASO 3 — TEM MISSÃO ATUAL (NORMAL)
+  // CASO 3 — MISSÃO ATUAL
   // ============================
 
-  // Proteção anti-NaN / valores undefined
+  const raridade = missaoAtual.raridade || "Comum";
+  const categoria = missaoAtual.categoria || "N/A";
+
   const prog = {
     platinas: Number(missaoAtual.progresso?.platinas) || 0,
     conquistas: Number(missaoAtual.progresso?.conquistas) || 0,
@@ -84,14 +113,15 @@ export async function execute(interaction) {
     .join("\n");
 
   const embed = new EmbedBuilder()
-    .setColor("#00CC88")
-    .setTitle("📘 Missão Semanal")
+    .setColor(cores[raridade] || "#00CC88")
+    .setTitle(`${icones[raridade]} ${raridade} — Missão Semanal`)
     .addFields(
-      { name: "📝 Descrição", value: missaoAtual.descricao || "Sem descrição" },
-      { name: "📅 Início", value: missaoAtual.dataInicio || "N/A", inline: true },
+      { name: "📝 Descrição", value: missaoAtual.descricao },
+      { name: "🏷️ Categoria", value: categoria, inline: true },
+      { name: "📅 Início", value: missaoAtual.dataInicio, inline: true },
       { name: "⏳ Tempo restante", value: tempoRestante(), inline: true },
-      { name: "🎁 Recompensa", value: `${missaoAtual.recompensa || 0} XP`, inline: true },
-      { name: "📊 Progresso", value: progressoTexto || "Sem progresso registado." }
+      { name: "🎁 Recompensa", value: `${missaoAtual.recompensa} XP`, inline: true },
+      { name: "📊 Progresso", value: progressoTexto }
     )
     .setFooter({ text: "A missão reseta automaticamente todas as semanas." });
 
