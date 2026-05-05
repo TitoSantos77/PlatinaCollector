@@ -164,7 +164,7 @@ export async function adicionarXPsemana(userId, quantidade) {
 }
 
 // ===============================
-// VERIFICAR CONCLUSÃO
+// VERIFICAR CONCLUSÃO (ATUALIZADO)
 // ===============================
 export async function verificarConclusao(userId) {
   const doc = await garantirUser(userId);
@@ -185,6 +185,9 @@ export async function verificarConclusao(userId) {
   missao.dataFim = new Date().toISOString().split("T")[0];
 
   await adicionarXP(userId, missao.recompensa);
+
+  // 🔥 AQUI ESTÁ O QUE FALTAVA 🔥
+  doc.ultimaConcluida = missao;
 
   doc.historico.push(missao);
   doc.atual = null;
