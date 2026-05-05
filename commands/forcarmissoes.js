@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
 import UserStats from "../models/UserStats.js";
+import UserMissions from "../models/UserMissions.js";
 import { gerarMissao } from "../utils/missions.js";
 
 export const data = new SlashCommandBuilder()
@@ -16,11 +17,17 @@ export async function execute(interaction) {
   }
 
   try {
-    // Buscar todos os users registados no Mongo
     const users = await UserStats.find().lean();
 
     for (const user of users) {
-      await gerarMissao(user.userId); // AGORA USA O SISTEMA NOVO
+      // limpar missão atual antes de gerar outra
+      await UserMissions.updateOne(
+        { userId: user.userId },
+        { $set: { atual: null } }
+      );
+
+      // gerar missão nova com o sistema premium
+      await gerarMissao(user.userId);
     }
 
     const embed = new EmbedBuilder()
