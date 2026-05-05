@@ -1,53 +1,36 @@
-import { readJSON, writeJSON } from "../utils/database.js";
+import UserStats from "../models/UserStats.js";
+import UserMissions from "../models/UserMissions.js";
 import { gerarMissao } from "../utils/missions.js";
-import { criarBackup } from "../utils/backup.js";
 
 export function iniciarSchedulerMissoes() {
-  console.log("⏱️ Scheduler de missões iniciado...");
+  console.log("⏱️ Scheduler de missões (Mongo) iniciado...");
 
-  setInterval(() => {
+  setInterval(async () => {
     try {
-      const hoje = new Date();
-      const diaSemana = hoje.getDay(); // 0=Domingo, 1=Segunda, 2=Terça...
+      const agora = new Date();
 
-      // Só gera missões à TERÇA-FEIRA
-      if (diaSemana !== 2) return;
+      // Converter UTC → Portugal (UTC+1 no verão)
+      const agoraPT = new Date(agora.getTime() + 60 * 60 * 1000);
 
-      const meta = readJSON("data/meta.json") || { ultimaSemanaGerada: null };
+      const dia = agoraPT.getDay(); // 0=Dom, 1=Seg, 2=Terça
+      const hora = agoraPT.getHours();
 
-      const ano = hoje.getFullYear();
-      const semana = obterSemanaDoAno(hoje);
-      const chaveSemana = `${ano}-${semana}`;
-
-      // Já gerou esta semana?
-      if (meta.ultimaSemanaGerada === chaveSemana) return;
+      // Só corre à terça às 00:00 PT
+      if (dia !== 2 || hora !== 0) return;
 
       console.log("📘 A gerar missões semanais para todos os jogadores...");
 
-      const missions = readJSON("data/missions.json");
-      const users = readJSON("data/users.json");
+      // Buscar todos os users que têm perfil
+      const users = await UserStats.find({}, "userId");
 
-      for (const userId of Object.keys(users)) {
-        gerarMissao(userId); // função já existente no teu missions.js
+      for (const u of users) {
+        await gerarMissao(u.userId);
       }
-
-      meta.ultimaSemanaGerada = chaveSemana;
-      writeJSON("data/meta.json", meta);
-
-      // 🔵 CRIAR BACKUP DEPOIS DE ATUALIZAR META
-      criarBackup();
 
       console.log("✅ Missões semanais geradas com sucesso!");
 
     } catch (err) {
       console.error("❌ Erro no scheduler de missões:", err);
     }
-  }, 60 * 60 * 1000); // corre a cada 1 hora
-}
-
-// Função auxiliar para calcular semana do ano
-function obterSemanaDoAno(data) {
-  const inicioAno = new Date(data.getFullYear(), 0, 1);
-  const diff = data - inicioAno;
-  return Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
+  }, 60 * 1000); // verifica a cada 1 minuto
 }
