@@ -13,7 +13,7 @@ export async function execute(interaction) {
   const missaoAtual = doc?.atual || null;
   const ultima = doc?.ultimaConcluida || null;
 
-  // Tempo até terça 07:00 PT (CORRIGIDO)
+  // Tempo até terça 07:00 PT (CORRIGIDO + DIAS)
   function tempoRestante() {
     const agora = new Date();
     const agoraPT = new Date(agora.getTime() + 60 * 60 * 1000);
@@ -29,10 +29,11 @@ export async function execute(interaction) {
 
     const diff = proximaTerca - agoraPT;
 
-    const horas = Math.floor(diff / 1000 / 60 / 60);
-    const minutos = Math.floor((diff / 1000 / 60) % 60);
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutos = Math.floor((diff / (1000 * 60)) % 60);
 
-    return `${horas}h ${minutos}m`;
+    return `${dias}d ${horas}h ${minutos}m`;
   }
 
   // ============================
