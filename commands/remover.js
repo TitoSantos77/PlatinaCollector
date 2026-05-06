@@ -13,6 +13,8 @@ export const data = new SlashCommandBuilder()
   .setName("remover")
   .setDescription("Remove platinas ou conquistas de um utilizador (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
+  // 1️⃣ tipo primeiro
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -23,22 +25,28 @@ export const data = new SlashCommandBuilder()
         { name: "Conquista", value: "conquista" }
       )
   )
+
+  // 2️⃣ user depois
   .addUserOption(opt =>
     opt
       .setName("user")
       .setDescription("Utilizador alvo")
       .setRequired(true)
   )
+
+  // 3️⃣ tudo ANTES do autocomplete
+  .addBooleanOption(opt =>
+    opt
+      .setName("tudo")
+      .setDescription("Remover TODAS as entradas do utilizador")
+  )
+
+  // 4️⃣ entrada por último (para o Discord não foder o autocomplete)
   .addStringOption(opt =>
     opt
       .setName("entrada")
       .setDescription("Escolhe a entrada a remover")
       .setAutocomplete(true)
-  )
-  .addBooleanOption(opt =>
-    opt
-      .setName("tudo")
-      .setDescription("Remover TODAS as entradas do utilizador")
   );
 
 // ===============================
