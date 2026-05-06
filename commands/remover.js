@@ -41,7 +41,9 @@ export const data = new SlashCommandBuilder()
       .setDescription("Remover TODAS as entradas do utilizador")
   );
 
-// AUTOCOMPLETE — MOSTRA ENTRADAS COMPLETAS
+// ===============================
+// AUTOCOMPLETE — FORMATO /LISTAR
+// ===============================
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
@@ -60,7 +62,7 @@ export async function autocomplete(interaction) {
   if (!lista || lista.length === 0) return interaction.respond([]);
 
   const opcoes = lista.map((item, index) => ({
-    name: `${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
+    name: `${index + 1} — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
     value: String(index)
   }));
 
@@ -71,7 +73,9 @@ export async function autocomplete(interaction) {
   return interaction.respond(filtrados);
 }
 
-// EXECUÇÃO DO COMANDO
+// ===============================
+// EXECUTAR /REMOVER
+// ===============================
 export async function execute(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
