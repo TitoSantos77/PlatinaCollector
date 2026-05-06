@@ -7,7 +7,7 @@ import {
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
-import { verificarBadges } from "../utils/badges.js"; // <-- CORRIGIDO
+import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
@@ -31,14 +31,9 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption(opt =>
     opt
-      .setName("numero")
-      .setDescription("Número da entrada a remover")
+      .setName("entrada")
+      .setDescription("Escolhe a entrada a remover")
       .setAutocomplete(true)
-  )
-  .addStringOption(opt =>
-    opt
-      .setName("numeros")
-      .setDescription("Lista de números (ex: 2,4,7)")
   )
   .addBooleanOption(opt =>
     opt
@@ -46,11 +41,11 @@ export const data = new SlashCommandBuilder()
       .setDescription("Remover TODAS as entradas do utilizador")
   );
 
-// AUTOCOMPLETE
+// AUTOCOMPLETE — MOSTRA ENTRADAS COMPLETAS
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
-  if (focused.name !== "numero") return;
+  if (focused.name !== "entrada") return;
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
@@ -64,13 +59,10 @@ export async function autocomplete(interaction) {
 
   if (!lista || lista.length === 0) return interaction.respond([]);
 
-  const opcoes = lista.map((item, index) => {
-    const numero = index + 1;
-    return {
-      name: `${numero} — ${item.jogo} (${item.plataforma})`,
-      value: String(numero)
-    };
-  });
+  const opcoes = lista.map((item, index) => ({
+    name: `${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
+    value: String(index)
+  }));
 
   const filtrados = opcoes
     .filter(o => o.name.toLowerCase().includes(focused.value.toLowerCase()))
@@ -90,8 +82,7 @@ export async function execute(interaction) {
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-  const numero = interaction.options.getString("numero");
-  const numerosStr = interaction.options.getString("numeros");
+  const entrada = interaction.options.getString("entrada");
   const tudo = interaction.options.getBoolean("tudo");
 
   const userId = user.id;
@@ -119,14 +110,11 @@ export async function execute(interaction) {
 
   if (tudo) {
     indices = lista.map((_, i) => i);
-  } else if (numerosStr) {
-    indices = numerosStr
-      .split(",")
-      .map(n => parseInt(n.trim()) - 1)
-      .filter(i => i >= 0 && i < lista.length);
-  } else if (numero) {
-    const idx = parseInt(numero) - 1;
-    if (idx >= 0 && idx < lista.length) indices = [idx];
+  } else if (entrada !== null) {
+    const idx = parseInt(entrada);
+    if (!isNaN(idx) && idx >= 0 && idx < lista.length) {
+      indices = [idx];
+    }
   }
 
   if (indices.length === 0) {
@@ -161,7 +149,6 @@ export async function execute(interaction) {
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  // <-- CORRIGIDO
   await verificarBadges(userId);
 
   if (tipo === "platina") {
