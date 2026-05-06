@@ -1,11 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { XP_CONQUISTA, adicionarXP } from "../utils/xp.js";
+import { XP_CONQUISTA, adicionarXP, xpNecessario } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsConquista } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
-import UserGames from "../models/UserGames.js"; // <-- ADICIONADO
+import UserGames from "../models/UserGames.js";
 
 // LISTA BASE — JOGOS
 const jogosBase = [
@@ -155,7 +155,7 @@ export async function execute(interaction) {
   await adicionarPlataforma(plataforma);
   await atualizarStatsConquista(interaction.user.id, jogo, plataforma, imagem.url);
 
-  // 🔥 NOVO: Guardar a conquista no histórico real
+  // Guardar no histórico real
   await UserGames.findOneAndUpdate(
     { userId: interaction.user.id },
     {
@@ -177,7 +177,7 @@ export async function execute(interaction) {
   // Verificar badges
   await verificarBadges(interaction.user.id);
 
-  // Embed final
+  // Embed final (CORRIGIDO)
   const embed = new EmbedBuilder()
     .setColor("#FFD000")
     .setTitle("🏅 Conquista adicionada!")
@@ -187,7 +187,11 @@ export async function execute(interaction) {
       { name: "🎮 Jogo", value: jogo, inline: true },
       { name: "🕹️ Plataforma", value: plataforma, inline: true },
       { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
-      { name: "📈 Nível Atual", value: `Nível ${user.nivel} — ${user.xp}/${user.totalXP} XP`, inline: true }
+      {
+        name: "📈 Nível Atual",
+        value: `Nível ${user.nivel} — ${user.xp}/${xpNecessario(user.nivel)} XP`,
+        inline: true
+      }
     )
     .setFooter({ text: "Boa! Continua a colecionar conquistas!" });
 
