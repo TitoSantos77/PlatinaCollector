@@ -96,7 +96,7 @@ client.once("ready", async () => {
 // ===============================
 client.on(Events.InteractionCreate, async interaction => {
 
-  // AUTOCOMPLETE
+  // AUTOCOMPLETE — AGORA CORRETO
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
 
@@ -108,23 +108,8 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    const focused = interaction.options.getFocused();
-    const field = interaction.options.getFocused(true).name;
-
-    const { obterJogos, obterPlataformas } = await import("./utils/globalStats.js");
-
-    let lista = [];
-
-    if (field === "jogo") lista = obterJogos();
-    if (field === "plataforma") lista = obterPlataformas();
-
-    const filtrados = lista
-      .filter(item => item.toLowerCase().includes(focused.toLowerCase()))
-      .slice(0, 25);
-
-    return interaction.respond(
-      filtrados.map(item => ({ name: item, value: item }))
-    );
+    // Se o comando não tiver autocomplete, não faz nada
+    return;
   }
 
   // SELECT MENU 1
