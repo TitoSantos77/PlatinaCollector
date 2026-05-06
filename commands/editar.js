@@ -69,7 +69,7 @@ export async function execute(interaction) {
 
   // NOVO: opções estilo /listar
   const options = lista.map((item, index) => ({
-    label: `${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
+    label: `${index + 1} — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
     value: `${userId}_${tipo}_${index}`
   }));
 
