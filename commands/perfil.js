@@ -2,6 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import UserStats from "../models/UserStats.js";
 import { readJSON } from "../utils/database.js";
 import { getUserStats } from "../utils/userStats.js";
+import { xpNecessario } from "../utils/xp.js";
 
 export const data = new SlashCommandBuilder()
   .setName("perfil")
@@ -28,7 +29,7 @@ export async function execute(interaction) {
 
   const badgesDB = readJSON("data/badges.json");
 
-  // BADGE PRINCIPAL = a mais rara desbloqueada
+  // BADGE PRINCIPAL
   let badgePrincipal = "Nenhuma";
 
   if (user.badgesDesbloqueadas.length > 0) {
@@ -43,7 +44,7 @@ export async function execute(interaction) {
     badgePrincipal = `${top.emoji} ${top.nome}`;
   }
 
-  // Estatísticas do user (platinas, conquistas, últimas)
+  // Estatísticas do user
   const stats = await getUserStats(userId);
 
   const platinas = stats.platinas ?? 0;
@@ -57,16 +58,37 @@ export async function execute(interaction) {
     ? `${stats.ultimaConquista.jogo}${stats.ultimaConquista.plataforma ? ` (${stats.ultimaConquista.plataforma})` : ""}`
     : "Nenhuma ainda";
 
+  // XP e nível
+  const nivel = user.nivel;
+  const xpAtual = user.xp;
+  const xpProximo = xpNecessario(nivel);
+
+  const percent = Math.min(100, Math.floor((xpAtual / xpProximo) * 100));
+
+  const totalBlocos = 20;
+  const blocosCheios = Math.round((percent / 100) * totalBlocos);
+  const blocosVazios = totalBlocos - blocosCheios;
+
+  const barra =
+    "▰".repeat(blocosCheios) +
+    "▱".repeat(blocosVazios);
+
   const embed = new EmbedBuilder()
     .setColor("#0055FF")
     .setTitle("🎮 Perfil do Jogador")
     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
     .addFields(
       { name: "👤 Jogador", value: interaction.user.username, inline: true },
-      { name: "🏅 Nível", value: `${user.nivel}`, inline: true },
+      { name: "🏅 Nível", value: `${nivel}`, inline: true },
       { name: "🔰 Badge Principal", value: badgePrincipal, inline: true },
 
       { name: "✨ XP Total", value: `${user.totalXP} XP`, inline: true },
+      { name: "✨ XP Atual", value: `${xpAtual} XP`, inline: true },
+      { name: "🎯 XP Necessário", value: `${xpProximo} XP`, inline: true },
+
+      { name: "📊 Progresso", value: `${percent}%`, inline: true },
+      { name: "🔵 Barra de XP", value: `\`${barra}\``, inline: false },
+
       { name: "🏆 Platinas", value: `${platinas}`, inline: true },
       { name: "🥇 Conquistas", value: `${conquistas}`, inline: true },
 
