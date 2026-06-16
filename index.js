@@ -50,4 +50,133 @@ const client = new Client({
 client.commands = new Collection();
 
 // Carregar comandos da pasta /commands
-const commandsPath
+const commandsPath = path.join(process.cwd(), "commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
+
+for (const file of commandFiles) {
+  const filePath = path.join(commandsPath, file);
+  const command = await import(`file://${filePath}`);
+
+  if ("data" in command && "execute" in command) {
+    client.commands.set(command.data.name, command);
+  } else {
+    console.log(`⚠️ O comando ${file} está mal formatado.`);
+  }
+}
+
+// IMPORTAR HANDLERS DO /EDITAR
+import * as editar from "./commands/editar.js";
+
+client.once("ready", async () => {
+  console.log(`Bot online como ${client.user.tag}`);
+
+  criarBackup();
+  iniciarSchedulerMissoes();
+
+  try {
+    const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+    const comandosJSON = client.commands.map(cmd => cmd.data.toJSON());
+
+    const guild = client.guilds.cache.get(process.env.GUILD_ID);
+
+    if (guild) {
+      console.log("🔧 MODO DEV ATIVO — A atualizar comandos GUILD...");
+      await rest.put(
+        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+        { body: comandosJSON }
+      );
+      console.log("✔ Comandos DEV atualizados!");
+    } else {
+      console.log("🌍 MODO PÚBLICO — A atualizar comandos GLOBAIS...");
+      await rest.put(
+        Routes.applicationCommands(process.env.CLIENT_ID),
+        { body: comandosJSON }
+      );
+      console.log("✔ Comandos globais enviados!");
+    }
+
+  } catch (err) {
+    console.error("❌ Erro ao registar comandos:", err);
+  }
+});
+
+// ===============================
+// 🔵 HANDLER DE INTERAÇÕES
+// ===============================
+client.on(Events.InteractionCreate, async interaction => {
+
+  // AUTOCOMPLETE — AGORA CORRETO
+  if (interaction.isAutocomplete()) {
+    const command = client.commands.get(interaction.commandName);
+
+    if (command && typeof command.autocomplete === "function") {
+      try {
+        return await command.autocomplete(interaction);
+      } catch (err) {
+        console.error("Erro no autocomplete do comando:", err);
+      }
+    }
+
+    return;
+  }
+
+  // SELECT MENU 1
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === "editar_escolher_item") {
+      return editar.handleSelect(interaction);
+    }
+
+    if (interaction.customId.startsWith("editar_opcao_")) {
+      return editar.handleSelectCampo(interaction);
+    }
+  }
+
+  // MODAL
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith("editar_modal_")) {
+      return editar.handleModal(interaction);
+    }
+  }
+
+  // SLASH COMMANDS
+  if (interaction.isChatInputCommand()) {
+
+    if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
+      return interaction.reply({
+        content: "❌ Este comando só pode ser usado nos canais permitidos.",
+        ephemeral: true
+      });
+    }
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+      await command.execute(interaction);
+
+      if (interaction.commandName === "setcanal") {
+        config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
+        criarBackup();
+        console.log("✔ Lista de canais atualizada:", config.allowedChannels);
+      }
+
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "❌ Ocorreu um erro ao executar este comando.",
+        ephemeral: true
+      });
+    }
+  }
+});
+
+// ===============================
+// 🔵 HANDLER DE MENSAGENS (IMAGEM DO /EDITAR)
+// ===============================
+client.on(Events.MessageCreate, async message => {
+  if (message.author.bot) return;
+
+  editar.handleImage(message);
+});
+
+client.login(process.env.DISCORD_TOKEN);
