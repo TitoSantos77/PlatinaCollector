@@ -130,7 +130,7 @@
 
   {
     "id": "secreta_primeira",
-    "nome": "???",
+    "nome": "Primeira Badge Secreta",
     "emoji": "❓",
     "raridade": "Mítica",
     "descricao": "Uma badge secreta misteriosa.",
@@ -139,7 +139,7 @@
   },
   {
     "id": "secreta_mestre",
-    "nome": "???",
+    "nome": "Mestre Oculto",
     "emoji": "🧿",
     "raridade": "Exótica",
     "descricao": "Apenas os verdadeiros mestres a desbloqueiam.",
