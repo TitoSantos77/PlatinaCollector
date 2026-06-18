@@ -38,7 +38,6 @@ export async function execute(interaction) {
 
     const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
-    // Filtrar badges inválidas e evitar undefined
     const desbloqueadasInfo = user.badgesDesbloqueadas
       .map(id => badgesDB.find(b => b.id === id))
       .filter(b => b && b.nome && b.emoji && b.raridade);
@@ -62,4 +61,54 @@ export async function execute(interaction) {
   const conquistas = stats.conquistas ?? 0;
 
   const ultimaPlatinaTexto = stats.ultimaPlatina?.jogo
-    ? `${stats.ultimaPlatina.jogo}${stats.ultima
+    ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
+    : "Nenhuma ainda";
+
+  const ultimaConquistaTexto = stats.ultimaConquista?.jogo
+    ? `${stats.ultimaConquista.jogo}${stats.ultimaConquista.plataforma ? ` (${stats.ultimaConquista.plataforma})` : ""}`
+    : "Nenhuma ainda";
+
+  // ============================
+  // 🔵 XP E NÍVEL
+  // ============================
+  const nivel = user.nivel;
+  const xpAtual = user.xp;
+  const xpProximo = xpNecessario(nivel);
+
+  const percent = Math.min(100, Math.floor((xpAtual / xpProximo) * 100));
+
+  const totalBlocos = 20;
+  const blocosCheios = Math.round((percent / 100) * totalBlocos);
+  const blocosVazios = totalBlocos - blocosCheios;
+
+  const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
+
+  // ============================
+  // 🔵 EMBED FINAL
+  // ============================
+  const embed = new EmbedBuilder()
+    .setColor("#0055FF")
+    .setTitle("🎮 Perfil do Jogador")
+    .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+    .addFields(
+      { name: "👤 Jogador", value: interaction.user.username, inline: true },
+      { name: "🏅 Nível", value: `${nivel}`, inline: true },
+      { name: "🔰 Badge Principal", value: badgePrincipal, inline: true },
+
+      { name: "✨ XP Total", value: `${user.totalXP} XP`, inline: true },
+      { name: "✨ XP Atual", value: `${xpAtual} XP`, inline: true },
+      { name: "🎯 XP Necessário", value: `${xpProximo} XP`, inline: true },
+
+      { name: "📊 Progresso", value: `${percent}%`, inline: true },
+      { name: "🔵 Barra de XP", value: `\`${barra}\``, inline: false },
+
+      { name: "🏆 Platinas", value: `${platinas}`, inline: true },
+      { name: "🥇 Conquistas", value: `${conquistas}`, inline: true },
+
+      { name: "Última Platina", value: ultimaPlatinaTexto, inline: false },
+      { name: "Última Conquista", value: ultimaConquistaTexto, inline: false }
+    )
+    .setFooter({ text: "Continua a evoluir, lenda!" });
+
+  await interaction.reply({ embeds: [embed] });
+}
