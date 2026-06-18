@@ -56,7 +56,39 @@ import * as editar from "./commands/editar.js";
 
   client.commands = new Collection();
 
-  // Carregar comandos
+  // ===============================
+  // 🔵 SISTEMA DE RECONEXÃO AUTOMÁTICA (ANTI-ZOMBIE)
+  // ===============================
+
+  client.on("shardDisconnect", (event, shardId) => {
+    console.warn(`⚠️ Shard ${shardId} desconectado:`, event.code);
+  });
+
+  client.on("shardReconnecting", shardId => {
+    console.log(`🔄 Shard ${shardId} a tentar reconectar...`);
+  });
+
+  client.on("shardResume", shardId => {
+    console.log(`🟢 Shard ${shardId} reconectado com sucesso!`);
+  });
+
+  client.on("shardError", (error, shardId) => {
+    console.error(`❌ Erro no shard ${shardId}:`, error);
+  });
+
+  // Watchdog para garantir que o bot não fica zombie
+  setInterval(() => {
+    if (!client.ws || !client.ws.status || client.ws.status !== 0) {
+      console.warn("⚠️ Ligação ao Discord instável. A tentar reconectar...");
+      client.destroy();
+      login();
+    }
+  }, 30_000);
+
+  // ===============================
+  // 🔵 CARREGAR COMANDOS
+  // ===============================
+
   const commandsPath = path.join(process.cwd(), "commands");
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
@@ -70,6 +102,10 @@ import * as editar from "./commands/editar.js";
       console.log(`⚠️ O comando ${file} está mal formatado.`);
     }
   }
+
+  // ===============================
+  // 🔵 READY
+  // ===============================
 
   client.once("ready", async () => {
     console.log(`Bot online como ${client.user.tag}`);
@@ -104,7 +140,10 @@ import * as editar from "./commands/editar.js";
     }
   });
 
-  // HANDLERS
+  // ===============================
+  // 🔵 HANDLERS
+  // ===============================
+
   client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
@@ -170,6 +209,20 @@ import * as editar from "./commands/editar.js";
     editar.handleImage(message);
   });
 
-  client.login(process.env.DISCORD_TOKEN);
+  // ===============================
+  // 🔵 LOGIN COM RETRY AUTOMÁTICO
+  // ===============================
+
+  const login = async () => {
+    try {
+      await client.login(process.env.DISCORD_TOKEN);
+      console.log("🔐 Login efetuado com sucesso!");
+    } catch (err) {
+      console.error("❌ Erro no login, a tentar novamente em 5s:", err);
+      setTimeout(login, 5000);
+    }
+  };
+
+  login();
 
 })();
