@@ -14,7 +14,7 @@ export async function execute(interaction) {
 
   if (!user) {
     return interaction.reply({
-      content: "❌ Ainda não tens XP registado. Adiciona uma platina ou conquista primeiro!",
+      content: "❌ Ainda não tens XP registado. Adiciona uma platina ou proeza primeiro!",
       ephemeral: true
     });
   }
@@ -35,7 +35,7 @@ export async function execute(interaction) {
     "▰".repeat(blocosCheios) +
     "▱".repeat(blocosVazios);
 
-  // Embed (mantive exatamente o teu estilo)
+  // Embed
   const embed = new EmbedBuilder()
     .setColor("#4A90E2")
     .setTitle("📈 Progresso de Nível")
