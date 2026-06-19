@@ -8,7 +8,7 @@ const platinaSchema = new mongoose.Schema({
   xpGanhos: Number
 });
 
-const conquistaSchema = new mongoose.Schema({
+const proezaSchema = new mongoose.Schema({
   jogo: String,
   plataforma: String,
   imagem: String,
@@ -18,8 +18,9 @@ const conquistaSchema = new mongoose.Schema({
 
 const userGamesSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
+
   platinas: { type: [platinaSchema], default: [] },
-  conquistas: { type: [conquistaSchema], default: [] }
+  proezas: { type: [proezaSchema], default: [] }
 });
 
 export default mongoose.model("UserGames", userGamesSchema);
