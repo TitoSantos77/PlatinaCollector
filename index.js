@@ -28,14 +28,9 @@ async function ligarMongo() {
 
     console.log("📦 MongoDB conectado!");
 
-    // 🔥 CORRER MIGRAÇÃO AQUI
-    try {
-      const { default: migrar } = await import("./migrar.js");
-      await migrar();
-      console.log("🔥 Migração concluída!");
-    } catch (err) {
-      console.error("❌ Erro na migração:", err);
-    }
+    // ❌❌❌ MIGRAÇÃO REMOVIDA ❌❌❌
+    // NUNCA MAIS CORRE AQUI
+    // ACABOU A BRINCADEIRA
 
   } catch (err) {
     console.error("❌ Erro ao ligar ao MongoDB:", err.message);
