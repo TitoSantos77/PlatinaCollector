@@ -16,18 +16,25 @@ app.listen(process.env.PORT || 10000, () =>
 // 🔵 MONGODB
 import mongoose from "mongoose";
 
-// 🔵 LIGAR AO MONGODB
+// 🔵 LIGAR AO MONGODB + MIGRAÇÃO
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => {
+}).then(async () => {
   console.log("📦 MongoDB conectado!");
+
+  // 🔥 CORRER MIGRAÇÃO UMA VEZ
+  try {
+    const { default: migrar } = await import("./migrar.js");
+    await migrar();
+    console.log("🔥 Migração concluída!");
+  } catch (err) {
+    console.error("❌ Erro na migração:", err);
+  }
+
 }).catch(err => {
   console.error("❌ Erro ao ligar ao MongoDB:", err);
 });
-
-// 🔵 RODAR MIGRAÇÃO AUTOMÁTICA (APENAS 1 VEZ)
-import "./migrar.js";
 
 // 🔵 IMPORTAR BACKUP
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
