@@ -26,6 +26,9 @@ mongoose.connect(process.env.MONGO_URL, {
   console.error("❌ Erro ao ligar ao MongoDB:", err);
 });
 
+// 🔵 RODAR MIGRAÇÃO AUTOMÁTICA (APENAS 1 VEZ)
+import "./migrar.js";
+
 // 🔵 IMPORTAR BACKUP
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
 
