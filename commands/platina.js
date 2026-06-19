@@ -151,13 +151,13 @@ export async function execute(interaction) {
   // Atualizar missões
   await atualizarProgresso(interaction.user.id, "platina", true);
 
-  // Atualizar stats
+  // Atualizar stats globais
   await adicionarJogo(jogo);
   await adicionarPlataforma(plataforma);
   await atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
 
-  // Guardar no histórico real
-  await UserGames.findOneAndUpdate(
+  // Guardar no histórico real + obter total
+  const updated = await UserGames.findOneAndUpdate(
     { userId: interaction.user.id },
     {
       $push: {
@@ -169,8 +169,10 @@ export async function execute(interaction) {
         }
       }
     },
-    { upsert: true }
+    { upsert: true, new: true }
   );
+
+  const totalPlatinas = updated.platinas.length;
 
   // Backup
   criarBackup();
@@ -178,7 +180,7 @@ export async function execute(interaction) {
   // Badges
   await verificarBadges(interaction.user.id);
 
-  // Embed final (CORRIGIDO)
+  // Embed final (MELHORADO)
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
     .setTitle("🏆 Platina adicionada!")
@@ -192,6 +194,11 @@ export async function execute(interaction) {
         name: "📈 Nível Atual",
         value: `Nível ${user.nivel} — ${user.xp}/${xpNecessario(user.nivel)} XP`,
         inline: true
+      },
+      {
+        name: "🏅 Total de Platinas",
+        value: `Esta foi a tua platina nº **${totalPlatinas}**!`,
+        inline: false
       }
     )
     .setFooter({ text: "Boa! Continua a colecionar platinas!" });
