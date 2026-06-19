@@ -61,7 +61,7 @@ function escolherRaridade(nivel) {
 }
 
 // ===============================
-// CALCULAR RECOMPENSA XP (CORRIGIDO)
+// CALCULAR RECOMPENSA XP
 // ===============================
 function calcularRecompensa(obj, raridade) {
   return BONUS_RARIDADE[raridade] || 20;
@@ -80,7 +80,7 @@ async function garantirUser(userId) {
 
   doc.atual.progresso = {
     platinas: Number(doc.atual.progresso?.platinas) || 0,
-    conquistas: Number(doc.atual.progresso?.conquistas) || 0,
+    proezas: Number(doc.atual.progresso?.proezas) || 0,
     xp: Number(doc.atual.progresso?.xp) || 0
   };
 
@@ -110,7 +110,7 @@ export async function gerarMissao(userId) {
     id: missao.id,
     descricao: missao.descricao,
     objetivo: missao.objetivo,
-    progresso: { platinas: 0, conquistas: 0, xp: 0 },
+    progresso: { platinas: 0, proezas: 0, xp: 0 },
     recompensa: recompensaXP,
     requerJogo: missao.requerJogo || false,
     concluida: false,
@@ -133,10 +133,10 @@ export async function atualizarProgresso(userId, tipo, temJogo) {
   if (doc.atual.requerJogo && !temJogo) return;
 
   doc.atual.progresso.platinas = Number(doc.atual.progresso.platinas) || 0;
-  doc.atual.progresso.conquistas = Number(doc.atual.progresso.conquistas) || 0;
+  doc.atual.progresso.proezas = Number(doc.atual.progresso.proezas) || 0;
 
   if (tipo === "platina") doc.atual.progresso.platinas += 1;
-  if (tipo === "conquista") doc.atual.progresso.conquistas += 1;
+  if (tipo === "proeza") doc.atual.progresso.proezas += 1;
 
   await doc.save();
   await verificarConclusao(userId);
@@ -171,7 +171,7 @@ export async function verificarConclusao(userId) {
 
   const concluida =
     prog.platinas >= obj.platinas &&
-    prog.conquistas >= obj.conquistas &&
+    prog.proezas >= obj.proezas &&
     prog.xp >= obj.xp;
 
   if (!concluida) return;
