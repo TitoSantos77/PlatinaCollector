@@ -9,7 +9,7 @@ import UserGames from "../models/UserGames.js";
 
 export const data = new SlashCommandBuilder()
   .setName("listar")
-  .setDescription("Lista platinas ou conquistas de um utilizador")
+  .setDescription("Lista platinas ou proezas de um utilizador")
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -17,7 +17,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Conquista", value: "conquista" }
+        { name: "Proeza", value: "proeza" }
       )
   )
   .addUserOption(opt =>
@@ -40,7 +40,7 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
@@ -61,9 +61,9 @@ export async function execute(interaction) {
 
     const texto = slice
       .map((item, i) => {
-        const idReal = inicio + i; // <-- ID REAL (0-based)
-        const numero = idReal + 1; // <-- ID VISUAL (1-based)
-        return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data}`;
+        const idReal = inicio + i;
+        const numero = idReal + 1;
+        return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`;
       })
       .join("\n");
 
@@ -72,7 +72,7 @@ export async function execute(interaction) {
       .setTitle(
         tipo === "platina"
           ? `📘 Platinas de ${user.username}`
-          : `📙 Conquistas de ${user.username}`
+          : `📙 Proezas de ${user.username}`
       )
       .setDescription(texto)
       .setFooter({ text: `Página ${pagina + 1} de ${totalPaginas}` });
