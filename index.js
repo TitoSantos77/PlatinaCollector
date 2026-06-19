@@ -28,9 +28,14 @@ async function ligarMongo() {
 
     console.log("📦 MongoDB conectado!");
 
-    // ❌❌❌ MIGRAÇÃO REMOVIDA ❌❌❌
-    // NUNCA MAIS CORRE AQUI
-    // ACABOU A BRINCADEIRA
+    // 🔥 CORRER REBUILD UMA VEZ
+    try {
+      const { default: rebuild } = await import("./rebuild.js");
+      await rebuild();
+      console.log("🔥 Rebuild concluído!");
+    } catch (err) {
+      console.error("❌ Erro no rebuild:", err);
+    }
 
   } catch (err) {
     console.error("❌ Erro ao ligar ao MongoDB:", err.message);
