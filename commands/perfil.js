@@ -22,7 +22,7 @@ export async function execute(interaction) {
       totalXP: 0,
       nivel: 1,
       platinas: 0,
-      conquistas: 0,
+      proezas: 0,
       badgesDesbloqueadas: []
     });
   }
@@ -30,7 +30,7 @@ export async function execute(interaction) {
   const badgesDB = readJSON("data/badges.json") || [];
 
   // ============================
-  // 🔵 BADGE PRINCIPAL (CORRIGIDO)
+  // 🔵 BADGE PRINCIPAL
   // ============================
   let badgePrincipal = "Nenhuma";
 
@@ -58,14 +58,14 @@ export async function execute(interaction) {
   const stats = await getUserStats(userId);
 
   const platinas = stats.platinas ?? 0;
-  const conquistas = stats.conquistas ?? 0;
+  const proezas = stats.proezas ?? 0;
 
   const ultimaPlatinaTexto = stats.ultimaPlatina?.jogo
     ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
     : "Nenhuma ainda";
 
-  const ultimaConquistaTexto = stats.ultimaConquista?.jogo
-    ? `${stats.ultimaConquista.jogo}${stats.ultimaConquista.plataforma ? ` (${stats.ultimaConquista.plataforma})` : ""}`
+  const ultimaProezaTexto = stats.ultimaProeza?.jogo
+    ? `${stats.ultimaProeza.jogo}${stats.ultimaProeza.plataforma ? ` (${stats.ultimaProeza.plataforma})` : ""}`
     : "Nenhuma ainda";
 
   // ============================
@@ -103,10 +103,10 @@ export async function execute(interaction) {
       { name: "🔵 Barra de XP", value: `\`${barra}\``, inline: false },
 
       { name: "🏆 Platinas", value: `${platinas}`, inline: true },
-      { name: "🥇 Conquistas", value: `${conquistas}`, inline: true },
+      { name: "🥇 Proezas", value: `${proezas}`, inline: true },
 
       { name: "Última Platina", value: ultimaPlatinaTexto, inline: false },
-      { name: "Última Conquista", value: ultimaConquistaTexto, inline: false }
+      { name: "Última Proeza", value: ultimaProezaTexto, inline: false }
     )
     .setFooter({ text: "Continua a evoluir, lenda!" });
 
