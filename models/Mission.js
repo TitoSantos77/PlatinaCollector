@@ -1,19 +1,28 @@
-import Mission from "../models/Mission.js";
-import { XP_FACIL, XP_MEDIA, XP_DIFICIL, adicionarXP } from "./xp.js";
-import { criarBackup } from "./backup.js";
+import UserMissions from "../models/UserMissions.js";
+import UserStats from "../models/UserStats.js";
+import { adicionarXP } from "./xp.js";
 import { verificarBadges } from "./badges.js";
-import { MISSOES } from "../data/missoesLista.js"; // mantém a tua lista original
+import { MISSOES } from "../data/missoesLista.js";
 
-// 🔵 GARANTIR QUE O USER TEM DOCUMENTO
+// 🔵 GARANTIR DOCUMENTO
 async function garantirUser(userId) {
-  let doc = await Mission.findOne({ userId });
+  let doc = await UserMissions.findOne({ userId });
 
   if (!doc) {
-    doc = await Mission.create({
+    doc = await UserMissions.create({
       userId,
       atual: null,
       historico: []
     });
+  }
+
+  // garantir estrutura moderna
+  if (doc.atual) {
+    doc.atual.progresso = {
+      platinas: Number(doc.atual.progresso?.platinas) || 0,
+      proezas: Number(doc.atual.progresso?.proezas) || 0,
+      xp: Number(doc.atual.progresso?.xp) || 0
+    };
   }
 
   return doc;
@@ -29,20 +38,20 @@ export async function gerarMissao(userId) {
     id: missao.id,
     descricao: missao.descricao,
     objetivo: missao.objetivo,
-    progresso: { platinas: 0, conquistas: 0, xp: 0 },
+    progresso: { platinas: 0, proezas: 0, xp: 0 },
     recompensa: missao.recompensa,
     requerJogo: missao.requerJogo || false,
     concluida: false,
+    raridade: missao.raridade,
+    categoria: missao.categoria,
     dataInicio: new Date().toISOString().split("T")[0]
   };
 
   await doc.save();
-  criarBackup();
-
   return doc.atual;
 }
 
-// 🔵 ATUALIZAR PROGRESSO (platina/conquista)
+// 🔵 ATUALIZAR PROGRESSO
 export async function atualizarProgresso(userId, tipo, temJogo) {
   const doc = await garantirUser(userId);
   const missao = doc.atual;
@@ -51,13 +60,11 @@ export async function atualizarProgresso(userId, tipo, temJogo) {
   if (missao.requerJogo && !temJogo) return;
 
   if (tipo === "platina") missao.progresso.platinas++;
-  if (tipo === "conquista") missao.progresso.conquistas++;
+  if (tipo === "proeza") missao.progresso.proezas++;
 
   await doc.save();
-  criarBackup();
-
   await verificarConclusao(userId);
-  verificarBadges(userId);
+  await verificarBadges(userId);
 }
 
 // 🔵 ADICIONAR XP SEMANAL
@@ -70,10 +77,8 @@ export async function adicionarXPsemana(userId, quantidade) {
   missao.progresso.xp += quantidade;
 
   await doc.save();
-  criarBackup();
-
   await verificarConclusao(userId);
-  verificarBadges(userId);
+  await verificarBadges(userId);
 }
 
 // 🔵 VERIFICAR CONCLUSÃO
@@ -87,7 +92,7 @@ export async function verificarConclusao(userId) {
 
   const concluida =
     prog.platinas >= obj.platinas &&
-    prog.conquistas >= obj.conquistas &&
+    prog.proezas >= obj.proezas &&
     prog.xp >= obj.xp;
 
   if (!concluida) return;
@@ -105,9 +110,7 @@ export async function verificarConclusao(userId) {
   doc.atual = null;
 
   await doc.save();
-  criarBackup();
-
-  verificarBadges(userId);
+  await verificarBadges(userId);
 
   return true;
 }
