@@ -16,25 +16,33 @@ app.listen(process.env.PORT || 10000, () =>
 // 🔵 MONGODB
 import mongoose from "mongoose";
 
-// 🔵 LIGAR AO MONGODB + MIGRAÇÃO
-mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(async () => {
-  console.log("📦 MongoDB conectado!");
-
-  // 🔥 CORRER MIGRAÇÃO UMA VEZ
+// ===============================
+// 🔵 LIGAR AO MONGO
+// ===============================
+async function ligarMongo() {
   try {
-    const { default: migrar } = await import("./migrar.js");
-    await migrar();
-    console.log("🔥 Migração concluída!");
-  } catch (err) {
-    console.error("❌ Erro na migração:", err);
-  }
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
 
-}).catch(err => {
-  console.error("❌ Erro ao ligar ao MongoDB:", err);
-});
+    console.log("📦 MongoDB conectado!");
+
+    // 🔥 CORRER MIGRAÇÃO AQUI
+    try {
+      const { default: migrar } = await import("./migrar.js");
+      await migrar();
+      console.log("🔥 Migração concluída!");
+    } catch (err) {
+      console.error("❌ Erro na migração:", err);
+    }
+
+  } catch (err) {
+    console.error("❌ Erro ao ligar ao MongoDB:", err.message);
+  }
+}
+
+ligarMongo();
 
 // 🔵 IMPORTAR BACKUP
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
@@ -50,10 +58,8 @@ import * as editar from "./commands/editar.js";
 // ===============================
 (async () => {
 
-  // 🔵 RESTAURAR BACKUP ANTES DE LER CONFIG
   restaurarBackup();
 
-  // IMPORTAR CONFIG
   let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
 
   const client = new Client({
@@ -65,30 +71,6 @@ import * as editar from "./commands/editar.js";
   });
 
   client.commands = new Collection();
-
-  // ===============================
-  // 🔵 EVENTOS DE SHARD (NORMAL)
-  // ===============================
-
-  client.on("shardDisconnect", (event, shardId) => {
-    console.warn(`⚠️ Shard ${shardId} desconectado:`, event.code);
-  });
-
-  client.on("shardReconnecting", shardId => {
-    console.log(`🔄 Shard ${shardId} a tentar reconectar...`);
-  });
-
-  client.on("shardResume", shardId => {
-    console.log(`🟢 Shard ${shardId} reconectado com sucesso!`);
-  });
-
-  client.on("shardError", (error, shardId) => {
-    console.error(`❌ Erro no shard ${shardId}:`, error);
-  });
-
-  // ===============================
-  // 🔵 CARREGAR COMANDOS
-  // ===============================
 
   const commandsPath = path.join(process.cwd(), "commands");
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
@@ -103,10 +85,6 @@ import * as editar from "./commands/editar.js";
       console.log(`⚠️ O comando ${file} está mal formatado.`);
     }
   }
-
-  // ===============================
-  // 🔵 READY
-  // ===============================
 
   client.once("ready", async () => {
     console.log(`Bot online como ${client.user.tag}`);
@@ -140,10 +118,6 @@ import * as editar from "./commands/editar.js";
       console.error("❌ Erro ao registar comandos:", err);
     }
   });
-
-  // ===============================
-  // 🔵 HANDLERS
-  // ===============================
 
   client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isAutocomplete()) {
@@ -209,10 +183,6 @@ import * as editar from "./commands/editar.js";
     if (message.author.bot) return;
     editar.handleImage(message);
   });
-
-  // ===============================
-  // 🔵 LOGIN SEGURO (SEM SPAM)
-  // ===============================
 
   const login = async (tentativa = 0) => {
     try {
