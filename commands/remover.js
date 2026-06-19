@@ -11,10 +11,9 @@ import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
-  .setDescription("Remove platinas ou conquistas de um utilizador (ADMIN)")
+  .setDescription("Remove platinas ou proezas de um utilizador (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
-  // 1️⃣ tipo primeiro
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -22,11 +21,10 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Conquista", value: "conquista" }
+        { name: "Proeza", value: "proeza" }
       )
   )
 
-  // 2️⃣ user depois
   .addUserOption(opt =>
     opt
       .setName("user")
@@ -34,14 +32,12 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   )
 
-  // 3️⃣ tudo ANTES do autocomplete
   .addBooleanOption(opt =>
     opt
       .setName("tudo")
       .setDescription("Remover TODAS as entradas do utilizador")
   )
 
-  // 4️⃣ entrada por último (para o Discord não foder o autocomplete)
   .addStringOption(opt =>
     opt
       .setName("entrada")
@@ -50,23 +46,20 @@ export const data = new SlashCommandBuilder()
   );
 
 // ===============================
-// AUTOCOMPLETE — FORMATO /LISTAR
+// AUTOCOMPLETE
 // ===============================
 export async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
-
   if (focused.name !== "entrada") return;
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-
   if (!tipo || !user) return interaction.respond([]);
 
   const games = await UserGames.findOne({ userId: user.id });
   if (!games) return interaction.respond([]);
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
-
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
   if (!lista || lista.length === 0) return interaction.respond([]);
 
   const opcoes = lista.map((item, index) => ({
@@ -109,7 +102,7 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
@@ -166,7 +159,7 @@ export async function execute(interaction) {
   if (tipo === "platina") {
     stats.ultimaPlatina = lista[lista.length - 1] || null;
   } else {
-    stats.ultimaConquista = lista[lista.length - 1] || null;
+    stats.ultimaProeza = lista[lista.length - 1] || null;
   }
 
   await stats.save();
@@ -181,7 +174,7 @@ export async function execute(interaction) {
     .setTitle(
       tipo === "platina"
         ? "🗑 Platinas removidas"
-        : "🗑 Conquistas removidas"
+        : "🗑 Proezas removidas"
     )
     .setDescription(`Foram removidas **${removidos.length}** entradas do utilizador **${user.username}**.`)
     .addFields(
