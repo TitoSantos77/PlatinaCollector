@@ -6,21 +6,23 @@ const missionSchema = new mongoose.Schema({
   atual: {
     id: String,
     descricao: String,
+
     objetivo: {
-      platinas: Number,
-      conquistas: Number,
-      xp: Number
-    },
-    progresso: {
       platinas: { type: Number, default: 0 },
-      conquistas: { type: Number, default: 0 },
+      proezas: { type: Number, default: 0 },
       xp: { type: Number, default: 0 }
     },
+
+    progresso: {
+      platinas: { type: Number, default: 0 },
+      proezas: { type: Number, default: 0 },
+      xp: { type: Number, default: 0 }
+    },
+
     recompensa: Number,
     requerJogo: { type: Boolean, default: false },
     concluida: { type: Boolean, default: false },
 
-    // ADICIONADO — porque o gerador premium usa isto
     raridade: String,
     categoria: String,
 
@@ -28,7 +30,6 @@ const missionSchema = new mongoose.Schema({
     dataFim: String
   },
 
-  // ADICIONADO — o que faltava para o /missoes funcionar
   ultimaConcluida: { type: Object, default: null },
 
   historico: { type: Array, default: [] }
