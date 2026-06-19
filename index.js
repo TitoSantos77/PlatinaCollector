@@ -57,7 +57,7 @@ import * as editar from "./commands/editar.js";
   client.commands = new Collection();
 
   // ===============================
-  // 🔵 SISTEMA DE RECONEXÃO AUTOMÁTICA (ANTI-ZOMBIE)
+  // 🔵 EVENTOS DE SHARD (NORMAL)
   // ===============================
 
   client.on("shardDisconnect", (event, shardId) => {
@@ -75,15 +75,6 @@ import * as editar from "./commands/editar.js";
   client.on("shardError", (error, shardId) => {
     console.error(`❌ Erro no shard ${shardId}:`, error);
   });
-
-  // Watchdog para garantir que o bot não fica zombie
-  setInterval(() => {
-    if (!client.ws || !client.ws.status || client.ws.status !== 0) {
-      console.warn("⚠️ Ligação ao Discord instável. A tentar reconectar...");
-      client.destroy();
-      login();
-    }
-  }, 30_000);
 
   // ===============================
   // 🔵 CARREGAR COMANDOS
@@ -210,16 +201,24 @@ import * as editar from "./commands/editar.js";
   });
 
   // ===============================
-  // 🔵 LOGIN COM RETRY AUTOMÁTICO
+  // 🔵 LOGIN SEGURO (SEM SPAM)
   // ===============================
 
-  const login = async () => {
+  const login = async (tentativa = 0) => {
     try {
       await client.login(process.env.DISCORD_TOKEN);
       console.log("🔐 Login efetuado com sucesso!");
     } catch (err) {
-      console.error("❌ Erro no login, a tentar novamente em 5s:", err);
-      setTimeout(login, 5000);
+      console.error("❌ Erro no login:", err);
+
+      if (tentativa >= 3) {
+        console.error("❌ Falha repetida no login. A parar para evitar spam.");
+        return;
+      }
+
+      const espera = 10_000 * (tentativa + 1);
+      console.log(`⏳ A tentar novamente em ${espera / 1000}s... (tentativa ${tentativa + 1}/3)`);
+      setTimeout(() => login(tentativa + 1), espera);
     }
   };
 
