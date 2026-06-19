@@ -2,7 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { XP_CONQUISTA as XP_PROEZA, adicionarXP, xpNecessario } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
-import { atualizarStatsConquista as atualizarStatsProeza } from "../utils/userStats.js";
+import { atualizarStatsProeza } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
 import UserGames from "../models/UserGames.js";
@@ -147,7 +147,7 @@ export async function execute(interaction) {
   // Atualizar XP
   const user = await adicionarXP(interaction.user.id, xpGanho);
 
-  // Atualizar missões (corrigido)
+  // Atualizar missões
   await atualizarProgresso(interaction.user.id, "proeza", true);
 
   // Atualizar stats globais
@@ -179,7 +179,7 @@ export async function execute(interaction) {
   // Verificar badges
   await verificarBadges(interaction.user.id);
 
-  // Embed final (melhorado)
+  // Embed final
   const embed = new EmbedBuilder()
     .setColor("#FFD000")
     .setTitle("🏅 Proeza adicionada!")
@@ -195,7 +195,7 @@ export async function execute(interaction) {
         inline: true
       },
       {
-        name: "🏆 Total de Proezas",
+        name: "🥇 Total de Proezas",
         value: `Esta foi a tua proeza nº **${totalProezas}**!`,
         inline: false
       }
