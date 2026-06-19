@@ -4,24 +4,12 @@ import { xpNecessario } from "../utils/xp.js";
 
 export const data = new SlashCommandBuilder()
   .setName("rank")
-  .setDescription("Mostra a tua posição no ranking")
-  .addStringOption(opt =>
-    opt
-      .setName("tipo")
-      .setDescription("Tipo de ranking")
-      .setRequired(true)
-      .addChoices(
-        { name: "Geral", value: "geral" },
-        { name: "Semanal", value: "semanal" },
-        { name: "Mensal", value: "mensal" }
-      )
-  );
+  .setDescription("Mostra a tua posição no ranking XP geral");
 
 export async function execute(interaction) {
-  const tipo = interaction.options.getString("tipo");
   const userId = interaction.user.id;
 
-  // Buscar users do Mongo (AGORA CORRETO)
+  // Buscar users do Mongo
   const users = await UserStats.find().lean();
 
   // Converter users em array
@@ -44,7 +32,7 @@ export async function execute(interaction) {
   const xpAtual = userData?.xpAtual || 0;
   const xpProximo = xpNecessario(nivelUser);
 
-  // Barra de XP (20 blocos)
+  // Barra de XP
   const percent = Math.min(100, Math.floor((xpAtual / xpProximo) * 100));
   const totalBlocos = 20;
   const blocosCheios = Math.round((percent / 100) * totalBlocos);
@@ -62,10 +50,9 @@ export async function execute(interaction) {
     return `**#${pos}** — <@${u.id}> — ${u.xp} XP ${marcador}`;
   }).join("\n");
 
-  // Embed original (não mexi)
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
-    .setTitle("📊 O teu ranking")
+    .setTitle("📊 A tua posição no ranking XP")
     .setDescription(
       `**Posição:** #${posicao}/${total}\n` +
       `**Nível:** ${nivelUser}\n` +
