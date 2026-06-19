@@ -8,10 +8,17 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userId = interaction.user.id;
 
-  // Buscar todos os users do Mongo (AGORA CORRETO)
+  // Buscar todos os users do Mongo
   const users = await UserStats.find().lean();
 
-  // Converter em lista ordenada
+  if (!users || users.length === 0) {
+    return interaction.reply({
+      content: "❌ Ainda não há jogadores suficientes para criar um ranking.",
+      ephemeral: true
+    });
+  }
+
+  // Ordenar por XP total
   const lista = users
     .map(u => ({
       id: u.userId,
@@ -29,16 +36,18 @@ export async function execute(interaction) {
   const linhas = top10
     .map((u, i) => {
       const medalha = medalhas[i] || `#${i + 1}`;
-      return `${medalha} — <@${u.id}> — ${u.xp} XP (Nível ${u.nivel})`;
+      const destaque = u.id === userId ? " **(TU)**" : "";
+      const xpFormatado = u.xp.toLocaleString("pt-PT");
+      return `${medalha} — <@${u.id}> — ${xpFormatado} XP (Nível ${u.nivel})${destaque}`;
     })
     .join("\n");
 
-  // Embed (mantive o teu estilo)
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
-    .setTitle("🏆 Top 10 Ranking Geral")
+    .setTitle("🏆 Top 10 — Ranking Geral de XP")
     .setDescription(linhas)
-    .setFooter({ text: "Ranking baseado no XP total acumulado" });
+    .setFooter({ text: "Ranking baseado no XP total acumulado" })
+    .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
 }
