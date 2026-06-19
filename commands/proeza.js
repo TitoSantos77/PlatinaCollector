@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { XP_CONQUISTA, adicionarXP, xpNecessario } from "../utils/xp.js";
+import { XP_CONQUISTA as XP_PROEZA, adicionarXP, xpNecessario } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
-import { atualizarStatsConquista } from "../utils/userStats.js";
+import { atualizarStatsConquista as atualizarStatsProeza } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
 import UserGames from "../models/UserGames.js";
@@ -76,12 +76,12 @@ const plataformasBase = [
 ];
 
 export const data = new SlashCommandBuilder()
-  .setName("conquista")
-  .setDescription("Gerir conquistas")
+  .setName("proeza")
+  .setDescription("Gerir proezas")
   .addSubcommand(sub =>
     sub
       .setName("add")
-      .setDescription("Adicionar uma conquista")
+      .setDescription("Adicionar uma proeza")
       .addStringOption(opt =>
         opt
           .setName("jogo")
@@ -99,7 +99,7 @@ export const data = new SlashCommandBuilder()
       .addAttachmentOption(opt =>
         opt
           .setName("imagem")
-          .setDescription("Prova da conquista (screenshot)")
+          .setDescription("Prova da proeza (screenshot)")
           .setRequired(true)
       )
   );
@@ -142,25 +142,25 @@ export async function execute(interaction) {
   }
 
   // XP ganho
-  const xpGanho = XP_CONQUISTA;
+  const xpGanho = XP_PROEZA;
 
   // Atualizar XP
   const user = await adicionarXP(interaction.user.id, xpGanho);
 
-  // Atualizar missões
-  await atualizarProgresso(interaction.user.id, "conquista", true);
+  // Atualizar missões (corrigido)
+  await atualizarProgresso(interaction.user.id, "proeza", true);
 
-  // Atualizar stats
+  // Atualizar stats globais
   await adicionarJogo(jogo);
   await adicionarPlataforma(plataforma);
-  await atualizarStatsConquista(interaction.user.id, jogo, plataforma, imagem.url);
+  await atualizarStatsProeza(interaction.user.id, jogo, plataforma, imagem.url);
 
   // Guardar no histórico real
-  await UserGames.findOneAndUpdate(
+  const updated = await UserGames.findOneAndUpdate(
     { userId: interaction.user.id },
     {
       $push: {
-        conquistas: {
+        proezas: {
           jogo,
           plataforma,
           imagem: imagem.url,
@@ -168,8 +168,10 @@ export async function execute(interaction) {
         }
       }
     },
-    { upsert: true }
+    { upsert: true, new: true }
   );
+
+  const totalProezas = updated.proezas.length;
 
   // Criar backup
   criarBackup();
@@ -177,10 +179,10 @@ export async function execute(interaction) {
   // Verificar badges
   await verificarBadges(interaction.user.id);
 
-  // Embed final (CORRIGIDO)
+  // Embed final (melhorado)
   const embed = new EmbedBuilder()
     .setColor("#FFD000")
-    .setTitle("🏅 Conquista adicionada!")
+    .setTitle("🏅 Proeza adicionada!")
     .setImage(imagem.url)
     .addFields(
       { name: "👤 Jogador", value: `${interaction.user}`, inline: false },
@@ -191,9 +193,14 @@ export async function execute(interaction) {
         name: "📈 Nível Atual",
         value: `Nível ${user.nivel} — ${user.xp}/${xpNecessario(user.nivel)} XP`,
         inline: true
+      },
+      {
+        name: "🏆 Total de Proezas",
+        value: `Esta foi a tua proeza nº **${totalProezas}**!`,
+        inline: false
       }
     )
-    .setFooter({ text: "Boa! Continua a colecionar conquistas!" });
+    .setFooter({ text: "Boa! Continua a colecionar proezas!" });
 
   await interaction.reply({ embeds: [embed] });
 }
