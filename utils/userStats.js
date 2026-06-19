@@ -1,34 +1,40 @@
 import UserStats from "../models/UserStats.js";
 
-// Garantir que o documento existe
+// Garante que o user existe e cria com os campos CORRETOS
 async function garantirUser(userId) {
   let user = await UserStats.findOne({ userId });
 
   if (!user) {
     user = await UserStats.create({
       userId,
-      platinas: 0,
-      conquistas: 0,
+      totalPlatinas: 0,
+      totalProezas: 0,
       ultimaPlatina: null,
-      ultimaConquista: null
+      ultimaProeza: null,
+      xp: 0,
+      totalXP: 0,
+      nivel: 1,
+      badgesDesbloqueadas: []
     });
   }
 
   return user;
 }
 
-// Atualizar platina
-export async function atualizarStatsPlatina(userId, jogo, plataforma) {
+// Atualizar PLATINA
+export async function atualizarStatsPlatina(userId, jogo, plataforma, imagem = null) {
   await garantirUser(userId);
 
   await UserStats.findOneAndUpdate(
     { userId },
     {
-      $inc: { platinas: 1 },
+      $inc: { totalPlatinas: 1 },
       $set: {
         ultimaPlatina: {
           jogo: jogo || "Não especificado",
-          plataforma: plataforma || "Não especificado"
+          plataforma: plataforma || "Não especificado",
+          imagem: imagem,
+          data: new Date().toISOString()
         }
       }
     },
@@ -36,18 +42,20 @@ export async function atualizarStatsPlatina(userId, jogo, plataforma) {
   );
 }
 
-// Atualizar conquista
-export async function atualizarStatsConquista(userId, jogo, plataforma) {
+// Atualizar PROEZA
+export async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
   await garantirUser(userId);
 
   await UserStats.findOneAndUpdate(
     { userId },
     {
-      $inc: { conquistas: 1 },
+      $inc: { totalProezas: 1 },
       $set: {
-        ultimaConquista: {
+        ultimaProeza: {
           jogo: jogo || "Não especificado",
-          plataforma: plataforma || "Não especificado"
+          plataforma: plataforma || "Não especificado",
+          imagem: imagem,
+          data: new Date().toISOString()
         }
       }
     },
@@ -55,18 +63,8 @@ export async function atualizarStatsConquista(userId, jogo, plataforma) {
   );
 }
 
-// Obter stats do utilizador
+// Obter stats do utilizador (VERSÃO FINAL)
 export async function getUserStats(userId) {
-  const user = await UserStats.findOne({ userId });
-
-  if (!user) {
-    return {
-      platinas: 0,
-      conquistas: 0,
-      ultimaPlatina: null,
-      ultimaConquista: null
-    };
-  }
-
+  const user = await garantirUser(userId);
   return user;
 }
