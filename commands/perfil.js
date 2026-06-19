@@ -21,8 +21,8 @@ export async function execute(interaction) {
       xp: 0,
       totalXP: 0,
       nivel: 1,
-      platinas: 0,
-      proezas: 0,
+      totalPlatinas: 0,
+      totalProezas: 0,
       badgesDesbloqueadas: []
     });
   }
@@ -57,8 +57,9 @@ export async function execute(interaction) {
   // ============================
   const stats = await getUserStats(userId);
 
-  const platinas = stats.platinas ?? 0;
-  const proezas = stats.proezas ?? 0;
+  // CAMPOS CORRETOS DO SCHEMA
+  const platinas = stats.totalPlatinas ?? 0;
+  const proezas = stats.totalProezas ?? 0;
 
   const ultimaPlatinaTexto = stats.ultimaPlatina?.jogo
     ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
