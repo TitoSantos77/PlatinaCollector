@@ -14,7 +14,7 @@ import UserStats from "../models/UserStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("editar")
-  .setDescription("Editar uma platina ou conquista")
+  .setDescription("Editar uma platina ou proeza")
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -22,7 +22,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Conquista", value: "conquista" }
+        { name: "Proeza", value: "proeza" }
       )
   )
   .addUserOption(opt =>
@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   if (targetUser.id !== interaction.user.id && !isAdmin) {
     return interaction.reply({
-      content: "❌ Só podes editar as TUAS próprias platinas/conquistas.",
+      content: "❌ Só podes editar as TUAS próprias platinas/proezas.",
       ephemeral: true
     });
   }
@@ -58,7 +58,7 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
@@ -67,9 +67,8 @@ export async function execute(interaction) {
     });
   }
 
-  // NOVO: opções estilo /listar
   const options = lista.map((item, index) => ({
-    label: `${index + 1} — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
+    label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
     value: `${userId}_${tipo}_${index}`
   }));
 
@@ -165,7 +164,7 @@ export async function handleModal(interaction) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
   const item = lista[index];
 
   if (!item) {
@@ -183,7 +182,7 @@ export async function handleModal(interaction) {
   await games.save();
 
   if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaConquista = lista[lista.length - 1] || null;
+  else stats.ultimaProeza = lista[lista.length - 1] || null;
 
   await stats.save();
 
@@ -208,7 +207,7 @@ export async function handleImage(message) {
 
   const replied = await message.channel.messages.fetch(message.reference.messageId);
 
-  const match = replied.content.match(/UserID: (\d+), Tipo: (platina|conquista), Index: (\d+)/);
+  const match = replied.content.match(/UserID: (\d+), Tipo: (platina|proeza), Index: (\d+)/);
   if (!match) return;
 
   const userId = match[1];
@@ -223,7 +222,7 @@ export async function handleImage(message) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.conquistas;
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
   const item = lista[index];
 
   if (!item) {
@@ -235,7 +234,7 @@ export async function handleImage(message) {
   await games.save();
 
   if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaConquista = lista[lista.length - 1] || null;
+  else stats.ultimaProeza = lista[lista.length - 1] || null;
 
   await stats.save();
 
