@@ -1,6 +1,6 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import UserStats from "../models/UserStats.js";
-import UserMissions from "../models/UserMissions.js";
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const UserStats = require("../models/UserStats.js");
+const UserMissions = require("../models/UserMissions.js");
 
 async function calcularXP(userId) {
   const stats = await UserStats.findOne({ userId });
@@ -30,7 +30,7 @@ async function calcularXP(userId) {
   return { totalXP, nivel, xpAtual, xpPlatinas, xpProezas, xpMissoes };
 }
 
-export default {
+module.exports = {
   data: new SlashCommandBuilder()
     .setName("rebuildxp")
     .setDescription("Reconstrói XP de um utilizador ou de todos (ADMIN).")
