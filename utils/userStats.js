@@ -21,50 +21,12 @@ async function garantirUser(userId) {
   return user;
 }
 
-// Atualizar PLATINA
-export async function atualizarStatsPlatina(userId, jogo, plataforma, imagem = null) {
-  await garantirUser(userId);
-
-  await UserStats.findOneAndUpdate(
-    { userId },
-    {
-      $inc: { totalPlatinas: 1 },
-      $set: {
-        ultimaPlatina: {
-          jogo: jogo || "Não especificado",
-          plataforma: plataforma || "Não especificado",
-          imagem: imagem,
-          data: new Date().toISOString()
-        }
-      }
-    },
-    { new: true }
-  );
-}
-
-// Atualizar PROEZA
-export async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
-  await garantirUser(userId);
-
-  await UserStats.findOneAndUpdate(
-    { userId },
-    {
-      $inc: { totalProezas: 1 },
-      $set: {
-        ultimaProeza: {
-          jogo: jogo || "Não especificado",
-          plataforma: plataforma || "Não especificado",
-          imagem: imagem,
-          data: new Date().toISOString()
-        }
-      }
-    },
-    { new: true }
-  );
-}
-
-// Obter stats do utilizador (VERSÃO FINAL)
+// Obter stats do utilizador (VERSÃO FINAL CORRIGIDA)
 export async function getUserStats(userId) {
-  const user = await garantirUser(userId);
+  await garantirUser(userId);
+
+  // 🔥 LER DIRETAMENTE DO MONGO, SEM CACHE ANTIGO
+  const user = await UserStats.findOne({ userId });
+
   return user;
 }
