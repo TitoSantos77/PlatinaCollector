@@ -28,14 +28,7 @@ async function ligarMongo() {
 
     console.log("📦 MongoDB conectado!");
 
-    // 🔥 SINCRONIZAR STATS DE PROEZAS (TEMPORÁRIO)
-    try {
-      const { default: rebuildStatsProezas } = await import("./rebuildStatsProezas.js");
-      await rebuildStatsProezas();
-      console.log("🔥 Stats de PROEZAS sincronizadas!");
-    } catch (err) {
-      console.error("❌ Erro ao sincronizar stats de proezas:", err);
-    }
+    // 🔥 REBUILD REMOVIDO — BOT ARRANCA NORMALMENTE
 
   } catch (err) {
     console.error("❌ Erro ao ligar ao MongoDB:", err.message);
