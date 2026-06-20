@@ -7,14 +7,14 @@ async function rebuildProezas() {
   const users = await UserGames.find({});
 
   for (const user of users) {
-    // Se não tiver conquistas antigas, passa à frente
     if (!user.conquistas || user.conquistas.length === 0) continue;
 
-    // Converter conquistas → proezas
+    // Converter conquistas → proezas no formato correto
     const novasProezas = user.conquistas.map(c => ({
-      nome: c.nome,
-      data: c.data,
-      plataforma: c.plataforma || null
+      jogo: c.nome,                  // <-- AGORA TEM "jogo"
+      plataforma: c.plataforma || null,
+      imagem: c.imagem || null,      // <-- SE EXISTIR
+      data: c.data || null
     }));
 
     // Adicionar às proezas existentes
