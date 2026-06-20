@@ -1,6 +1,6 @@
 import UserStats from "../models/UserStats.js";
 
-// Garante que o user existe e cria com os campos CORRETOS
+// Garante que o user existe
 async function garantirUser(userId) {
   let user = await UserStats.findOne({ userId });
 
@@ -21,12 +21,54 @@ async function garantirUser(userId) {
   return user;
 }
 
-// Obter stats do utilizador (VERSÃO FINAL CORRIGIDA)
-export async function getUserStats(userId) {
+// Atualizar PLATINA
+async function atualizarStatsPlatina(userId, jogo, plataforma, imagem = null) {
   await garantirUser(userId);
 
-  // 🔥 LER DIRETAMENTE DO MONGO, SEM CACHE ANTIGO
-  const user = await UserStats.findOne({ userId });
-
-  return user;
+  await UserStats.findOneAndUpdate(
+    { userId },
+    {
+      $inc: { totalPlatinas: 1 },
+      $set: {
+        ultimaPlatina: {
+          jogo: jogo || "Não especificado",
+          plataforma: plataforma || "Não especificado",
+          imagem,
+          data: new Date().toISOString()
+        }
+      }
+    }
+  );
 }
+
+// Atualizar PROEZA
+async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
+  await garantirUser(userId);
+
+  await UserStats.findOneAndUpdate(
+    { userId },
+    {
+      $inc: { totalProezas: 1 },
+      $set: {
+        ultimaProeza: {
+          jogo: jogo || "Não especificado",
+          plataforma: plataforma || "Não especificado",
+          imagem,
+          data: new Date().toISOString()
+        }
+      }
+    }
+  );
+}
+
+// Obter stats ATUALIZADOS
+async function getUserStats(userId) {
+  await garantirUser(userId);
+  return await UserStats.findOne({ userId });
+}
+
+export {
+  atualizarStatsPlatina,
+  atualizarStatsProeza,
+  getUserStats
+};
