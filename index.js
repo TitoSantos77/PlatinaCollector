@@ -28,8 +28,14 @@ async function ligarMongo() {
 
     console.log("📦 MongoDB conectado!");
 
-    // 🔥 REBUILD REMOVIDO
-    // O BOT AGORA ARRANCA NORMALMENTE
+    // 🔥 CORRER O REBUILD UMA VEZ
+    try {
+      const { default: rebuildProezas } = await import("./rebuildProezas.js");
+      await rebuildProezas();
+      console.log("🔥 Rebuild de PROEZAS concluído!");
+    } catch (err) {
+      console.error("❌ Erro no rebuild de proezas:", err);
+    }
 
   } catch (err) {
     console.error("❌ Erro ao ligar ao MongoDB:", err.message);
