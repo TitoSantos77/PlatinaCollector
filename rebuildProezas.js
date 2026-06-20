@@ -7,14 +7,18 @@ async function rebuildProezas() {
   const users = await UserGames.find({});
 
   for (const user of users) {
-    if (!user.conquistas || user.conquistas.length === 0) continue;
+    const conquistas = user.conquistas || [];
 
-    // Converter conquistas → proezas no formato correto
-    const novasProezas = user.conquistas.map(c => ({
-      jogo: c.nome,                  // <-- AGORA TEM "jogo"
+    // Se não tiver conquistas, ignora
+    if (conquistas.length === 0) continue;
+
+    // Converter conquistas → proezas
+    const novasProezas = conquistas.map(c => ({
+      jogo: c.nome || c.jogo || null,
       plataforma: c.plataforma || null,
-      imagem: c.imagem || null,      // <-- SE EXISTIR
-      data: c.data || null
+      imagem: c.imagem || null,
+      data: c.data || null,
+      xpGanhos: c.xpGanhos || 0
     }));
 
     // Adicionar às proezas existentes
@@ -26,12 +30,24 @@ async function rebuildProezas() {
     await user.save();
 
     // Atualizar UserStats
-    const stats = await UserStats.findOne({ userId: user.userId });
-    if (stats) {
-      stats.totalProezas = user.proezas.length;
-      stats.ultimaProeza = user.proezas[user.proezas.length - 1] || null;
-      await stats.save();
+    let stats = await UserStats.findOne({ userId: user.userId });
+
+    if (!stats) {
+      stats = await UserStats.create({
+        userId: user.userId,
+        totalPlatinas: 0,
+        totalProezas: 0,
+        xp: 0,
+        totalXP: 0,
+        nivel: 1,
+        badgesDesbloqueadas: []
+      });
     }
+
+    stats.totalProezas = user.proezas.length;
+    stats.ultimaProeza = user.proezas[user.proezas.length - 1] || null;
+
+    await stats.save();
 
     console.log(`➡️ User ${user.userId}: ${novasProezas.length} proezas convertidas`);
   }
