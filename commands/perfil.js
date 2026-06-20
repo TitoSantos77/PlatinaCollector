@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import UserStats from "../models/UserStats.js";
+import UserGames from "../models/UserGames.js";
 import { readJSON } from "../utils/database.js";
 import { getUserStats } from "../utils/userStats.js";
 import { xpNecessario } from "../utils/xp.js";
@@ -27,15 +28,60 @@ export async function execute(interaction) {
     });
   }
 
-  const badgesDB = readJSON("data/badges.json") || [];
+  // ============================
+  // 🔵 REBUILD AUTOMÁTICO SE ESTIVER VAZIO
+  // ============================
+  const stats = await getUserStats(userId);
+
+  const statsVazio =
+    (!stats.totalPlatinas || stats.totalPlatinas === 0) &&
+    (!stats.totalProezas || stats.totalProezas === 0) &&
+    (!stats.ultimaPlatina || !stats.ultimaPlatina.jogo) &&
+    (!stats.ultimaProeza || !stats.ultimaProeza.jogo);
+
+  if (statsVazio) {
+    const userGames = await UserGames.findOne({ userId });
+
+    if (userGames) {
+      const totalPlatinas = userGames.platinas?.length || 0;
+      const totalProezas = userGames.proezas?.length || 0;
+
+      const ultimaPlatina =
+        totalPlatinas > 0
+          ? userGames.platinas[userGames.platinas.length - 1]
+          : null;
+
+      const ultimaProeza =
+        totalProezas > 0
+          ? userGames.proezas[userGames.proezas.length - 1]
+          : null;
+
+      await UserStats.findOneAndUpdate(
+        { userId },
+        {
+          totalPlatinas,
+          totalProezas,
+          ultimaPlatina,
+          ultimaProeza
+        },
+        { new: true }
+      );
+
+      // Atualizar objeto local
+      stats.totalPlatinas = totalPlatinas;
+      stats.totalProezas = totalProezas;
+      stats.ultimaPlatina = ultimaPlatina;
+      stats.ultimaProeza = ultimaProeza;
+    }
+  }
 
   // ============================
   // 🔵 BADGE PRINCIPAL
   // ============================
+  const badgesDB = readJSON("data/badges.json") || [];
   let badgePrincipal = "Nenhuma";
 
   if (Array.isArray(user.badgesDesbloqueadas) && user.badgesDesbloqueadas.length > 0) {
-
     const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
     const desbloqueadasInfo = user.badgesDesbloqueadas
@@ -55,9 +101,6 @@ export async function execute(interaction) {
   // ============================
   // 🔵 ESTATÍSTICAS DO USER
   // ============================
-  const stats = await getUserStats(userId);
-
-  // CAMPOS CORRETOS DO SCHEMA
   const platinas = stats.totalPlatinas ?? 0;
   const proezas = stats.totalProezas ?? 0;
 
