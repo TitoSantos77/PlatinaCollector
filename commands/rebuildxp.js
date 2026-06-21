@@ -8,13 +8,16 @@ async function calcularXP(userId) {
 
   if (!stats) return null;
 
-  const xpPlatinas = stats.totalPlatinas * 100;
-  const xpProezas = stats.totalProezas * 50;
+  const xpPlatinas = (stats.totalPlatinas || 0) * 100;
+  const xpProezas = (stats.totalProezas || 0) * 50;
 
   let xpMissoes = 0;
-  if (missions && missions.historico) {
+
+  if (missions && Array.isArray(missions.historico)) {
     for (const m of missions.historico) {
-      xpMissoes += Number(m.recompensa) || 0;
+      if (!m) continue; // missão null
+      if (typeof m.recompensa !== "number") continue; // recompensa inválida
+      xpMissoes += m.recompensa;
     }
   }
 
