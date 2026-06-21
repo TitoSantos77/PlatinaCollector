@@ -4,7 +4,7 @@ import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
 
-// 🔵 FAKE SERVER PARA O RENDER
+// Fake server para o Render
 import express from "express";
 const app = express();
 
@@ -13,12 +13,9 @@ app.listen(process.env.PORT || 10000, () =>
   console.log("Fake server ativo na porta " + (process.env.PORT || 10000))
 );
 
-// 🔵 MONGODB
+// MongoDB
 import mongoose from "mongoose";
 
-// ===============================
-// 🔵 LIGAR AO MONGO
-// ===============================
 async function ligarMongo() {
   try {
     await mongoose.connect(process.env.MONGO_URL, {
@@ -26,27 +23,23 @@ async function ligarMongo() {
       useUnifiedTopology: true
     });
 
-    console.log("📦 MongoDB conectado!");
-
+    console.log("MongoDB conectado!");
   } catch (err) {
-    console.error("❌ Erro ao ligar ao MongoDB:", err.message);
+    console.error("Erro ao ligar ao MongoDB:", err.message);
   }
 }
 
 ligarMongo();
 
-// 🔵 IMPORTAR BACKUP
+// Backup
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
 
-// IMPORTAR O SCHEDULER
+// Scheduler
 import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 
-// IMPORTAR HANDLERS DO /EDITAR
+// Handlers do /editar
 import * as editar from "./commands/editar.js";
 
-// ===============================
-// 🔵 INICIAR BOT (AGORA ASSÍNCRONO)
-// ===============================
 (async () => {
 
   restaurarBackup();
@@ -63,9 +56,7 @@ import * as editar from "./commands/editar.js";
 
   client.commands = new Collection();
 
-  // ===============================
-  // 🔧 LOADER DE COMANDOS (CORRIGIDO)
-  // ===============================
+  // LOADER DE COMANDOS (CORRIGIDO)
   const commandsPath = path.join(process.cwd(), "commands");
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
@@ -73,21 +64,17 @@ import * as editar from "./commands/editar.js";
     const filePath = path.join(commandsPath, file);
     const commandModule = await import(`file://${filePath}`);
 
-    // Se tiver export default, usa-o. Senão, usa o módulo normal.
     const command = commandModule.default ?? commandModule;
 
     if ("data" in command && "execute" in command) {
       client.commands.set(command.data.name, command);
     } else {
-      console.log(`⚠️ O comando ${file} está mal formatado.`);
+      console.log("Comando mal formatado:", file);
     }
   }
 
-  // ===============================
-  // 🔵 READY
-  // ===============================
   client.once("ready", async () => {
-    console.log(`Bot online como ${client.user.tag}`);
+    console.log("Bot online como " + client.user.tag);
 
     criarBackup();
     iniciarSchedulerMissoes();
@@ -99,29 +86,26 @@ import * as editar from "./commands/editar.js";
       const guild = client.guilds.cache.get(process.env.GUILD_ID);
 
       if (guild) {
-        console.log("🔧 MODO DEV ATIVO — A atualizar comandos GUILD...");
+        console.log("Modo DEV: Atualizando comandos da guild...");
         await rest.put(
           Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
           { body: comandosJSON }
         );
-        console.log("✔ Comandos DEV atualizados!");
+        console.log("Comandos DEV atualizados!");
       } else {
-        console.log("🌍 MODO PÚBLICO — A atualizar comandos GLOBAIS...");
+        console.log("Modo PUBLICO: Atualizando comandos globais...");
         await rest.put(
           Routes.applicationCommands(process.env.CLIENT_ID),
           { body: comandosJSON }
         );
-        console.log("✔ Comandos globais enviados!");
+        console.log("Comandos globais enviados!");
       }
 
     } catch (err) {
-      console.error("❌ Erro ao registar comandos:", err);
+      console.error("Erro ao registar comandos:", err);
     }
   });
 
-  // ===============================
-  // 🔵 INTERAÇÕES
-  // ===============================
   client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
@@ -130,7 +114,7 @@ import * as editar from "./commands/editar.js";
         try {
           return await command.autocomplete(interaction);
         } catch (err) {
-          console.error("Erro no autocomplete do comando:", err);
+          console.error("Erro no autocomplete:", err);
         }
       }
       return;
@@ -155,7 +139,7 @@ import * as editar from "./commands/editar.js";
     if (interaction.isChatInputCommand()) {
       if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
         return interaction.reply({
-          content: "❌ Este comando só pode ser usado nos canais permitidos.",
+          content: "Este comando só pode ser usado nos canais permitidos.",
           ephemeral: true
         });
       }
@@ -169,36 +153,42 @@ import * as editar from "./commands/editar.js";
         if (interaction.commandName === "setcanal") {
           config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
           criarBackup();
-          console.log("✔ Lista de canais atualizada:", config.allowedChannels);
+          console.log("Lista de canais atualizada:", config.allowedChannels);
         }
 
       } catch (error) {
         console.error(error);
         await interaction.reply({
-          content: "❌ Ocorreu um erro ao executar este comando.",
+          content: "Ocorreu um erro ao executar este comando.",
           ephemeral: true
         });
       }
     }
   });
 
-  // ===============================
-  // 🔵 MENSAGENS
-  // ===============================
   client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
     editar.handleImage(message);
   });
 
-  // ===============================
-  // 🔵 LOGIN
-  // ===============================
   const login = async (tentativa = 0) => {
     try {
       await client.login(process.env.DISCORD_TOKEN);
-      console.log("🔐 Login efetuado com sucesso!");
+      console.log("Login efetuado com sucesso!");
     } catch (err) {
-      console.error("❌ Erro no login:", err);
+      console.error("Erro no login:", err);
 
       if (tentativa >= 3) {
-        console.error("❌ Falha repetida no login. A parar para evitar spam
+        console.error("Falha repetida no login. A parar para evitar spam.");
+        return;
+      }
+
+      const espera = 10000 * (tentativa + 1);
+      console.log("A tentar novamente em " + espera / 1000 + "s... (tentativa " + (tentativa + 1) + "/3)");
+      setTimeout(() => login(tentativa + 1), espera);
+    }
+  };
+
+  login();
+
+})();
