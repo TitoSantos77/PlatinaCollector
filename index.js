@@ -28,8 +28,6 @@ async function ligarMongo() {
 
     console.log("📦 MongoDB conectado!");
 
-    // 🔥 REBUILD REMOVIDO — BOT ARRANCA NORMALMENTE
-
   } catch (err) {
     console.error("❌ Erro ao ligar ao MongoDB:", err.message);
   }
@@ -65,12 +63,18 @@ import * as editar from "./commands/editar.js";
 
   client.commands = new Collection();
 
+  // ===============================
+  // 🔧 LOADER DE COMANDOS (CORRIGIDO)
+  // ===============================
   const commandsPath = path.join(process.cwd(), "commands");
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = await import(`file://${filePath}`);
+    const commandModule = await import(`file://${filePath}`);
+
+    // Se tiver export default, usa-o. Senão, usa o módulo normal.
+    const command = commandModule.default ?? commandModule;
 
     if ("data" in command && "execute" in command) {
       client.commands.set(command.data.name, command);
@@ -79,6 +83,9 @@ import * as editar from "./commands/editar.js";
     }
   }
 
+  // ===============================
+  // 🔵 READY
+  // ===============================
   client.once("ready", async () => {
     console.log(`Bot online como ${client.user.tag}`);
 
@@ -112,6 +119,9 @@ import * as editar from "./commands/editar.js";
     }
   });
 
+  // ===============================
+  // 🔵 INTERAÇÕES
+  // ===============================
   client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
@@ -172,11 +182,17 @@ import * as editar from "./commands/editar.js";
     }
   });
 
+  // ===============================
+  // 🔵 MENSAGENS
+  // ===============================
   client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
     editar.handleImage(message);
   });
 
+  // ===============================
+  // 🔵 LOGIN
+  // ===============================
   const login = async (tentativa = 0) => {
     try {
       await client.login(process.env.DISCORD_TOKEN);
@@ -185,16 +201,4 @@ import * as editar from "./commands/editar.js";
       console.error("❌ Erro no login:", err);
 
       if (tentativa >= 3) {
-        console.error("❌ Falha repetida no login. A parar para evitar spam.");
-        return;
-      }
-
-      const espera = 10_000 * (tentativa + 1);
-      console.log(`⏳ A tentar novamente em ${espera / 1000}s... (tentativa ${tentativa + 1}/3)`);
-      setTimeout(() => login(tentativa + 1), espera);
-    }
-  };
-
-  login();
-
-})();
+        console.error("❌ Falha repetida no login. A parar para evitar spam
