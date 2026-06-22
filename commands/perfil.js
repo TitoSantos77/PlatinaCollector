@@ -13,11 +13,11 @@ export async function execute(interaction) {
   const userId = interaction.user.id;
 
   // Buscar stats do user no Mongo
-  let user = await UserStats.findOne({ userId });
+  let stats = await UserStats.findOne({ userId });
 
   // Criar se não existir
-  if (!user) {
-    user = await UserStats.create({
+  if (!stats) {
+    stats = await UserStats.create({
       userId,
       xp: 0,
       totalXP: 0,
@@ -31,13 +31,13 @@ export async function execute(interaction) {
   // ============================
   // 🔵 REBUILD AUTOMÁTICO SE ESTIVER VAZIO
   // ============================
-  const stats = await getUserStats(userId);
+  const statsAtualizados = await getUserStats(userId);
 
   const statsVazio =
-    (!stats.totalPlatinas || stats.totalPlatinas === 0) &&
-    (!stats.totalProezas || stats.totalProezas === 0) &&
-    (!stats.ultimaPlatina || !stats.ultimaPlatina.jogo) &&
-    (!stats.ultimaProeza || !stats.ultimaProeza.jogo);
+    (!statsAtualizados.totalPlatinas || statsAtualizados.totalPlatinas === 0) &&
+    (!statsAtualizados.totalProezas || statsAtualizados.totalProezas === 0) &&
+    (!statsAtualizados.ultimaPlatina || !statsAtualizados.ultimaPlatina.jogo) &&
+    (!statsAtualizados.ultimaProeza || !statsAtualizados.ultimaProeza.jogo);
 
   if (statsVazio) {
     const userGames = await UserGames.findOne({ userId });
@@ -68,12 +68,15 @@ export async function execute(interaction) {
       );
 
       // Atualizar objeto local
-      stats.totalPlatinas = totalPlatinas;
-      stats.totalProezas = totalProezas;
-      stats.ultimaPlatina = ultimaPlatina;
-      stats.ultimaProeza = ultimaProeza;
+      statsAtualizados.totalPlatinas = totalPlatinas;
+      statsAtualizados.totalProezas = totalProezas;
+      statsAtualizados.ultimaPlatina = ultimaPlatina;
+      statsAtualizados.ultimaProeza = ultimaProeza;
     }
   }
+
+  // Agora statsAtualizados é a fonte oficial
+  stats = statsAtualizados;
 
   // ============================
   // 🔵 BADGE PRINCIPAL
@@ -81,10 +84,10 @@ export async function execute(interaction) {
   const badgesDB = readJSON("data/badges.json") || [];
   let badgePrincipal = "Nenhuma";
 
-  if (Array.isArray(user.badgesDesbloqueadas) && user.badgesDesbloqueadas.length > 0) {
+  if (Array.isArray(stats.badgesDesbloqueadas) && stats.badgesDesbloqueadas.length > 0) {
     const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
 
-    const desbloqueadasInfo = user.badgesDesbloqueadas
+    const desbloqueadasInfo = stats.badgesDesbloqueadas
       .map(id => badgesDB.find(b => b.id === id))
       .filter(b => b && b.nome && b.emoji && b.raridade);
 
@@ -115,8 +118,8 @@ export async function execute(interaction) {
   // ============================
   // 🔵 XP E NÍVEL
   // ============================
-  const nivel = user.nivel;
-  const xpAtual = user.xp;
+  const nivel = stats.nivel;
+  const xpAtual = stats.xp;
   const xpProximo = xpNecessario(nivel);
 
   const percent = Math.min(100, Math.floor((xpAtual / xpProximo) * 100));
@@ -139,7 +142,7 @@ export async function execute(interaction) {
       { name: "🏅 Nível", value: `${nivel}`, inline: true },
       { name: "🔰 Badge Principal", value: badgePrincipal, inline: true },
 
-      { name: "✨ XP Total", value: `${user.totalXP} XP`, inline: true },
+      { name: "✨ XP Total", value: `${stats.totalXP} XP`, inline: true },
       { name: "✨ XP Atual", value: `${xpAtual} XP`, inline: true },
       { name: "🎯 XP Necessário", value: `${xpProximo} XP`, inline: true },
 
