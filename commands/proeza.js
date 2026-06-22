@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { XP_CONQUISTA as XP_PROEZA, adicionarXP, xpNecessario } from "../utils/xp.js";
+import { XP_PROEZA, adicionarXP, xpNecessario } from "../utils/xp.js";
 import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsProeza } from "../utils/userStats.js";
