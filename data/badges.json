@@ -47,37 +47,37 @@
 
   {
     "id": "primeira_conquista",
-    "nome": "Primeira Conquista",
+    "nome": "Primeira Proeza",
     "emoji": "🎖️",
     "raridade": "Comum",
-    "descricao": "Ganhaste a tua primeira conquista.",
+    "descricao": "Ganhaste a tua primeira proeza!",
     "secreta": false,
     "requisito": { "conquistas": 1 }
   },
   {
     "id": "dez_conquistas",
-    "nome": "Colecionador",
+    "nome": "Colecionador de Proezas",
     "emoji": "📀",
     "raridade": "Incomum",
-    "descricao": "Atingiste 10 conquistas.",
+    "descricao": "Atingiste 10 proezas.",
     "secreta": false,
     "requisito": { "conquistas": 10 }
   },
   {
     "id": "vinte_cinco_conquistas",
-    "nome": "Caçador de Conquistas",
+    "nome": "Caçador de Proezas",
     "emoji": "💎",
     "raridade": "Rara",
-    "descricao": "Atingiste 25 conquistas.",
+    "descricao": "Atingiste 25 proezas.",
     "secreta": false,
     "requisito": { "conquistas": 25 }
   },
   {
     "id": "cinquenta_conquistas",
-    "nome": "Mestre das Conquistas",
+    "nome": "Mestre das Proezas",
     "emoji": "⚡",
     "raridade": "Épica",
-    "descricao": "Atingiste 50 conquistas.",
+    "descricao": "Atingiste 50 proezas.",
     "secreta": false,
     "requisito": { "conquistas": 50 }
   },
