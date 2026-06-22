@@ -141,3 +141,10 @@ export async function handleRestoreMenu(interaction) {
     components: []
   });
 }
+
+// ---------------------- EXPORT DEFAULT (OBRIGATÓRIO!) ----------------------
+
+export default {
+  data,
+  execute
+};
