@@ -4,7 +4,6 @@ import { readJSON } from "./database.js";
 export async function verificarBadges(userId) {
   const badgesDB = readJSON("data/badges.json");
 
-  // Buscar stats corretas (XP, nível, platinas, conquistas)
   let stats = await UserStats.findOne({ userId });
   if (!stats) return false;
 
@@ -17,20 +16,35 @@ export async function verificarBadges(userId) {
 
   for (const badge of badgesDB) {
     const id = badge.id;
+    if (!id) continue;
 
     // Já tem esta badge?
     if (stats.badgesDesbloqueadas.includes(id)) continue;
 
-    // Requisitos vindos do JSON
     const req = badge.requisito || {};
 
+    // ✔ Correto
     const cumpreNivel = req.nivel ? stats.nivel >= req.nivel : true;
-    const cumpreXP = req.xp ? stats.totalXP >= req.xp : true;
-    const cumprePlatinas = req.platinas ? stats.platinas >= req.platinas : true;
-    const cumpreConquistas = req.conquistas ? stats.conquistas >= req.conquistas : true;
-    const cumpreMissoes = req.missoes ? (stats.missoesConcluidas || 0) >= req.missoes : true;
 
-    // Só desbloqueia se cumprir TODOS os requisitos definidos
+    // ✔ Correto
+    const cumpreXP = req.xp ? stats.totalXP >= req.xp : true;
+
+    // 🔧 CORRIGIDO — antes lia stats.platinas (que não existe)
+    const cumprePlatinas = req.platinas
+      ? (stats.totalPlatinas || 0) >= req.platinas
+      : true;
+
+    // 🔧 CORRIGIDO — antes lia stats.conquistas (que não existe)
+    const cumpreConquistas = req.conquistas
+      ? (stats.totalProezas || 0) >= req.conquistas
+      : true;
+
+    // ✔ Mantido
+    const cumpreMissoes = req.missoes
+      ? (stats.missoesConcluidas || 0) >= req.missoes
+      : true;
+
+    // Se cumpre todos os requisitos → desbloqueia
     if (cumpreNivel && cumpreXP && cumprePlatinas && cumpreConquistas && cumpreMissoes) {
       stats.badgesDesbloqueadas.push(id);
       ganhouNova = true;
