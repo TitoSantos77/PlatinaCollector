@@ -2,7 +2,7 @@ import UserStats from "../models/UserStats.js";
 
 // XP base
 export const XP_PLATINA = 100;
-export const XP_CONQUISTA = 50;
+export const XP_PROEZA = 50; // <-- atualizado
 
 // XP extra das missões
 export const XP_FACIL = 20;
@@ -33,9 +33,9 @@ async function garantirUser(userId) {
     user = await UserStats.create({
       userId,
       platinas: 0,
-      conquistas: 0,
+      proezas: 0, // <-- atualizado
       ultimaPlatina: null,
-      ultimaConquista: null,
+      ultimaProeza: null, // <-- atualizado
       xp: 0,
       totalXP: 0,
       nivel: 1,
