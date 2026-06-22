@@ -3,6 +3,7 @@ import {
 } from "discord.js";
 
 import * as editar from "../commands/editar.js";
+import { handleBackupMenu, handleRestoreMenu } from "../commands/backup.js";
 
 export default {
   name: Events.InteractionCreate,
@@ -30,6 +31,15 @@ export default {
     // 2) SELECT MENUS
     // ============================
     if (interaction.isStringSelectMenu()) {
+
+      // Menus do /backup
+      if (interaction.customId === "backup_menu") {
+        return handleBackupMenu(interaction);
+      }
+
+      if (interaction.customId === "restore_menu") {
+        return handleRestoreMenu(interaction);
+      }
 
       // Primeiro menu do /editar
       if (interaction.customId === "editar_escolher_item") {
