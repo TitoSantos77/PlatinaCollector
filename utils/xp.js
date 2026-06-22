@@ -1,20 +1,26 @@
 import UserStats from "../models/UserStats.js";
 
-// XP base
+// ===============================
+// XP BASE
+// ===============================
 export const XP_PLATINA = 100;
-export const XP_PROEZA = 50; // <-- atualizado
+export const XP_PROEZA = 50;
 
-// XP extra das missões
+// XP extra das missões (se precisares)
 export const XP_FACIL = 20;
 export const XP_MEDIA = 25;
 export const XP_DIFICIL = 30;
 
-// XP necessário para subir de nível
+// ===============================
+// XP NECESSÁRIO POR NÍVEL
+// ===============================
 export function xpNecessario(nivel) {
   return nivel * 100;
 }
 
-// BADGES POR NÍVEL (PORTUGUÊS)
+// ===============================
+// BADGES AUTOMÁTICAS POR NÍVEL
+// ===============================
 export function getBadgeByLevel(nivel) {
   if (nivel >= 50) return "🟧 Colecionador Eterno";
   if (nivel >= 40) return "🟡 Guardião Supremo";
@@ -25,46 +31,44 @@ export function getBadgeByLevel(nivel) {
   return "⚪ Iniciante";
 }
 
-// Garantir documento no Mongo
+// ===============================
+// GARANTIR USER NO MONGO
+// ===============================
 async function garantirUser(userId) {
   let user = await UserStats.findOne({ userId });
 
   if (!user) {
     user = await UserStats.create({
       userId,
-      platinas: 0,
-      proezas: 0, // <-- atualizado
+      totalPlatinas: 0,
+      totalProezas: 0,
       ultimaPlatina: null,
-      ultimaProeza: null, // <-- atualizado
+      ultimaProeza: null,
       xp: 0,
       totalXP: 0,
       nivel: 1,
-      badge: "⚪ Iniciante",
-      badgesDesbloqueadas: ["⚪ Iniciante"]
+      badgesDesbloqueadas: []
     });
   }
 
   return user;
 }
 
-// Atualiza badge atual + badges desbloqueadas
+// ===============================
+// ATUALIZAR BADGE AUTOMÁTICA
+// ===============================
 function atualizarBadge(user) {
   const novaBadge = getBadgeByLevel(user.nivel);
 
-  if (user.badge !== novaBadge) {
-    user.badge = novaBadge;
-
-    if (!user.badgesDesbloqueadas) {
-      user.badgesDesbloqueadas = [];
-    }
-
-    if (!user.badgesDesbloqueadas.includes(novaBadge)) {
-      user.badgesDesbloqueadas.push(novaBadge);
-    }
+  // Se mudou de badge → atualizar
+  if (!user.badgesDesbloqueadas.includes(novaBadge)) {
+    user.badgesDesbloqueadas.push(novaBadge);
   }
 }
 
-// Adiciona XP ao user (AGORA NO MONGO)
+// ===============================
+// ADICIONAR XP AO USER
+// ===============================
 export async function adicionarXP(userId, quantidade) {
   let user = await garantirUser(userId);
 
@@ -73,6 +77,7 @@ export async function adicionarXP(userId, quantidade) {
 
   let xpNeeded = xpNecessario(user.nivel);
 
+  // Subir de nível em loop
   while (user.xp >= xpNeeded) {
     user.xp -= xpNeeded;
     user.nivel++;
@@ -83,6 +88,5 @@ export async function adicionarXP(userId, quantidade) {
   }
 
   await user.save();
-
   return user;
 }
