@@ -40,6 +40,9 @@ import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
 // Handlers do /editar
 import * as editar from "./commands/editar.js";
 
+// Handlers do /backup
+import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
+
 (async () => {
 
   restaurarBackup();
@@ -56,7 +59,7 @@ import * as editar from "./commands/editar.js";
 
   client.commands = new Collection();
 
-  // LOADER DE COMANDOS (CORRIGIDO)
+  // LOADER DE COMANDOS
   const commandsPath = path.join(process.cwd(), "commands");
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
@@ -107,6 +110,7 @@ import * as editar from "./commands/editar.js";
   });
 
   client.on(Events.InteractionCreate, async interaction => {
+    // AUTOCOMPLETE
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
 
@@ -120,7 +124,18 @@ import * as editar from "./commands/editar.js";
       return;
     }
 
+    // SELECT MENUS
     if (interaction.isStringSelectMenu()) {
+      // Menus do /backup
+      if (interaction.customId === "backup_menu") {
+        return handleBackupMenu(interaction);
+      }
+
+      if (interaction.customId === "restore_menu") {
+        return handleRestoreMenu(interaction);
+      }
+
+      // Menus do /editar
       if (interaction.customId === "editar_escolher_item") {
         return editar.handleSelect(interaction);
       }
@@ -128,14 +143,20 @@ import * as editar from "./commands/editar.js";
       if (interaction.customId.startsWith("editar_opcao_")) {
         return editar.handleSelectCampo(interaction);
       }
+
+      return;
     }
 
+    // MODALS
     if (interaction.isModalSubmit()) {
       if (interaction.customId.startsWith("editar_modal_")) {
         return editar.handleModal(interaction);
       }
+
+      return;
     }
 
+    // SLASH COMMANDS
     if (interaction.isChatInputCommand()) {
       if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
         return interaction.reply({
