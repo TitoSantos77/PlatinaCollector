@@ -1,40 +1,31 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import UserStats from "../models/UserStats.js";
-import { getBadgeByLevel } from "../utils/xpSystem.js";
+import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("fixbadges")
-  .setDescription("Recalcula e corrige badges de todos os utilizadores (ADMIN).")
+  .setDescription("Recalcula TODAS as badges retroativamente para TODOS os utilizadores.")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
-  await interaction.reply("🔧 A recalcular badges...");
+  await interaction.reply("🔧 A recalcular badges retroativas...");
 
-  const statsUsers = await UserStats.find();
+  const users = await UserStats.find();
   let corrigidos = 0;
 
-  for (const stats of statsUsers) {
-    const badgeCorreta = getBadgeByLevel(stats.nivel);
+  for (const user of users) {
+    // limpar badges antigas
+    user.badgesDesbloqueadas = [];
+    await user.save();
 
-    // Criar array se não existir
-    if (!Array.isArray(stats.badgesDesbloqueadas)) {
-      stats.badgesDesbloqueadas = [];
-    }
+    // reconstruir badges retroativas
+    await verificarBadges(user.userId);
 
-    // Atualizar badge principal
-    stats.badge = badgeCorreta;
-
-    // Garantir que está desbloqueada
-    if (!stats.badgesDesbloqueadas.includes(badgeCorreta)) {
-      stats.badgesDesbloqueadas.push(badgeCorreta);
-    }
-
-    await stats.save();
     corrigidos++;
   }
 
   return interaction.followUp(
-    `🏅 Badges corrigidas com sucesso!\n` +
+    `🏅 Badges reconstruídas com sucesso!\n` +
     `👥 Utilizadores atualizados: **${corrigidos}**`
   );
 }
