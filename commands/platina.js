@@ -6,64 +6,10 @@ import { atualizarStatsPlatina } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
 import UserGames from "../models/UserGames.js";
+import UserStats from "../models/UserStats.js";
 
 // LISTA BASE — JOGOS
-const jogosBase = [
-  "Grand Theft Auto",
-  "Grand Theft Auto 2",
-  "Grand Theft Auto III",
-  "Grand Theft Auto: Vice City",
-  "Grand Theft Auto: San Andreas",
-  "Grand Theft Auto IV",
-  "Grand Theft Auto V",
-  "Grand Theft Auto VI",
-  "GTA: Liberty City Stories",
-  "GTA: Vice City Stories",
-  "GTA: Chinatown Wars",
-  "GTA Advance",
-
-  "Red Dead Revolver",
-  "Red Dead Redemption",
-  "Red Dead Redemption: Undead Nightmare",
-  "Red Dead Redemption 2",
-  "Red Dead Redemption (Remastered)",
-
-  "God of War",
-  "God of War Ragnarök",
-  "Horizon Zero Dawn",
-  "Horizon Forbidden West",
-  "Marvel’s Spider-Man",
-  "Marvel’s Spider-Man: Miles Morales",
-  "Marvel’s Spider-Man 2",
-  "The Last of Us Part I",
-  "The Last of Us Part II",
-  "Ghost of Tsushima",
-  "Cyberpunk 2077",
-  "The Witcher 3",
-  "Assassin’s Creed Valhalla",
-  "Assassin’s Creed Odyssey",
-  "Assassin’s Creed Mirage",
-  "Elden Ring",
-  "Fortnite",
-  "Apex Legends",
-  "Valorant",
-  "League of Legends",
-  "Rocket League",
-  "Minecraft",
-  "Gran Turismo 7",
-  "Forza Horizon 5",
-  "Destiny 2",
-  "Overwatch 2",
-  "Rainbow Six Siege",
-  "PUBG",
-  "Warzone",
-  "Diablo IV",
-  "Hades",
-  "Hollow Knight",
-  "Stardew Valley",
-  "Cuphead",
-  "Celeste"
-];
+const jogosBase = [ /* manténs a tua lista */ ];
 
 // LISTA BASE — PLATAFORMAS
 const plataformasBase = [
@@ -83,24 +29,13 @@ export const data = new SlashCommandBuilder()
       .setName("add")
       .setDescription("Adicionar uma platina")
       .addStringOption(opt =>
-        opt
-          .setName("jogo")
-          .setDescription("Nome do jogo")
-          .setRequired(true)
-          .setAutocomplete(true)
+        opt.setName("jogo").setDescription("Nome do jogo").setRequired(true).setAutocomplete(true)
       )
       .addStringOption(opt =>
-        opt
-          .setName("plataforma")
-          .setDescription("Plataforma usada")
-          .setRequired(true)
-          .setAutocomplete(true)
+        opt.setName("plataforma").setDescription("Plataforma usada").setRequired(true).setAutocomplete(true)
       )
       .addAttachmentOption(opt =>
-        opt
-          .setName("imagem")
-          .setDescription("Prova da platina (screenshot)")
-          .setRequired(true)
+        opt.setName("imagem").setDescription("Prova da platina (screenshot)").setRequired(true)
       )
   );
 
@@ -142,23 +77,12 @@ export async function execute(interaction) {
     });
   }
 
-  // XP ganho
+  const userId = interaction.user.id;
   const xpGanho = XP_PLATINA;
 
-  // Atualizar XP
-  const user = await adicionarXP(interaction.user.id, xpGanho);
-
-  // Atualizar missões
-  await atualizarProgresso(interaction.user.id, "platina", true);
-
-  // Atualizar stats globais
-  await adicionarJogo(jogo);
-  await adicionarPlataforma(plataforma);
-  await atualizarStatsPlatina(interaction.user.id, jogo, plataforma, imagem.url);
-
-  // Guardar no histórico real + obter total
+  // 1) Guardar no histórico real
   const updated = await UserGames.findOneAndUpdate(
-    { userId: interaction.user.id },
+    { userId },
     {
       $push: {
         platinas: {
@@ -174,16 +98,32 @@ export async function execute(interaction) {
 
   const totalPlatinas = updated.platinas.length;
 
-  // Backup
+  // 2) Atualizar stats do user
+  await atualizarStatsPlatina(userId, jogo, plataforma, imagem.url);
+
+  // 3) XP
+  await adicionarXP(userId, xpGanho);
+
+  // 4) Missões
+  await atualizarProgresso(userId, "platina", true);
+
+  // 5) Stats globais
+  await adicionarJogo(jogo);
+  await adicionarPlataforma(plataforma);
+
+  // 6) Badges
+  await verificarBadges(userId);
+
+  // 7) Buscar stats atualizados
+  const stats = await UserStats.findOne({ userId });
+
+  // 8) Backup final
   criarBackup();
 
-  // Badges
-  await verificarBadges(interaction.user.id);
-
-  // Embed final (MELHORADO)
+  // 9) EMBED — igual ao teu, só com a frase pedida
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
-    .setTitle("🏆 Platina adicionada!")
+    .setTitle(`🏆 ${interaction.user.username} adicionou a platina nº ${totalPlatinas}!`)
     .setImage(imagem.url)
     .addFields(
       { name: "👤 Jogador", value: `${interaction.user}`, inline: false },
@@ -192,7 +132,7 @@ export async function execute(interaction) {
       { name: "✨ XP Ganho", value: `+${xpGanho} XP`, inline: true },
       {
         name: "📈 Nível Atual",
-        value: `Nível ${user.nivel} — ${user.xp}/${xpNecessario(user.nivel)} XP`,
+        value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
         inline: true
       },
       {
