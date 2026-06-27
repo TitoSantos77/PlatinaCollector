@@ -79,10 +79,17 @@ export async function execute(interaction) {
       .addOptions(options)
   );
 
+  // 1️⃣ Resposta ephemeral normal
   await interaction.reply({
     content: `Escolhe a ${tipo} que queres editar de **${targetUser.username}**:`,
-    components: [row],
     ephemeral: true
+  });
+
+  // 2️⃣ O menu tem de ser enviado numa mensagem NÃO-EPHEMERAL
+  await interaction.followUp({
+    content: "Seleciona abaixo:",
+    components: [row],
+    ephemeral: false
   });
 }
 
@@ -125,10 +132,16 @@ export async function handleSelectCampo(interaction) {
   const campo = interaction.values[0];
 
   if (campo === "imagem") {
-    return interaction.update({
+    // 1️⃣ Atualiza a mensagem do menu
+    await interaction.update({
+      content: "Ok! Agora envia a nova imagem abaixo.",
+      components: []
+    });
+
+    // 2️⃣ Mensagem NÃO-EPHEMERAL para poder ser respondida
+    return interaction.followUp({
       content: `Envia a nova imagem da entrada (UserID: ${userId}, Tipo: ${tipo}, Index: ${index})`,
-      components: [],
-      ephemeral: true
+      ephemeral: false
     });
   }
 
