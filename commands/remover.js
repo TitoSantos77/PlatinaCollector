@@ -1,6 +1,8 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
   EmbedBuilder
 } from "discord.js";
 
@@ -30,49 +32,7 @@ export const data = new SlashCommandBuilder()
       .setName("user")
       .setDescription("Utilizador alvo")
       .setRequired(true)
-  )
-
-  .addBooleanOption(opt =>
-    opt
-      .setName("tudo")
-      .setDescription("Remover TODAS as entradas do utilizador")
-  )
-
-  .addStringOption(opt =>
-    opt
-      .setName("entrada")
-      .setDescription("Escolhe a entrada a remover")
-      .setAutocomplete(true)
   );
-
-// ===============================
-// AUTOCOMPLETE
-// ===============================
-export async function autocomplete(interaction) {
-  const focused = interaction.options.getFocused(true);
-  if (focused.name !== "entrada") return;
-
-  const tipo = interaction.options.getString("tipo");
-  const user = interaction.options.getUser("user");
-  if (!tipo || !user) return interaction.respond([]);
-
-  const games = await UserGames.findOne({ userId: user.id });
-  if (!games) return interaction.respond([]);
-
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
-  if (!lista || lista.length === 0) return interaction.respond([]);
-
-  const opcoes = lista.map((item, index) => ({
-    name: `${index + 1} — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`,
-    value: String(index)
-  }));
-
-  const filtrados = opcoes
-    .filter(o => o.name.toLowerCase().includes(focused.value.toLowerCase()))
-    .slice(0, 25);
-
-  return interaction.respond(filtrados);
-}
 
 // ===============================
 // EXECUTAR /REMOVER
@@ -87,9 +47,6 @@ export async function execute(interaction) {
 
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-  const entrada = interaction.options.getString("entrada");
-  const tudo = interaction.options.getBoolean("tudo");
-
   const userId = user.id;
 
   const games = await UserGames.findOne({ userId });
@@ -111,36 +68,53 @@ export async function execute(interaction) {
     });
   }
 
-  let indices = [];
+  // Criar menu com todas as entradas
+  const options = lista.map((item, index) => ({
+    label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
+    value: `${userId}_${tipo}_${index}`
+  }));
 
-  if (tudo) {
-    indices = lista.map((_, i) => i);
-  } else if (entrada !== null) {
-    const idx = parseInt(entrada);
-    if (!isNaN(idx) && idx >= 0 && idx < lista.length) {
-      indices = [idx];
-    }
-  }
+  const row = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId("remover_escolher_item")
+      .setPlaceholder("Escolhe a entrada que queres remover")
+      .addOptions(options)
+  );
 
-  if (indices.length === 0) {
-    return interaction.reply({
-      content: "❌ Nenhuma entrada válida para remover.",
-      ephemeral: true
+  await interaction.reply({
+    content: `🗑 Escolhe a ${tipo} que queres remover de **${user.username}**:`,
+    components: [row],
+    ephemeral: false
+  });
+}
+
+// ===============================
+// SELECT MENU — REMOVER ITEM
+// ===============================
+export async function handleSelect(interaction) {
+  if (interaction.customId !== "remover_escolher_item") return;
+
+  const [userId, tipo, index] = interaction.values[0].split("_");
+  const idx = parseInt(index);
+
+  const games = await UserGames.findOne({ userId });
+  const stats = await UserStats.findOne({ userId });
+
+  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const item = lista[idx];
+
+  if (!item) {
+    return interaction.update({
+      content: "❌ Entrada inválida.",
+      components: []
     });
   }
 
-  indices.sort((a, b) => b - a);
+  // Remover entrada
+  lista.splice(idx, 1);
 
-  let removidos = [];
-  let xpPerdido = 0;
-
-  for (const idx of indices) {
-    const item = lista[idx];
-    removidos.push(item);
-    xpPerdido += item.xpGanhos || 0;
-    lista.splice(idx, 1);
-  }
-
+  // Recalcular XP
+  const xpPerdido = item.xpGanhos || 0;
   stats.totalXP = Math.max(0, stats.totalXP - xpPerdido);
 
   let nivel = 1;
@@ -165,24 +139,19 @@ export async function execute(interaction) {
   await stats.save();
   await games.save();
 
-  const detalhes = removidos
-    .map(r => `• **${r.jogo}** (${r.plataforma}) — ${r.data}`)
-    .join("\n");
-
   const embed = new EmbedBuilder()
     .setColor("#FF4444")
-    .setTitle(
-      tipo === "platina"
-        ? "🗑 Platinas removidas"
-        : "🗑 Proezas removidas"
-    )
-    .setDescription(`Foram removidas **${removidos.length}** entradas do utilizador **${user.username}**.`)
+    .setTitle(tipo === "platina" ? "🗑 Platina removida" : "🗑 Proeza removida")
+    .setDescription(`A entrada **${item.jogo} (${item.plataforma})** foi removida.`)
     .addFields(
-      { name: "📋 Detalhes", value: detalhes },
       { name: "❌ XP Perdido", value: `${xpPerdido} XP`, inline: true },
       { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true }
     )
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.update({
+    content: "",
+    embeds: [embed],
+    components: []
+  });
 }
