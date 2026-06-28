@@ -134,13 +134,16 @@ export async function handleSelectCampo(interaction) {
   if (campo === "imagem") {
     // 1️⃣ Atualiza a mensagem do menu
     await interaction.update({
-      content: "Ok! Agora envia a nova imagem abaixo.",
+      content: "📸 Vamos atualizar a imagem!",
       components: []
     });
 
     // 2️⃣ Mensagem NÃO-EPHEMERAL para poder ser respondida
     return interaction.followUp({
-      content: `Envia a nova imagem da entrada (UserID: ${userId}, Tipo: ${tipo}, Index: ${index})`,
+      content:
+        "📸 **Atualizar imagem da entrada**\n\n" +
+        "➡️ **RESPONDE a esta mensagem** com a nova imagem.\n" +
+        `\n(ID interno: UserID: ${userId}, Tipo: ${tipo}, Index: ${index})`,
       ephemeral: false
     });
   }
@@ -218,7 +221,13 @@ export async function handleModal(interaction) {
 export async function handleImage(message) {
   if (!message.reference) return;
 
-  const replied = await message.channel.messages.fetch(message.reference.messageId);
+  let replied;
+  try {
+    replied = await message.channel.messages.fetch(message.reference.messageId);
+  } catch (err) {
+    console.error("Erro ao buscar mensagem original:", err);
+    return message.reply("❌ Não consegui encontrar a mensagem original. Tenta novamente.");
+  }
 
   const match = replied.content.match(/UserID: (\d+), Tipo: (platina|proeza), Index: (\d+)/);
   if (!match) return;
@@ -257,5 +266,10 @@ export async function handleImage(message) {
     .setDescription(`A imagem da entrada **${index + 1}** foi atualizada.`)
     .setImage(attachment.url);
 
-  await message.reply({ embeds: [embed] });
+  try {
+    await message.reply({ embeds: [embed] });
+  } catch (err) {
+    console.error("Erro ao enviar mensagem de imagem:", err);
+    return message.channel.send("❌ Não tenho permissão para enviar mensagens neste canal.");
+  }
 }
