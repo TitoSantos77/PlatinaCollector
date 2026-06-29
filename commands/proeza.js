@@ -109,7 +109,7 @@ export async function execute(interaction) {
   // 8) Backup
   criarBackup();
 
-  // 9) EMBED — igual ao teu, só com a frase pedida
+  // 9) EMBED — sem duplicação
   const embed = new EmbedBuilder()
     .setColor("#FFD000")
     .setTitle(`🏅 ${interaction.user.username} adicionou a proeza nº ${totalProezas}!`)
@@ -123,11 +123,6 @@ export async function execute(interaction) {
         name: "📈 Nível Atual",
         value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
         inline: true
-      },
-      {
-        name: "🥇 Total de Proezas",
-        value: `Esta foi a tua proeza nº **${totalProezas}**!`,
-        inline: false
       }
     )
     .setFooter({ text: "Boa! Continua a colecionar proezas!" });
