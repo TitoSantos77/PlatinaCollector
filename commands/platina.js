@@ -120,7 +120,7 @@ export async function execute(interaction) {
   // 8) Backup final
   criarBackup();
 
-  // 9) EMBED — igual ao teu, só com a frase pedida
+  // 9) EMBED — sem duplicação
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
     .setTitle(`🏆 ${interaction.user.username} adicionou a platina nº ${totalPlatinas}!`)
@@ -134,11 +134,6 @@ export async function execute(interaction) {
         name: "📈 Nível Atual",
         value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
         inline: true
-      },
-      {
-        name: "🏅 Total de Platinas",
-        value: `Esta foi a tua platina nº **${totalPlatinas}**!`,
-        inline: false
       }
     )
     .setFooter({ text: "Boa! Continua a colecionar platinas!" });
