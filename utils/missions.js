@@ -81,6 +81,7 @@ async function garantirUser(userId) {
   doc.atual.progresso = {
     platinas: Number(doc.atual.progresso?.platinas) || 0,
     proezas: Number(doc.atual.progresso?.proezas) || 0,
+    carreira: Number(doc.atual.progresso?.carreira) || 0,
     xp: Number(doc.atual.progresso?.xp) || 0
   };
 
@@ -110,7 +111,7 @@ export async function gerarMissao(userId) {
     id: missao.id,
     descricao: missao.descricao,
     objetivo: missao.objetivo,
-    progresso: { platinas: 0, proezas: 0, xp: 0 },
+    progresso: { platinas: 0, proezas: 0, carreira: 0, xp: 0 },
     recompensa: recompensaXP,
     requerJogo: missao.requerJogo || false,
     concluida: false,
@@ -134,9 +135,13 @@ export async function atualizarProgresso(userId, tipo, temJogo) {
 
   doc.atual.progresso.platinas = Number(doc.atual.progresso.platinas) || 0;
   doc.atual.progresso.proezas = Number(doc.atual.progresso.proezas) || 0;
+  doc.atual.progresso.carreira = Number(doc.atual.progresso.carreira) || 0;
 
   if (tipo === "platina") doc.atual.progresso.platinas += 1;
   if (tipo === "proeza") doc.atual.progresso.proezas += 1;
+
+  // 🟨 NOVO — CARREIRA GTA
+  if (tipo === "carreira") doc.atual.progresso.carreira += 1;
 
   await doc.save();
   await verificarConclusao(userId);
@@ -172,6 +177,7 @@ export async function verificarConclusao(userId) {
   const concluida =
     prog.platinas >= obj.platinas &&
     prog.proezas >= obj.proezas &&
+    prog.carreira >= obj.carreira && // 🟨 NOVO
     prog.xp >= obj.xp;
 
   if (!concluida) return;
