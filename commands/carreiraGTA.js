@@ -1,11 +1,11 @@
-const {
+import {
     SlashCommandBuilder,
-    AttachmentBuilder,
     EmbedBuilder,
     ActionRowBuilder,
-    StringSelectMenuBuilder,
-} = require("discord.js");
-const fs = require("fs");
+    StringSelectMenuBuilder
+} from "discord.js";
+
+import fs from "fs";
 
 // Base de dados local
 const DB_PATH = "./carreira.json";
@@ -79,7 +79,7 @@ const categorias = {
 // Plataformas
 const plataformas = ["PS5", "Xbox Series X/S", "PC"];
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName("carreiraGta")
         .setDescription("Gerir o progresso de carreira GTA Online")
@@ -118,7 +118,6 @@ module.exports = {
                 ephemeral: true,
             });
 
-            // Collector
             const collector = interaction.channel.createMessageComponentCollector({
                 time: 60000,
             });
@@ -195,7 +194,7 @@ module.exports = {
                     const embed = new EmbedBuilder()
                         .setColor("#F5C400")
                         .setTitle(`${categoriaEscolhida} — ${subcategoriaEscolhida}`)
-                        .setThumbnail("https://i.imgur.com/2u6hFQv.png") // GTA Online logo
+                        .setThumbnail("https://i.imgur.com/2u6hFQv.png")
                         .addFields(
                             { name: "Plataforma", value: plataformaEscolhida, inline: true },
                             { name: "Categoria", value: categoriaEscolhida, inline: true },
