@@ -13,7 +13,7 @@ export async function execute(interaction) {
   const missaoAtual = doc?.atual || null;
   const ultima = doc?.ultimaConcluida || null;
 
-  // Tempo até terça 07:00 PT (CORRIGIDO + DIAS)
+  // Tempo até terça 07:00 PT
   function tempoRestante() {
     const agora = new Date();
     const agoraPT = new Date(agora.getTime() + 60 * 60 * 1000);
@@ -22,7 +22,6 @@ export async function execute(interaction) {
     proximaTerca.setDate(agoraPT.getDate() + ((2 - agoraPT.getDay() + 7) % 7));
     proximaTerca.setHours(7, 0, 0, 0);
 
-    // SE JÁ PASSOU DAS 07:00 NA TERÇA → AVANÇA 7 DIAS
     if (agoraPT > proximaTerca) {
       proximaTerca.setDate(proximaTerca.getDate() + 7);
     }
@@ -36,9 +35,7 @@ export async function execute(interaction) {
     return `${dias}d ${horas}h ${minutos}m`;
   }
 
-  // ============================
-  // CORES POR RARIDADE
-  // ============================
+  // Cores por raridade
   const cores = {
     "Comum": "#A0A0A0",
     "Incomum": "#2ECC71",
@@ -50,9 +47,7 @@ export async function execute(interaction) {
     "Premium": "#E74C3C"
   };
 
-  // ============================
-  // ÍCONES POR RARIDADE
-  // ============================
+  // Ícones por raridade
   const icones = {
     "Comum": "⚪",
     "Incomum": "🟢",
@@ -112,7 +107,7 @@ export async function execute(interaction) {
 
   const prog = {
     platinas: Number(missaoAtual.progresso?.platinas) || 0,
-    conquistas: Number(missaoAtual.progresso?.conquistas) || 0,
+    carreira: Number(missaoAtual.progresso?.carreira) || 0,
     xp: Number(missaoAtual.progresso?.xp) || 0
   };
 
@@ -120,7 +115,7 @@ export async function execute(interaction) {
 
   const progressoTexto = [
     obj.platinas ? `🏆 Platinas: **${prog.platinas}/${obj.platinas}**` : null,
-    obj.conquistas ? `🎯 Conquistas: **${prog.conquistas}/${obj.conquistas}**` : null,
+    obj.carreira ? `🚗 Carreira GTA: **${prog.carreira}/${obj.carreira}**` : null,
     obj.xp ? `✨ XP: **${prog.xp}/${obj.xp}**` : null
   ]
     .filter(Boolean)
