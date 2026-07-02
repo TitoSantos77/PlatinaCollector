@@ -8,73 +8,48 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
 
-  // LOG 1 — confirmar que este ficheiro está a ser carregado
-  console.log(">>> [ESTATISTICAS] FICHEIRO ATIVO <<<");
-
   const stats = await UserStats.find().lean();
   const globalStats = await GlobalStats.findOne().lean();
-
-  // LOG 2 — ver o documento global REAL vindo do Mongo
-  console.log(">>> [ESTATISTICAS] GLOBALSTATS RAW:", globalStats);
-
-  // LOG 3 — ver se os arrays existem e o que têm
-  if (globalStats) {
-    console.log(">>> jogos:", globalStats.jogos);
-    console.log(">>> plataformas:", globalStats.plataformas);
-    console.log(">>> categoriasCarreira:", globalStats.categoriasCarreira);
-    console.log(">>> subcategoriasCarreira:", globalStats.subcategoriasCarreira);
-    console.log(">>> plataformasGTA:", globalStats.plataformasGTA);
-  } else {
-    console.log(">>> [ESTATISTICAS] GlobalStats veio NULL");
-  }
 
   const totalJogadores = stats.length;
   const totalXP = stats.reduce((acc, u) => acc + (u.totalXP || 0), 0);
   const totalPlatinas = stats.reduce((acc, u) => acc + (u.totalPlatinas || 0), 0);
   const totalCarreira = stats.reduce((acc, u) => acc + (u.totalCarreira || 0), 0);
 
-  // Função para contar ocorrências
-  function contar(array) {
-    const mapa = {};
-    for (const item of array || []) {
-      mapa[item] = (mapa[item] || 0) + 1;
-    }
-    return mapa;
-  }
-
-  // Jogo mais platinado
+  // Jogo mais platinado (já vem com contagens)
   let jogoMaisFeito = "Nenhum";
-  if (globalStats?.jogos?.length > 0) {
-    const contagem = contar(globalStats.jogos);
-    jogoMaisFeito = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.jogos && Object.keys(globalStats.jogos).length > 0) {
+    jogoMaisFeito = Object.entries(globalStats.jogos)
+      .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Plataforma mais usada (platinas)
   let plataformaMaisUsada = "Nenhuma";
-  if (globalStats?.plataformas?.length > 0) {
-    const contagem = contar(globalStats.plataformas);
-    plataformaMaisUsada = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.plataformas && Object.keys(globalStats.plataformas).length > 0) {
+    plataformaMaisUsada = Object.entries(globalStats.plataformas)
+      .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Categoria mais feita (carreira)
   let categoriaMaisFeita = "Nenhuma";
-  if (globalStats?.categoriasCarreira?.length > 0) {
-    const contagem = contar(globalStats.categoriasCarreira);
-    categoriaMaisFeita = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.categoriasCarreira && Object.keys(globalStats.categoriasCarreira).length > 0) {
+    categoriaMaisFeita = Object.entries(globalStats.categoriasCarreira)
+      .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Subcategoria mais feita (carreira)
   let subcategoriaMaisFeita = "Nenhuma";
-  if (globalStats?.subcategoriasCarreira?.length > 0) {
-    const contagem = contar(globalStats.subcategoriasCarreira);
-    subcategoriaMaisFeita = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.subcategoriasCarreira && Object.keys(globalStats.subcategororiasCarreira ?? globalStats.subcategoriasCarreira).length > 0) {
+    const subObj = globalStats.subcategororiasCarreira ?? globalStats.subcategoriasCarreira;
+    subcategoriaMaisFeita = Object.entries(subObj)
+      .sort((a, b) => b[1] - a[1])[0][0];
   }
 
-  // Plataforma GTA mais usada
+  // Plataforma GTA mais usada (campo correto: plataformasCarreira)
   let plataformaCarreiraMaisUsada = "Nenhuma";
-  if (globalStats?.plataformasGTA?.length > 0) {
-    const contagem = contar(globalStats.plataformasGTA);
-    plataformaCarreiraMaisUsada = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.plataformasCarreira && Object.keys(globalStats.plataformasCarreira).length > 0) {
+    plataformaCarreiraMaisUsada = Object.entries(globalStats.plataformasCarreira)
+      .sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Top XP
