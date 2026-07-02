@@ -14,7 +14,7 @@ import UserStats from "../models/UserStats.js";
 
 export const data = new SlashCommandBuilder()
   .setName("editar")
-  .setDescription("Editar uma platina ou proeza")
+  .setDescription("Editar uma platina ou entrada da carreira GTA")
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -22,7 +22,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Proeza", value: "proeza" }
+        { name: "Carreira GTA", value: "carreira" }
       )
   )
   .addUserOption(opt =>
@@ -43,7 +43,7 @@ export async function execute(interaction) {
 
   if (targetUser.id !== interaction.user.id && !isAdmin) {
     return interaction.reply({
-      content: "❌ Só podes editar as TUAS próprias platinas/proezas.",
+      content: "❌ Só podes editar as TUAS próprias entradas.",
       ephemeral: true
     });
   }
@@ -58,17 +58,20 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
-      content: `📭 O utilizador não tem nenhuma ${tipo} para editar.`,
+      content: `📭 O utilizador não tem nenhuma entrada de ${tipo} para editar.`,
       ephemeral: true
     });
   }
 
   const options = lista.map((item, index) => ({
-    label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
+    label:
+      tipo === "platina"
+        ? `${index + 1} — ${item.jogo} (${item.plataforma})`
+        : `${index + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
     value: `${userId}_${tipo}_${index}`
   }));
 
@@ -79,13 +82,11 @@ export async function execute(interaction) {
       .addOptions(options)
   );
 
-  // 1️⃣ Resposta ephemeral normal
   await interaction.reply({
-    content: `Escolhe a ${tipo} que queres editar de **${targetUser.username}**:`,
+    content: `Escolhe a entrada de **${tipo}** que queres editar de **${targetUser.username}**:`,
     ephemeral: true
   });
 
-  // 2️⃣ O menu tem de ser enviado numa mensagem NÃO-EPHEMERAL
   await interaction.followUp({
     content: "Seleciona abaixo:",
     components: [row],
@@ -105,11 +106,20 @@ export async function handleSelect(interaction) {
     new StringSelectMenuBuilder()
       .setCustomId(`editar_opcao_${userId}_${tipo}_${index}`)
       .setPlaceholder("O que queres editar?")
-      .addOptions([
-        { label: "Jogo", value: "jogo" },
-        { label: "Plataforma", value: "plataforma" },
-        { label: "Imagem", value: "imagem" }
-      ])
+      .addOptions(
+        tipo === "platina"
+          ? [
+              { label: "Jogo", value: "jogo" },
+              { label: "Plataforma", value: "plataforma" },
+              { label: "Imagem", value: "imagem" }
+            ]
+          : [
+              { label: "Categoria", value: "categoria" },
+              { label: "Subcategoria", value: "subcategoria" },
+              { label: "Plataforma", value: "plataforma" },
+              { label: "Imagem", value: "imagem" }
+            ]
+      )
   );
 
   await interaction.update({
@@ -132,13 +142,11 @@ export async function handleSelectCampo(interaction) {
   const campo = interaction.values[0];
 
   if (campo === "imagem") {
-    // 1️⃣ Atualiza a mensagem do menu
     await interaction.update({
       content: "📸 Vamos atualizar a imagem!",
       components: []
     });
 
-    // 2️⃣ Mensagem NÃO-EPHEMERAL para poder ser respondida
     return interaction.followUp({
       content:
         "📸 **Atualizar imagem da entrada**\n\n" +
@@ -154,7 +162,7 @@ export async function handleSelectCampo(interaction) {
 
   const input = new TextInputBuilder()
     .setCustomId("valor")
-    .setLabel(campo === "jogo" ? "Novo nome do jogo" : "Nova plataforma")
+    .setLabel(`Novo valor para ${campo}`)
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
@@ -180,7 +188,7 @@ export async function handleModal(interaction) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
   const item = lista[index];
 
   if (!item) {
@@ -190,19 +198,25 @@ export async function handleModal(interaction) {
     });
   }
 
-  const antes = `${item.jogo} (${item.plataforma})`;
+  const antes =
+    tipo === "platina"
+      ? `${item.jogo} (${item.plataforma})`
+      : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
 
-  if (campo === "jogo") item.jogo = valor;
-  if (campo === "plataforma") item.plataforma = valor;
+  // Aplicar edição
+  item[campo] = valor;
 
   await games.save();
 
   if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaProeza = lista[lista.length - 1] || null;
+  else stats.ultimaCarreira = lista[lista.length - 1] || null;
 
   await stats.save();
 
-  const depois = `${item.jogo} (${item.plataforma})`;
+  const depois =
+    tipo === "platina"
+      ? `${item.jogo} (${item.plataforma})`
+      : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
 
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
@@ -229,7 +243,7 @@ export async function handleImage(message) {
     return message.reply("❌ Não consegui encontrar a mensagem original. Tenta novamente.");
   }
 
-  const match = replied.content.match(/UserID: (\d+), Tipo: (platina|proeza), Index: (\d+)/);
+  const match = replied.content.match(/UserID: (\d+), Tipo: (platina|carreira), Index: (\d+)/);
   if (!match) return;
 
   const userId = match[1];
@@ -244,7 +258,7 @@ export async function handleImage(message) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
   const item = lista[index];
 
   if (!item) {
@@ -256,7 +270,7 @@ export async function handleImage(message) {
   await games.save();
 
   if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaProeza = lista[lista.length - 1] || null;
+  else stats.ultimaCarreira = lista[lista.length - 1] || null;
 
   await stats.save();
 
