@@ -3,8 +3,8 @@ import UserStats from "../models/UserStats.js";
 import UserGames from "../models/UserGames.js";
 import UserMissions from "../models/UserMissions.js";
 
-// 🟩 IMPORT CORRIGIDO — AGORA USA O SISTEMA NOVO
-import { adicionarXP, XP_PLATINA, XP_CONQUISTA } from "../utils/xp.js";
+// 🟩 IMPORT CORRIGIDO — sem XP_CONQUISTA
+import { adicionarXP, XP_PLATINA } from "../utils/xp.js";
 
 async function calcularXP(userId) {
   const stats = await UserStats.findOne({ userId });
@@ -18,9 +18,7 @@ async function calcularXP(userId) {
   // XP por platinas
   totalXP += (games.platinas?.length || 0) * XP_PLATINA;
 
-  // XP por conquistas (proezas + conquistas)
-  const totalConquistas = (games.proezas?.length || 0) + (games.conquistas?.length || 0);
-  totalXP += totalConquistas * XP_CONQUISTA;
+  // 🟩 REMOVIDO: XP por conquistas/proezas (estão a dormir)
 
   // XP por missões concluídas
   if (missions && Array.isArray(missions.historico)) {
