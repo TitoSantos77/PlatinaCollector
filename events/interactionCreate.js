@@ -10,7 +10,9 @@ export default {
   name: Events.InteractionCreate,
   async execute(interaction) {
 
+    // ============================
     // 1) SLASH COMMANDS
+    // ============================
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
@@ -26,7 +28,9 @@ export default {
       return;
     }
 
+    // ============================
     // 2) SELECT MENUS
+    // ============================
     if (interaction.isStringSelectMenu()) {
 
       // Menus do /backup
@@ -38,9 +42,9 @@ export default {
         return handleRestoreMenu(interaction);
       }
 
-      // Menu do /remover
+      // 🟥 AQUI FALTAVA O HANDLER DO /REMOVER
       if (interaction.customId === "remover_escolher_item") {
-        return remover.handleSelect(interaction);   // <-- ADICIONADO
+        return remover.handleSelect(interaction);   // <-- PATCH
       }
 
       // Primeiro menu do /editar
@@ -56,7 +60,9 @@ export default {
       return;
     }
 
+    // ============================
     // 3) MODAL SUBMIT
+    // ============================
     if (interaction.isModalSubmit()) {
 
       if (interaction.customId.startsWith("editar_modal_")) {
