@@ -1,9 +1,7 @@
-import {
-  Events,
-} from "discord.js";
+import { Events } from "discord.js";
 
 import * as editar from "../commands/editar.js";
-import * as remover from "../commands/remover.js";   // <-- ADICIONADO
+import * as remover from "../commands/remover.js";
 import { handleBackupMenu, handleRestoreMenu } from "../commands/backup.js";
 
 export default {
@@ -20,9 +18,17 @@ export default {
       try {
         await command.execute(interaction);
       } catch (err) {
-        console.error(err);
-        if (!interaction.replied) {
-          interaction.reply({ content: "❌ Erro ao executar o comando.", flags: ["Ephemeral"] });
+        console.error("ERRO NO SLASH:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao executar o comando.",
+            flags: ["Ephemeral"]
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erro ao executar o comando."
+          });
         }
       }
       return;
@@ -33,31 +39,49 @@ export default {
     // ============================
     if (interaction.isStringSelectMenu()) {
 
-      // 🟦 TESTE CRÍTICO — VER SE O BOT RECEBE O SELECT
       console.log("SELECT MENU RECEBIDO:", interaction.customId);
+      console.log("VALORES:", interaction.values);
 
-      // Menus do /backup
-      if (interaction.customId === "backup_menu") {
-        return handleBackupMenu(interaction);
-      }
+      try {
 
-      if (interaction.customId === "restore_menu") {
-        return handleRestoreMenu(interaction);
-      }
+        // Menus do /backup
+        if (interaction.customId === "backup_menu") {
+          return handleBackupMenu(interaction);
+        }
 
-      // Menu do /remover
-      if (interaction.customId === "remover_escolher_item") {
-        return remover.handleSelect(interaction);   // <-- PATCH
-      }
+        if (interaction.customId === "restore_menu") {
+          return handleRestoreMenu(interaction);
+        }
 
-      // Primeiro menu do /editar
-      if (interaction.customId === "editar_escolher_item") {
-        return editar.handleSelect(interaction);
-      }
+        // Menu do /remover
+        if (interaction.customId === "remover_escolher_item") {
+          return remover.handleSelect(interaction);
+        }
 
-      // Segundo menu do /editar
-      if (interaction.customId.startsWith("editar_opcao_")) {
-        return editar.handleSelectCampo(interaction);
+        // Primeiro menu do /editar
+        if (interaction.customId === "editar_escolher_item") {
+          return editar.handleSelect(interaction);
+        }
+
+        // Segundo menu do /editar
+        if (interaction.customId.startsWith("editar_opcao_")) {
+          return editar.handleSelectCampo(interaction);
+        }
+
+      } catch (err) {
+        console.error("ERRO NO SELECT MENU:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar o menu.",
+            flags: ["Ephemeral"]
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erro ao processar o menu.",
+            components: []
+          });
+        }
       }
 
       return;
@@ -68,8 +92,23 @@ export default {
     // ============================
     if (interaction.isModalSubmit()) {
 
-      if (interaction.customId.startsWith("editar_modal_")) {
-        return editar.handleModal(interaction);
+      try {
+        if (interaction.customId.startsWith("editar_modal_")) {
+          return editar.handleModal(interaction);
+        }
+      } catch (err) {
+        console.error("ERRO NO MODAL:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar o modal.",
+            flags: ["Ephemeral"]
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erro ao processar o modal."
+          });
+        }
       }
 
       return;
