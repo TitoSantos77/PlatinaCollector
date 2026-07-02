@@ -41,7 +41,7 @@ export async function execute(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
       content: "❌ Apenas administradores podem usar este comando.",
-      ephemeral: true
+      flags: ["Ephemeral"]
     });
   }
 
@@ -55,7 +55,7 @@ export async function execute(interaction) {
   if (!games || !stats) {
     return interaction.reply({
       content: "❌ Este utilizador não tem registos.",
-      ephemeral: true
+      flags: ["Ephemeral"]
     });
   }
 
@@ -67,7 +67,7 @@ export async function execute(interaction) {
         tipo === "platina"
           ? `📭 O utilizador não tem nenhuma platina.`
           : `📭 O utilizador não tem nenhuma entrada de carreira GTA.`,
-      ephemeral: true
+      flags: ["Ephemeral"]
     });
   }
 
@@ -89,8 +89,7 @@ export async function execute(interaction) {
 
   await interaction.reply({
     content: `🗑 Escolhe a entrada de **${tipo}** que queres remover de **${user.username}**:`,
-    components: [row],
-    ephemeral: false
+    components: [row]
   });
 }
 
@@ -100,7 +99,25 @@ export async function execute(interaction) {
 export async function handleSelect(interaction) {
   if (interaction.customId !== "remover_escolher_item") return;
 
-  const [userId, tipo, index] = interaction.values[0].split("_");
+  // Segurança extra
+  if (!interaction.values || interaction.values.length === 0) {
+    return interaction.editReply({
+      content: "❌ Erro: o menu não devolveu nenhum valor.",
+      components: []
+    });
+  }
+
+  const raw = interaction.values[0];
+  const partes = raw.split("_");
+
+  if (partes.length < 3) {
+    return interaction.editReply({
+      content: "❌ Erro: valor inválido recebido.",
+      components: []
+    });
+  }
+
+  const [userId, tipo, index] = partes;
   const idx = parseInt(index);
 
   const games = await UserGames.findOne({ userId });
@@ -110,7 +127,7 @@ export async function handleSelect(interaction) {
   const item = lista[idx];
 
   if (!item) {
-    return interaction.update({
+    return interaction.editReply({
       content: "❌ Entrada inválida.",
       components: []
     });
@@ -120,20 +137,13 @@ export async function handleSelect(interaction) {
   lista.splice(idx, 1);
 
   // ===============================
-  // RECONTAR XP TOTAL (sistema atual)
+  // RECONTAR XP TOTAL
   // ===============================
   let novoTotalXP = 0;
 
-  // XP por platinas
-  novoTotalXP += (games.platinas?.length || 0) * 100; // XP_PLATINA
+  novoTotalXP += (games.platinas?.length || 0) * 100; // XP por platina
+  novoTotalXP += (games.carreira?.length || 0) * 50;  // XP por carreira
 
-  // XP por carreira
-  novoTotalXP += (games.carreira?.length || 0) * 50; // XP_CARREIRA (exemplo)
-
-  // XP por missões (mantém)
-  // stats.totalXP já é atualizado pelo sistema de missões
-
-  // Recalcular nível
   let nivel = 1;
   let xpTemp = novoTotalXP;
 
@@ -174,7 +184,7 @@ export async function handleSelect(interaction) {
     )
     .setTimestamp();
 
-  await interaction.update({
+  await interaction.editReply({
     content: "",
     embeds: [embed],
     components: []
