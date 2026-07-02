@@ -43,6 +43,9 @@ import * as editar from "./commands/editar.js";
 // Handlers do /backup
 import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
 
+// Handler do /remover  <-- FALTAVA ISTO
+import * as remover from "./commands/remover.js";
+
 (async () => {
 
   restaurarBackup();
@@ -109,7 +112,13 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
     }
   });
 
+  // ============================
+  // INTERACTION CREATE (FINAL)
+  // ============================
   client.on(Events.InteractionCreate, async interaction => {
+
+    console.log("INTERACTION RECEBIDA:", interaction.type);
+
     // AUTOCOMPLETE
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
@@ -124,40 +133,90 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
       return;
     }
 
+    // ============================
     // SELECT MENUS
+    // ============================
     if (interaction.isStringSelectMenu()) {
-      // Menus do /backup
-      if (interaction.customId === "backup_menu") {
-        return handleBackupMenu(interaction);
-      }
 
-      if (interaction.customId === "restore_menu") {
-        return handleRestoreMenu(interaction);
-      }
+      console.log("SELECT MENU RECEBIDO:", interaction.customId);
+      console.log("VALORES:", interaction.values);
 
-      // Menus do /editar
-      if (interaction.customId === "editar_escolher_item") {
-        return editar.handleSelect(interaction);
-      }
+      try {
 
-      if (interaction.customId.startsWith("editar_opcao_")) {
-        return editar.handleSelectCampo(interaction);
+        // /backup
+        if (interaction.customId === "backup_menu") {
+          return handleBackupMenu(interaction);
+        }
+
+        if (interaction.customId === "restore_menu") {
+          return handleRestoreMenu(interaction);
+        }
+
+        // /remover  <-- AGORA FUNCIONA
+        if (interaction.customId === "remover_escolher_item") {
+          return remover.handleSelect(interaction);
+        }
+
+        // /editar
+        if (interaction.customId === "editar_escolher_item") {
+          return editar.handleSelect(interaction);
+        }
+
+        if (interaction.customId.startsWith("editar_opcao_")) {
+          return editar.handleSelectCampo(interaction);
+        }
+
+      } catch (err) {
+        console.error("ERRO NO SELECT MENU:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar o menu.",
+            flags: ["Ephemeral"]
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erro ao processar o menu.",
+            components: []
+          });
+        }
       }
 
       return;
     }
 
+    // ============================
     // MODALS
+    // ============================
     if (interaction.isModalSubmit()) {
-      if (interaction.customId.startsWith("editar_modal_")) {
-        return editar.handleModal(interaction);
+
+      try {
+        if (interaction.customId.startsWith("editar_modal_")) {
+          return editar.handleModal(interaction);
+        }
+      } catch (err) {
+        console.error("ERRO NO MODAL:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar o modal.",
+            flags: ["Ephemeral"]
+          });
+        } else {
+          await interaction.editReply({
+            content: "❌ Erro ao processar o modal."
+          });
+        }
       }
 
       return;
     }
 
+    // ============================
     // SLASH COMMANDS
+    // ============================
     if (interaction.isChatInputCommand()) {
+
       if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
         return interaction.reply({
           content: "Este comando só pode ser usado nos canais permitidos.",
@@ -187,6 +246,9 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
     }
   });
 
+  // ============================
+  // MESSAGE CREATE
+  // ============================
   client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
     editar.handleImage(message);
