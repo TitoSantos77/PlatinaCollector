@@ -202,7 +202,7 @@ export default {
                 jogo: "Grand Theft Auto V",
                 imagem: imagem.url,
                 xpGanhos: XP_CARREIRA,
-                data: new Date() // <-- CORRIGIDO
+                data: new Date()
               }
             }
           },
@@ -265,12 +265,17 @@ export default {
             text: `#${totalCarreira} progresso de carreira (por utilizador)`
           });
 
+        // Enviar embed final
         await i.update({
           content: "",
           components: [],
           embeds: [embed],
           ephemeral: false
         });
+
+        // 🏆 ADICIONAR REAÇÃO AQUI
+        const msg = await i.fetchReply();
+        await msg.react("🏆");
 
         collector.stop();
       }
