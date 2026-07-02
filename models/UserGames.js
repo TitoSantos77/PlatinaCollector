@@ -16,7 +16,7 @@ const proezaSchema = new mongoose.Schema({
   xpGanhos: Number
 });
 
-// 🔵 ADICIONADO — para o Mongoose finalmente ler o que já existe no Mongo
+// 🔵 LEGADO — conquistas antigas
 const conquistaSchema = new mongoose.Schema({
   nome: String,
   plataforma: String,
@@ -25,14 +25,26 @@ const conquistaSchema = new mongoose.Schema({
   xpGanhos: Number
 });
 
+// 🟩 NOVO — CARREIRA GTA
+const carreiraSchema = new mongoose.Schema({
+  categoria: String,
+  subcategoria: String,
+  plataforma: String,
+  jogo: { type: String, default: "Grand Theft Auto V" },
+  imagem: String,
+  xpGanhos: Number,
+  timestamp: { type: Number, default: () => Date.now() }
+});
+
 const userGamesSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
 
   platinas: { type: [platinaSchema], default: [] },
   proezas: { type: [proezaSchema], default: [] },
+  conquistas: { type: [conquistaSchema], default: [] },
 
-  // 🔵 AGORA O MONGOOSE CONSEGUE LER AS CONQUISTAS QUE JÁ ESTÃO NO MONGO
-  conquistas: { type: [conquistaSchema], default: [] }
+  // 🟩 NOVO — CARREIRA GTA
+  carreira: { type: [carreiraSchema], default: [] }
 });
 
 export default mongoose.model("UserGames", userGamesSchema);
