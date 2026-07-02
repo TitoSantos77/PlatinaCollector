@@ -190,7 +190,7 @@ export default {
 
         const userId = interaction.user.id;
 
-        // 1) Guardar no MongoDB
+        // 1) Guardar no MongoDB — AGORA COM DATA CORRETA
         const updated = await UserGames.findOneAndUpdate(
           { userId },
           {
@@ -202,7 +202,7 @@ export default {
                 jogo: "Grand Theft Auto V",
                 imagem: imagem.url,
                 xpGanhos: XP_CARREIRA,
-                timestamp: Date.now()
+                data: new Date() // <-- CORRIGIDO
               }
             }
           },
