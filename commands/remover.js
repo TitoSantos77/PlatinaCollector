@@ -13,7 +13,7 @@ import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
-  .setDescription("Remove platinas ou proezas de um utilizador (ADMIN)")
+  .setDescription("Remove platinas ou entradas da carreira GTA de um utilizador (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
   .addStringOption(opt =>
@@ -23,7 +23,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Proeza", value: "proeza" }
+        { name: "Carreira GTA", value: "carreira" }
       )
   )
 
@@ -59,18 +59,24 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
-      content: `📭 O utilizador não tem nenhuma ${tipo}.`,
+      content:
+        tipo === "platina"
+          ? `📭 O utilizador não tem nenhuma platina.`
+          : `📭 O utilizador não tem nenhuma entrada de carreira GTA.`,
       ephemeral: true
     });
   }
 
   // Criar menu com todas as entradas
   const options = lista.map((item, index) => ({
-    label: `${index + 1} — ${item.jogo} (${item.plataforma})`,
+    label:
+      tipo === "platina"
+        ? `${index + 1} — ${item.jogo} (${item.plataforma})`
+        : `${index + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
     value: `${userId}_${tipo}_${index}`
   }));
 
@@ -82,7 +88,7 @@ export async function execute(interaction) {
   );
 
   await interaction.reply({
-    content: `🗑 Escolhe a ${tipo} que queres remover de **${user.username}**:`,
+    content: `🗑 Escolhe a entrada de **${tipo}** que queres remover de **${user.username}**:`,
     components: [row],
     ephemeral: false
   });
@@ -100,7 +106,7 @@ export async function handleSelect(interaction) {
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
   const item = lista[idx];
 
   if (!item) {
@@ -113,39 +119,58 @@ export async function handleSelect(interaction) {
   // Remover entrada
   lista.splice(idx, 1);
 
-  // Recalcular XP
-  const xpPerdido = item.xpGanhos || 0;
-  stats.totalXP = Math.max(0, stats.totalXP - xpPerdido);
+  // ===============================
+  // RECONTAR XP TOTAL (sistema atual)
+  // ===============================
+  let novoTotalXP = 0;
 
+  // XP por platinas
+  novoTotalXP += (games.platinas?.length || 0) * 100; // XP_PLATINA
+
+  // XP por carreira
+  novoTotalXP += (games.carreira?.length || 0) * 50; // XP_CARREIRA (exemplo)
+
+  // XP por missões (mantém)
+  // stats.totalXP já é atualizado pelo sistema de missões
+
+  // Recalcular nível
   let nivel = 1;
-  let xpTemp = stats.totalXP;
+  let xpTemp = novoTotalXP;
 
   while (xpTemp >= xpNecessario(nivel)) {
     xpTemp -= xpNecessario(nivel);
     nivel++;
   }
 
+  stats.totalXP = novoTotalXP;
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  await verificarBadges(userId);
-
+  // Atualizar última entrada
   if (tipo === "platina") {
     stats.ultimaPlatina = lista[lista.length - 1] || null;
   } else {
-    stats.ultimaProeza = lista[lista.length - 1] || null;
+    stats.ultimaCarreira = lista[lista.length - 1] || null;
   }
+
+  await verificarBadges(userId);
 
   await stats.save();
   await games.save();
 
+  const texto =
+    tipo === "platina"
+      ? `${item.jogo} (${item.plataforma})`
+      : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
+
   const embed = new EmbedBuilder()
     .setColor("#FF4444")
-    .setTitle(tipo === "platina" ? "🗑 Platina removida" : "🗑 Proeza removida")
-    .setDescription(`A entrada **${item.jogo} (${item.plataforma})** foi removida.`)
+    .setTitle(tipo === "platina" ? "🗑 Platina removida" : "🗑 Carreira GTA removida")
+    .setDescription(`A entrada **${texto}** foi removida.`)
     .addFields(
-      { name: "❌ XP Perdido", value: `${xpPerdido} XP`, inline: true },
-      { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true }
+      { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true },
+      { name: "✨ XP Atual", value: `${stats.xp} XP`, inline: true },
+      { name: "📊 XP Total", value: `${stats.totalXP} XP`, inline: true }
     )
     .setTimestamp();
 
