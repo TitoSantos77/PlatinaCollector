@@ -6,6 +6,9 @@ import UserStats from "../models/UserStats.js";
 export const XP_PLATINA = 100;
 export const XP_PROEZA = 50;
 
+// 🟨 NOVO — XP para CARREIRA GTA
+export const XP_CARREIRA = 75;
+
 // XP extra das missões (se precisares)
 export const XP_FACIL = 20;
 export const XP_MEDIA = 25;
@@ -40,16 +43,37 @@ async function garantirUser(userId) {
   if (!user) {
     user = await UserStats.create({
       userId,
+
+      // PLATINAS
       totalPlatinas: 0,
-      totalProezas: 0,
       ultimaPlatina: null,
+
+      // PROEZAS (LEGADO)
+      totalProezas: 0,
       ultimaProeza: null,
+
+      // 🟨 CARREIRA GTA — NOVO SISTEMA
+      totalCarreira: 0,
+      ultimaCarreira: null,
+      categorias: {},
+      subcategorias: {},
+      plataformasCarreira: {},
+
+      // XP / NÍVEL
       xp: 0,
       totalXP: 0,
       nivel: 1,
+
+      // BADGES
       badgesDesbloqueadas: []
     });
   }
+
+  // Garantir campos novos em users antigos
+  user.totalCarreira = user.totalCarreira || 0;
+  user.categorias = user.categorias || {};
+  user.subcategorias = user.subcategorias || {};
+  user.plataformasCarreira = user.plataformasCarreira || {};
 
   return user;
 }
@@ -60,7 +84,6 @@ async function garantirUser(userId) {
 function atualizarBadge(user) {
   const novaBadge = getBadgeByLevel(user.nivel);
 
-  // Se mudou de badge → atualizar
   if (!user.badgesDesbloqueadas.includes(novaBadge)) {
     user.badgesDesbloqueadas.push(novaBadge);
   }
