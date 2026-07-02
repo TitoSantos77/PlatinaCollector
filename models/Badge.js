@@ -36,12 +36,33 @@ export async function verificarBadges(userId) {
       ? (stats.missoesConcluidas || 0) >= req.missoes
       : true;
 
+    // 🟩 NOVO — CARREIRA GTA
+    const cumpreCarreira = req.carreira
+      ? (stats.totalCarreira || 0) >= req.carreira
+      : true;
+
+    const cumpreCategoria = req.categoria
+      ? (stats.categorias?.get(req.categoria) || 0) >= req.categoriaQtd || 1
+      : true;
+
+    const cumpreSubcategoria = req.subcategoria
+      ? (stats.subcategorias?.get(req.subcategoria) || 0) >= req.subcategoriaQtd || 1
+      : true;
+
+    const cumprePlataformaCarreira = req.plataformaCarreira
+      ? (stats.plataformasCarreira?.get(req.plataformaCarreira) || 0) >= req.plataformaQtd || 1
+      : true;
+
     if (
       cumpreNivel &&
       cumpreXP &&
       cumprePlatinas &&
       cumpreProezas &&
-      cumpreMissoes
+      cumpreMissoes &&
+      cumpreCarreira &&
+      cumpreCategoria &&
+      cumpreSubcategoria &&
+      cumprePlataformaCarreira
     ) {
       stats.badgesDesbloqueadas.push(id);
       ganhouNova = true;
