@@ -16,39 +16,48 @@ export async function execute(interaction) {
   const totalPlatinas = stats.reduce((acc, u) => acc + (u.totalPlatinas || 0), 0);
   const totalCarreira = stats.reduce((acc, u) => acc + (u.totalCarreira || 0), 0);
 
+  // Função para contar ocorrências
+  function contar(array) {
+    const mapa = {};
+    for (const item of array || []) {
+      mapa[item] = (mapa[item] || 0) + 1;
+    }
+    return mapa;
+  }
+
   // Jogo mais platinado
   let jogoMaisFeito = "Nenhum";
-  if (globalStats?.jogos && globalStats.jogos.size > 0) {
-    jogoMaisFeito = [...globalStats.jogos.entries()]
-      .sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.jogos?.length > 0) {
+    const contagem = contar(globalStats.jogos);
+    jogoMaisFeito = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Plataforma mais usada (platinas)
   let plataformaMaisUsada = "Nenhuma";
-  if (globalStats?.plataformas && globalStats.plataformas.size > 0) {
-    plataformaMaisUsada = [...globalStats.plataformas.entries()]
-      .sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.plataformas?.length > 0) {
+    const contagem = contar(globalStats.plataformas);
+    plataformaMaisUsada = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Categoria mais feita (carreira)
   let categoriaMaisFeita = "Nenhuma";
-  if (globalStats?.categoriasCarreira && globalStats.categoriasCarreira.size > 0) {
-    categoriaMaisFeita = [...globalStats.categoriasCarreira.entries()]
-      .sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.categoriasCarreira?.length > 0) {
+    const contagem = contar(globalStats.categoriasCarreira);
+    categoriaMaisFeita = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Subcategoria mais feita (carreira)
   let subcategoriaMaisFeita = "Nenhuma";
-  if (globalStats?.subcategoriasCarreira && globalStats.subcategoriasCarreira.size > 0) {
-    subcategoriaMaisFeita = [...globalStats.subcategoriasCarreira.entries()]
-      .sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.subcategoriasCarreira?.length > 0) {
+    const contagem = contar(globalStats.subcategoriasCarreira);
+    subcategoriaMaisFeita = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Plataforma GTA mais usada
   let plataformaCarreiraMaisUsada = "Nenhuma";
-  if (globalStats?.plataformasCarreira && globalStats.plataformasCarreira.size > 0) {
-    plataformaCarreiraMaisUsada = [...globalStats.plataformasCarreira.entries()]
-      .sort((a, b) => b[1] - a[1])[0][0];
+  if (globalStats?.plataformasGTA?.length > 0) {
+    const contagem = contar(globalStats.plataformasGTA);
+    plataformaCarreiraMaisUsada = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   // Top XP
