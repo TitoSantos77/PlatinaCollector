@@ -75,8 +75,8 @@ export async function execute(interaction) {
   const options = lista.map((item, index) => ({
     label:
       tipo === "platina"
-        ? `${index + 1} — ${item.jogo} (${item.plataforma})`
-        : `${index + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
+        ? `${index + 1} — ${item.jogo || "Sem nome"} (${item.plataforma || "??"})`
+        : `${index + 1} — ${item.categoria || "Sem categoria"} / ${item.subcategoria || "Sem subcategoria"} (${item.plataforma || "??"})`,
     value: `${userId}_${tipo}_${index}`
   }));
 
@@ -128,7 +128,7 @@ export async function handleSelect(interaction) {
 
   if (!item) {
     return interaction.editReply({
-      content: "❌ Entrada inválida.",
+      content: "❌ Entrada inválida ou corrompida.",
       components: []
     });
   }
@@ -168,10 +168,11 @@ export async function handleSelect(interaction) {
   await stats.save();
   await games.save();
 
+  // TEXTO BLINDADO — nunca crasha
   const texto =
     tipo === "platina"
-      ? `${item.jogo} (${item.plataforma})`
-      : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
+      ? `${item.jogo || "Jogo desconhecido"} (${item.plataforma || "??"})`
+      : `${item.categoria || "Categoria desconhecida"} / ${item.subcategoria || "Subcategoria desconhecida"} (${item.plataforma || "??"})`;
 
   const embed = new EmbedBuilder()
     .setColor("#FF4444")
