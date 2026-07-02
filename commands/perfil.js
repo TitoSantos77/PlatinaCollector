@@ -23,7 +23,7 @@ export async function execute(interaction) {
       totalXP: 0,
       nivel: 1,
       totalPlatinas: 0,
-      totalProezas: 0,
+      totalCarreira: 0,
       badgesDesbloqueadas: []
     });
   }
@@ -35,47 +35,45 @@ export async function execute(interaction) {
 
   const statsVazio =
     (!statsAtualizados.totalPlatinas || statsAtualizados.totalPlatinas === 0) &&
-    (!statsAtualizados.totalProezas || statsAtualizados.totalProezas === 0) &&
+    (!statsAtualizados.totalCarreira || statsAtualizados.totalCarreira === 0) &&
     (!statsAtualizados.ultimaPlatina || !statsAtualizados.ultimaPlatina.jogo) &&
-    (!statsAtualizados.ultimaProeza || !statsAtualizados.ultimaProeza.jogo);
+    (!statsAtualizados.ultimaCarreira || !statsAtualizados.ultimaCarreira.categoria);
 
   if (statsVazio) {
     const userGames = await UserGames.findOne({ userId });
 
     if (userGames) {
       const totalPlatinas = userGames.platinas?.length || 0;
-      const totalProezas = userGames.proezas?.length || 0;
+      const totalCarreira = userGames.carreira?.length || 0;
 
       const ultimaPlatina =
         totalPlatinas > 0
           ? userGames.platinas[userGames.platinas.length - 1]
           : null;
 
-      const ultimaProeza =
-        totalProezas > 0
-          ? userGames.proezas[userGames.proezas.length - 1]
+      const ultimaCarreira =
+        totalCarreira > 0
+          ? userGames.carreira[userGames.carreira.length - 1]
           : null;
 
       await UserStats.findOneAndUpdate(
         { userId },
         {
           totalPlatinas,
-          totalProezas,
+          totalCarreira,
           ultimaPlatina,
-          ultimaProeza
+          ultimaCarreira
         },
         { new: true }
       );
 
-      // Atualizar objeto local
       statsAtualizados.totalPlatinas = totalPlatinas;
-      statsAtualizados.totalProezas = totalProezas;
+      statsAtualizados.totalCarreira = totalCarreira;
       statsAtualizados.ultimaPlatina = ultimaPlatina;
-      statsAtualizados.ultimaProeza = ultimaProeza;
+      statsAtualizados.ultimaCarreira = ultimaCarreira;
     }
   }
 
-  // Agora statsAtualizados é a fonte oficial
   stats = statsAtualizados;
 
   // ============================
@@ -105,14 +103,14 @@ export async function execute(interaction) {
   // 🔵 ESTATÍSTICAS DO USER
   // ============================
   const platinas = stats.totalPlatinas ?? 0;
-  const proezas = stats.totalProezas ?? 0;
+  const carreira = stats.totalCarreira ?? 0;
 
   const ultimaPlatinaTexto = stats.ultimaPlatina?.jogo
     ? `${stats.ultimaPlatina.jogo}${stats.ultimaPlatina.plataforma ? ` (${stats.ultimaPlatina.plataforma})` : ""}`
     : "Nenhuma ainda";
 
-  const ultimaProezaTexto = stats.ultimaProeza?.jogo
-    ? `${stats.ultimaProeza.jogo}${stats.ultimaProeza.plataforma ? ` (${stats.ultimaProeza.plataforma})` : ""}`
+  const ultimaCarreiraTexto = stats.ultimaCarreira?.categoria
+    ? `${stats.ultimaCarreira.categoria} / ${stats.ultimaCarreira.subcategoria} (${stats.ultimaCarreira.plataforma})`
     : "Nenhuma ainda";
 
   // ============================
@@ -150,10 +148,10 @@ export async function execute(interaction) {
       { name: "🔵 Barra de XP", value: `\`${barra}\``, inline: false },
 
       { name: "🏆 Platinas", value: `${platinas}`, inline: true },
-      { name: "🥇 Proezas", value: `${proezas}`, inline: true },
+      { name: "🚗 Carreira GTA", value: `${carreira}`, inline: true },
 
       { name: "Última Platina", value: ultimaPlatinaTexto, inline: false },
-      { name: "Última Proeza", value: ultimaProezaTexto, inline: false }
+      { name: "Última Ação de Carreira", value: ultimaCarreiraTexto, inline: false }
     )
     .setFooter({ text: "Continua a evoluir, lenda!" });
 
