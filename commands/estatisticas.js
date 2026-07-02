@@ -8,8 +8,25 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
 
+  // LOG 1 — confirmar que este ficheiro está a ser carregado
+  console.log(">>> [ESTATISTICAS] FICHEIRO ATIVO <<<");
+
   const stats = await UserStats.find().lean();
   const globalStats = await GlobalStats.findOne().lean();
+
+  // LOG 2 — ver o documento global REAL vindo do Mongo
+  console.log(">>> [ESTATISTICAS] GLOBALSTATS RAW:", globalStats);
+
+  // LOG 3 — ver se os arrays existem e o que têm
+  if (globalStats) {
+    console.log(">>> jogos:", globalStats.jogos);
+    console.log(">>> plataformas:", globalStats.plataformas);
+    console.log(">>> categoriasCarreira:", globalStats.categoriasCarreira);
+    console.log(">>> subcategoriasCarreira:", globalStats.subcategoriasCarreira);
+    console.log(">>> plataformasGTA:", globalStats.plataformasGTA);
+  } else {
+    console.log(">>> [ESTATISTICAS] GlobalStats veio NULL");
+  }
 
   const totalJogadores = stats.length;
   const totalXP = stats.reduce((acc, u) => acc + (u.totalXP || 0), 0);
