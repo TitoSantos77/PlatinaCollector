@@ -1,4 +1,6 @@
 import fs from "fs";
+import UserGames from "../models/UserGames.js";
+import UserStats from "../models/UserStats.js";
 
 const DATA_FILES = [
   "data/users.json",
@@ -8,11 +10,12 @@ const DATA_FILES = [
   "data/missions.json"
 ];
 
-export function criarBackup() {
+export async function criarBackup() {
   if (!fs.existsSync("backup")) {
     fs.mkdirSync("backup");
   }
 
+  // BACKUP DOS JSON LOCAIS
   for (const file of DATA_FILES) {
     if (fs.existsSync(file)) {
       const conteudo = fs.readFileSync(file, "utf8");
@@ -21,13 +24,20 @@ export function criarBackup() {
       const tempPath = `backup/${nome}.tmp`;
       const finalPath = `backup/${nome}`;
 
-      // Escreve primeiro num ficheiro temporário
       fs.writeFileSync(tempPath, conteudo);
-
-      // Substitui de forma atómica
       fs.renameSync(tempPath, finalPath);
     }
   }
+
+  // BACKUP DO MONGODB — USERGAMES
+  const userGamesData = await UserGames.find().lean();
+  fs.writeFileSync("backup/userGames.json.tmp", JSON.stringify(userGamesData, null, 2));
+  fs.renameSync("backup/userGames.json.tmp", "backup/userGames.json");
+
+  // BACKUP DO MONGODB — USERSTATS
+  const userStatsData = await UserStats.find().lean();
+  fs.writeFileSync("backup/userStatsMongo.json.tmp", JSON.stringify(userStatsData, null, 2));
+  fs.renameSync("backup/userStatsMongo.json.tmp", "backup/userStatsMongo.json");
 }
 
 export function restaurarBackup() {
@@ -41,14 +51,14 @@ export function restaurarBackup() {
 
     if (fs.existsSync(backupPath) && !fs.existsSync(file)) {
       const conteudo = fs.readFileSync(backupPath, "utf8");
-
       const tempPath = `${file}.tmp`;
 
-      // Escreve temporário
       fs.writeFileSync(tempPath, conteudo);
-
-      // Move para o ficheiro final
       fs.renameSync(tempPath, file);
     }
   }
+
+  // MongoDB NÃO é restaurado automaticamente
+  // porque seria perigoso sobrescrever coleções inteiras.
+  // Se quiseres, posso criar um comando /restore_mongo.
 }
