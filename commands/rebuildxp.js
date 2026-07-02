@@ -2,7 +2,9 @@ import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import UserStats from "../models/UserStats.js";
 import UserGames from "../models/UserGames.js";
 import UserMissions from "../models/UserMissions.js";
-import { adicionarXP, XP_PLATINA, XP_CONQUISTA } from "../utils/xpSystem.js";
+
+// 🟩 IMPORT CORRIGIDO — AGORA USA O SISTEMA NOVO
+import { adicionarXP, XP_PLATINA, XP_CONQUISTA } from "../utils/xp.js";
 
 async function calcularXP(userId) {
   const stats = await UserStats.findOne({ userId });
@@ -16,11 +18,11 @@ async function calcularXP(userId) {
   // XP por platinas
   totalXP += (games.platinas?.length || 0) * XP_PLATINA;
 
-  // XP por proezas + conquistas
+  // XP por conquistas (proezas + conquistas)
   const totalConquistas = (games.proezas?.length || 0) + (games.conquistas?.length || 0);
   totalXP += totalConquistas * XP_CONQUISTA;
 
-  // XP por missões
+  // XP por missões concluídas
   if (missions && Array.isArray(missions.historico)) {
     for (const m of missions.historico) {
       if (!m) continue;
@@ -29,12 +31,13 @@ async function calcularXP(userId) {
     }
   }
 
-  // Reset XP e aplicar XP real via sistema original
+  // Reset XP antes de aplicar o novo total
   stats.xp = 0;
   stats.totalXP = 0;
   stats.nivel = 1;
   await stats.save();
 
+  // Aplicar XP real via sistema novo
   await adicionarXP(userId, totalXP);
 
   return totalXP;
