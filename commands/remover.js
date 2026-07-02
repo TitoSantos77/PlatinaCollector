@@ -8,6 +8,7 @@ import {
 
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
+import GlobalStats from "../models/GlobalStats.js";
 import { xpNecessario } from "../utils/xp.js";
 import { verificarBadges } from "../utils/badges.js";
 
@@ -99,7 +100,6 @@ export async function execute(interaction) {
 export async function handleSelect(interaction) {
   if (interaction.customId !== "remover_escolher_item") return;
 
-  // Segurança extra
   if (!interaction.values || interaction.values.length === 0) {
     return interaction.editReply({
       content: "❌ Erro: o menu não devolveu nenhum valor.",
@@ -133,16 +133,29 @@ export async function handleSelect(interaction) {
     });
   }
 
-  // Remover entrada
-  lista.splice(idx, 1);
+  // ===============================
+  // REMOVER DO MONGO CORRETAMENTE
+  // ===============================
+  if (tipo === "platina") {
+    games.platinas.splice(idx, 1);
+  } else {
+    games.carreira.splice(idx, 1);
+  }
+
+  await games.save();
 
   // ===============================
-  // RECONTAR XP TOTAL
+  // RECONTAR XP CORRETAMENTE
   // ===============================
   let novoTotalXP = 0;
 
-  novoTotalXP += (games.platinas?.length || 0) * 100; // XP por platina
-  novoTotalXP += (games.carreira?.length || 0) * 50;  // XP por carreira
+  for (const p of games.platinas) {
+    novoTotalXP += p.xpGanhos || 100;
+  }
+
+  for (const c of games.carreira) {
+    novoTotalXP += c.xpGanhos || 75;
+  }
 
   let nivel = 1;
   let xpTemp = novoTotalXP;
@@ -156,19 +169,29 @@ export async function handleSelect(interaction) {
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  // Atualizar última entrada
-  if (tipo === "platina") {
-    stats.ultimaPlatina = lista[lista.length - 1] || null;
-  } else {
-    stats.ultimaCarreira = lista[lista.length - 1] || null;
-  }
+  stats.ultimaPlatina = games.platinas[games.platinas.length - 1] || null;
+  stats.ultimaCarreira = games.carreira[games.carreira.length - 1] || null;
 
   await verificarBadges(userId);
-
   await stats.save();
-  await games.save();
 
-  // TEXTO BLINDADO — nunca crasha
+  // ===============================
+  // ATUALIZAR ESTATÍSTICAS GLOBAIS
+  // ===============================
+  const globais = await GlobalStats.findOne() || new GlobalStats();
+
+  globais.jogos = [...new Set(games.platinas.map(p => p.jogo))];
+  globais.plataformas = [...new Set(games.platinas.map(p => p.plataforma))];
+
+  globais.categoriasCarreira = [...new Set(games.carreira.map(c => c.categoria))];
+  globais.subcategoriasCarreira = [...new Set(games.carreira.map(c => c.subcategoria))];
+  globais.plataformasGTA = [...new Set(games.carreira.map(c => c.plataforma))];
+
+  await globais.save();
+
+  // ===============================
+  // EMBED FINAL
+  // ===============================
   const texto =
     tipo === "platina"
       ? `${item.jogo || "Jogo desconhecido"} (${item.plataforma || "??"})`
@@ -190,4 +213,12 @@ export async function handleSelect(interaction) {
     embeds: [embed],
     components: []
   });
+
+  // Reação opcional
+  try {
+    const msg = await interaction.fetchReply();
+    await msg.react("🗑️");
+  } catch (err) {
+    console.log("Falha ao reagir:", err);
+  }
 }
