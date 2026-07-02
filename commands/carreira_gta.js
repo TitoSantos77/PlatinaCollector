@@ -81,7 +81,7 @@ const plataformas = ["PS5", "Xbox Series X/S", "PC"];
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("carreiraGta")
+        .setName("carreira_gta") // ✔ NOME CORRIGIDO
         .setDescription("Gerir o progresso de carreira GTA Online")
         .addSubcommand(sub =>
             sub
