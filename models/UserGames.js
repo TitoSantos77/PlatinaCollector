@@ -16,7 +16,7 @@ const proezaSchema = new mongoose.Schema({
   xpGanhos: Number
 });
 
-// 🔵 LEGADO — conquistas antigas
+// LEGADO — conquistas antigas
 const conquistaSchema = new mongoose.Schema({
   nome: String,
   plataforma: String,
