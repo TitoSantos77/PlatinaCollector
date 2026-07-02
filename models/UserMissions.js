@@ -9,14 +9,28 @@ const missionSchema = new mongoose.Schema({
 
     objetivo: {
       platinas: { type: Number, default: 0 },
-      proezas: { type: Number, default: 0 },
-      xp: { type: Number, default: 0 }
+
+      // 🟩 NOVO — CARREIRA GTA
+      carreira: { type: Number, default: 0 },
+
+      // XP
+      xp: { type: Number, default: 0 },
+
+      // 🟨 LEGADO — proezas (não usado, mas mantido para compatibilidade)
+      proezas: { type: Number, default: 0 }
     },
 
     progresso: {
       platinas: { type: Number, default: 0 },
-      proezas: { type: Number, default: 0 },
-      xp: { type: Number, default: 0 }
+
+      // 🟩 NOVO — CARREIRA GTA
+      carreira: { type: Number, default: 0 },
+
+      // XP
+      xp: { type: Number, default: 0 },
+
+      // 🟨 LEGADO — proezas
+      proezas: { type: Number, default: 0 }
     },
 
     recompensa: Number,
