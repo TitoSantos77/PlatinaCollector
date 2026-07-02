@@ -9,7 +9,7 @@ import UserGames from "../models/UserGames.js";
 
 export const data = new SlashCommandBuilder()
   .setName("listar")
-  .setDescription("Lista platinas ou proezas de um utilizador")
+  .setDescription("Lista platinas ou entradas da carreira GTA de um utilizador")
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -17,7 +17,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Platina", value: "platina" },
-        { name: "Proeza", value: "proeza" }
+        { name: "Carreira GTA", value: "carreira" }
       )
   )
   .addUserOption(opt =>
@@ -40,11 +40,14 @@ export async function execute(interaction) {
     });
   }
 
-  const lista = tipo === "platina" ? games.platinas : games.proezas;
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
-      content: `📭 O utilizador não tem nenhuma ${tipo}.`,
+      content:
+        tipo === "platina"
+          ? `📭 O utilizador não tem nenhuma platina.`
+          : `📭 O utilizador não tem nenhuma entrada de carreira GTA.`,
       ephemeral: true
     });
   }
@@ -63,7 +66,13 @@ export async function execute(interaction) {
       .map((item, i) => {
         const idReal = inicio + i;
         const numero = idReal + 1;
-        return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`;
+
+        if (tipo === "platina") {
+          return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`;
+        }
+
+        // Carreira GTA
+        return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${item.data || "sem data"}`;
       })
       .join("\n");
 
@@ -72,7 +81,7 @@ export async function execute(interaction) {
       .setTitle(
         tipo === "platina"
           ? `📘 Platinas de ${user.username}`
-          : `📙 Proezas de ${user.username}`
+          : `🚗 Carreira GTA de ${user.username}`
       )
       .setDescription(texto)
       .setFooter({ text: `Página ${pagina + 1} de ${totalPaginas}` });
