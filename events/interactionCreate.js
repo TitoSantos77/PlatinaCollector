@@ -22,7 +22,7 @@ export default {
       } catch (err) {
         console.error(err);
         if (!interaction.replied) {
-          interaction.reply({ content: "❌ Erro ao executar o comando.", ephemeral: true });
+          interaction.reply({ content: "❌ Erro ao executar o comando.", flags: ["Ephemeral"] });
         }
       }
       return;
@@ -33,6 +33,9 @@ export default {
     // ============================
     if (interaction.isStringSelectMenu()) {
 
+      // 🟦 TESTE CRÍTICO — VER SE O BOT RECEBE O SELECT
+      console.log("SELECT MENU RECEBIDO:", interaction.customId);
+
       // Menus do /backup
       if (interaction.customId === "backup_menu") {
         return handleBackupMenu(interaction);
@@ -42,7 +45,7 @@ export default {
         return handleRestoreMenu(interaction);
       }
 
-      // 🟥 AQUI FALTAVA O HANDLER DO /REMOVER
+      // Menu do /remover
       if (interaction.customId === "remover_escolher_item") {
         return remover.handleSelect(interaction);   // <-- PATCH
       }
