@@ -89,7 +89,8 @@ export async function execute(interaction) {
           jogo,
           plataforma,
           imagem: imagem.url,
-          xpGanhos: xpGanho
+          xpGanhos: xpGanho,
+          data: new Date() // <-- ADICIONADO PARA CONSISTÊNCIA
         }
       }
     },
@@ -138,5 +139,10 @@ export async function execute(interaction) {
     )
     .setFooter({ text: "Boa! Continua a colecionar platinas!" });
 
+  // Enviar embed
   await interaction.reply({ embeds: [embed] });
+
+  // 🏆 ADICIONAR REAÇÃO AQUI
+  const msg = await interaction.fetchReply();
+  await msg.react("🏆");
 }
