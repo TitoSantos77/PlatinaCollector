@@ -21,10 +21,8 @@ import { atualizarStatsCarreira } from "../utils/userStats.js";
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 
-// XP fixo para carreira
 const XP_CARREIRA = 75;
 
-// Categorias e subcategorias oficiais PT‑BR
 const categorias = {
   "Missões de Contato": [
     "A Safehouse in the Hills",
@@ -80,7 +78,6 @@ const categorias = {
   ]
 };
 
-// Plataformas GTA
 const plataformas = ["PS5", "Xbox Series X/S", "PC"];
 
 export default {
@@ -98,7 +95,6 @@ export default {
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
-
     if (sub !== "add") return;
 
     const imagem = interaction.options.getAttachment("imagem");
@@ -110,7 +106,6 @@ export default {
       });
     }
 
-    // 1) MENU DE CATEGORIA
     const categoriaMenu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("carreira_categoria")
@@ -138,7 +133,7 @@ export default {
     let plataformaEscolhida = null;
 
     collector.on("collect", async i => {
-      // CATEGORIA
+
       if (i.customId === "carreira_categoria") {
         categoriaEscolhida = i.values[0];
 
@@ -161,7 +156,6 @@ export default {
         });
       }
 
-      // SUBCATEGORIA
       if (i.customId === "carreira_subcategoria") {
         subcategoriaEscolhida = i.values[0];
 
@@ -184,13 +178,10 @@ export default {
         });
       }
 
-      // PLATAFORMA → GUARDAR NO SISTEMA
       if (i.customId === "carreira_plataforma") {
         plataformaEscolhida = i.values[0];
-
         const userId = interaction.user.id;
 
-        // 1) Guardar no MongoDB — AGORA COM DATA CORRETA
         const updated = await UserGames.findOneAndUpdate(
           { userId },
           {
@@ -211,7 +202,6 @@ export default {
 
         const totalCarreira = updated.carreira.length;
 
-        // 2) Stats individuais
         await atualizarStatsCarreira(
           userId,
           categoriaEscolhida,
@@ -219,30 +209,21 @@ export default {
           plataformaEscolhida
         );
 
-        // 3) XP
         await adicionarXP(userId, XP_CARREIRA);
-
-        // 4) Missões
         await atualizarProgresso(userId, "carreira", true);
 
-        // 5) Stats globais
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
 
-        // 6) Badges
         await verificarBadges(userId);
 
-        // 7) Stats atualizados
         const stats = await UserStats.findOne({ userId });
 
-        // 8) Backup
         criarBackup();
 
-        // 9) EMBED FINAL
         const embed = new EmbedBuilder()
           .setColor("#F5C400")
-          .setTitle(`${categoriaEscolhida} — ${subcategoriaEscolhida}`)
           .setThumbnail("https://i.imgur.com/2u6hFQv.png")
           .addFields(
             { name: "🎮 Jogo", value: "Grand Theft Auto V", inline: false },
@@ -265,7 +246,6 @@ export default {
             text: `#${totalCarreira} progresso de carreira (por utilizador)`
           });
 
-        // Enviar embed final
         await i.update({
           content: "",
           components: [],
@@ -273,9 +253,8 @@ export default {
           ephemeral: false
         });
 
-        // 🏆 ADICIONAR REAÇÃO AQUI
-        const msg = await i.fetchReply();
-        await msg.react("🏆");
+        // 🏆 REAÇÃO — AGORA FUNCIONA
+        await i.message.react("🏆");
 
         collector.stop();
       }
