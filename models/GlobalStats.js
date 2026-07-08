@@ -3,35 +3,30 @@ import mongoose from "mongoose";
 const globalStatsSchema = new mongoose.Schema({
   // Contagem de jogos (platinas)
   jogos: {
-    type: Map,
-    of: Number,
-    default: {}
+    type: [String],
+    default: []
   },
 
   // Contagem de plataformas (platinas)
   plataformas: {
-    type: Map,
-    of: Number,
-    default: {}
+    type: [String],
+    default: []
   },
 
-  // 🟩 NOVO — CARREIRA GTA
+  // 🟩 CARREIRA GTA — ARRAYS (compatível com .push, .filter, etc.)
   categoriasCarreira: {
-    type: Map,
-    of: Number,
-    default: {}
+    type: [String],
+    default: []
   },
 
   subcategoriasCarreira: {
-    type: Map,
-    of: Number,
-    default: {}
+    type: [String],
+    default: []
   },
 
   plataformasCarreira: {
-    type: Map,
-    of: Number,
-    default: {}
+    type: [String],
+    default: []
   }
 });
 
