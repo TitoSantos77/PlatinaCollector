@@ -9,7 +9,7 @@ async function garantirStats() {
       plataformas: [],
       categoriasCarreira: [],
       subcategoriasCarreira: [],
-      plataformasGTA: []
+      plataformasCarreira: []   // <-- CORRIGIDO
     });
   }
   return stats;
@@ -78,7 +78,7 @@ export async function adicionarSubcategoriaCarreira(nome) {
 export async function adicionarPlataformaCarreira(nome) {
   if (!nome) return;
   const stats = await garantirStats();
-  stats.plataformasGTA.push(nome);
+  stats.plataformasCarreira.push(nome);   // <-- CORRIGIDO
   await stats.save();
 }
 
@@ -99,7 +99,7 @@ export async function removerSubcategoriaCarreira(nome) {
 export async function removerPlataformaCarreira(nome) {
   if (!nome) return;
   const stats = await garantirStats();
-  stats.plataformasGTA = stats.plataformasGTA.filter(p => p !== nome);
+  stats.plataformasCarreira = stats.plataformasCarreira.filter(p => p !== nome);  // <-- CORRIGIDO
   await stats.save();
 }
 
@@ -115,5 +115,5 @@ export async function obterSubcategoriasCarreira() {
 
 export async function obterPlataformasCarreira() {
   const stats = await garantirStats();
-  return stats.plataformasGTA;
+  return stats.plataformasCarreira;   // <-- CORRIGIDO
 }
