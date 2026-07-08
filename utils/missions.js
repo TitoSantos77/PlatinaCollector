@@ -164,7 +164,7 @@ export async function adicionarXPsemana(userId, quantidade) {
 }
 
 // ===============================
-// VERIFICAR CONCLUSÃO
+// VERIFICAR CONCLUSÃO (CORRIGIDO)
 // ===============================
 export async function verificarConclusao(userId) {
   const doc = await garantirUser(userId);
@@ -174,18 +174,32 @@ export async function verificarConclusao(userId) {
   const obj = missao.objetivo;
   const prog = missao.progresso;
 
+  // Garantir números válidos
+  const platinasObj = Number(obj.platinas) || 0;
+  const proezasObj = Number(obj.proezas) || 0;
+  const carreiraObj = Number(obj.carreira) || 0;
+  const xpObj = Number(obj.xp) || 0;
+
+  const platinasProg = Number(prog.platinas) || 0;
+  const proezasProg = Number(prog.proezas) || 0;
+  const carreiraProg = Number(prog.carreira) || 0;
+  const xpProg = Number(prog.xp) || 0;
+
   const concluida =
-    prog.platinas >= obj.platinas &&
-    prog.proezas >= obj.proezas &&
-    prog.carreira >= obj.carreira && // 🟨 NOVO
-    prog.xp >= obj.xp;
+    platinasProg >= platinasObj &&
+    proezasProg >= proezasObj &&
+    carreiraProg >= carreiraObj &&
+    xpProg >= xpObj;
 
   if (!concluida) return;
 
   missao.concluida = true;
   missao.dataFim = new Date().toISOString().split("T")[0];
 
-  await adicionarXP(userId, missao.recompensa);
+  // Garantir recompensa válida
+  const recompensa = Number(missao.recompensa) || 0;
+
+  await adicionarXP(userId, recompensa);
 
   doc.ultimaConcluida = missao;
 
