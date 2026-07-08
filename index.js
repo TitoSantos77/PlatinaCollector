@@ -31,6 +31,10 @@ async function ligarMongo() {
 
 ligarMongo();
 
+// 🟩 FIX GLOBALSTATS (SEM APAGAR NADA)
+import { fixGlobalStats } from "./utils/fixGlobalStats.js";
+fixGlobalStats();
+
 // Backup
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
 
@@ -43,7 +47,7 @@ import * as editar from "./commands/editar.js";
 // Handlers do /backup
 import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
 
-// Handler do /remover  <-- FALTAVA ISTO
+// Handler do /remover
 import * as remover from "./commands/remover.js";
 
 (async () => {
@@ -152,7 +156,7 @@ import * as remover from "./commands/remover.js";
           return handleRestoreMenu(interaction);
         }
 
-        // /remover  <-- AGORA FUNCIONA
+        // /remover
         if (interaction.customId === "remover_escolher_item") {
           return remover.handleSelect(interaction);
         }
