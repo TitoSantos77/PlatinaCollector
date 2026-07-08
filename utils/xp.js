@@ -90,13 +90,20 @@ function atualizarBadge(user) {
 }
 
 // ===============================
-// ADICIONAR XP AO USER
+// ADICIONAR XP AO USER (CORRIGIDO)
 // ===============================
 export async function adicionarXP(userId, quantidade) {
   let user = await garantirUser(userId);
 
-  user.xp += quantidade;
-  user.totalXP += quantidade;
+  // Garantir que xp e totalXP são números válidos
+  const xpAtual = Number(user.xp) || 0;
+  const totalXPAtual = Number(user.totalXP) || 0;
+
+  const novoXP = xpAtual + quantidade;
+  const novoTotalXP = totalXPAtual + quantidade;
+
+  user.xp = novoXP;
+  user.totalXP = novoTotalXP;
 
   let xpNeeded = xpNecessario(user.nivel);
 
