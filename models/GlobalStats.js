@@ -1,19 +1,21 @@
 import mongoose from "mongoose";
 
 const globalStatsSchema = new mongoose.Schema({
-  // Contagem de jogos (platinas)
+  // Contagem de jogos (platinas) — FORMATO ANTIGO
   jogos: {
-    type: [String],
-    default: []
+    type: Map,
+    of: Number,
+    default: {}
   },
 
-  // Contagem de plataformas (platinas)
+  // Contagem de plataformas (platinas) — FORMATO ANTIGO
   plataformas: {
-    type: [String],
-    default: []
+    type: Map,
+    of: Number,
+    default: {}
   },
 
-  // 🟩 CARREIRA GTA — ARRAYS (compatível com .push, .filter, etc.)
+  // 🟩 CARREIRA GTA — ARRAYS (NOVO)
   categoriasCarreira: {
     type: [String],
     default: []
@@ -30,5 +32,4 @@ const globalStatsSchema = new mongoose.Schema({
   }
 });
 
-// Documento único
 export default mongoose.model("GlobalStats", globalStatsSchema);
