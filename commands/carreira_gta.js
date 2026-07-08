@@ -94,17 +94,25 @@ export default {
     ),
 
   async execute(interaction) {
+    console.log(">>> /carreira_gta chamado");
+
     const sub = interaction.options.getSubcommand();
+    console.log("Subcomando:", sub);
+
     if (sub !== "add") return;
 
     const imagem = interaction.options.getAttachment("imagem");
+    console.log("Imagem recebida:", imagem?.url);
 
     if (!imagem.contentType?.startsWith("image/")) {
+      console.log("Imagem inválida");
       return interaction.reply({
         content: "❌ O ficheiro enviado não é uma imagem válida.",
         ephemeral: true
       });
     }
+
+    console.log("Criando menu de categorias...");
 
     const categoriaMenu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
@@ -118,14 +126,16 @@ export default {
         )
     );
 
-    // 🔥 CORREÇÃO: guardar a mensagem ephemeral
+    console.log("Enviando primeira mensagem...");
+
     const msg = await interaction.reply({
       content: "Escolhe a categoria:",
       components: [categoriaMenu],
       ephemeral: true
     });
 
-    // 🔥 CORREÇÃO: collector na mensagem, não no canal
+    console.log("Collector criado na mensagem");
+
     const collector = msg.createMessageComponentCollector({
       time: 60000
     });
@@ -135,9 +145,11 @@ export default {
     let plataformaEscolhida = null;
 
     collector.on("collect", async i => {
+      console.log("Collector recebeu:", i.customId);
 
       if (i.customId === "carreira_categoria") {
         categoriaEscolhida = i.values[0];
+        console.log("Categoria escolhida:", categoriaEscolhida);
 
         const subMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
@@ -160,6 +172,7 @@ export default {
 
       if (i.customId === "carreira_subcategoria") {
         subcategoriaEscolhida = i.values[0];
+        console.log("Subcategoria escolhida:", subcategoriaEscolhida);
 
         const plataformaMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
@@ -182,7 +195,11 @@ export default {
 
       if (i.customId === "carreira_plataforma") {
         plataformaEscolhida = i.values[0];
+        console.log("Plataforma escolhida:", plataformaEscolhida);
+
         const userId = interaction.user.id;
+
+        console.log("Gravando no UserGames...");
 
         const updated = await UserGames.findOneAndUpdate(
           { userId },
@@ -202,8 +219,11 @@ export default {
           { upsert: true, new: true }
         );
 
+        console.log("UserGames atualizado");
+
         const totalCarreira = updated.carreira.length;
 
+        console.log("Atualizando stats do user...");
         await atualizarStatsCarreira(
           userId,
           categoriaEscolhida,
@@ -211,18 +231,26 @@ export default {
           plataformaEscolhida
         );
 
+        console.log("Adicionando XP...");
         await adicionarXP(userId, XP_CARREIRA);
+
+        console.log("Atualizando progresso...");
         await atualizarProgresso(userId, "carreira", true);
 
+        console.log("Atualizando estatísticas globais...");
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
 
+        console.log("Verificando badges...");
         await verificarBadges(userId);
 
         const stats = await UserStats.findOne({ userId });
 
+        console.log("Criando backup...");
         criarBackup();
+
+        console.log("Montando embed final...");
 
         const embed = new EmbedBuilder()
           .setColor("#F5C400")
@@ -235,4 +263,38 @@ export default {
             { name: "✨ XP Ganho", value: `+${XP_CARREIRA} XP`, inline: true },
             {
               name: "📈 Nível Atual",
-              value: `Nível ${stats.nivel} — ${stats.xp}/${xpNec
+              value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
+              inline: true
+            }
+          )
+          .setAuthor({
+            name: `${interaction.user.username} completou mais um progresso de carreira no GTA Online`,
+            iconURL: interaction.user.displayAvatarURL()
+          })
+          .setImage(imagem.url)
+          .setFooter({
+            text: `#${totalCarreira} progresso de carreira (por utilizador)`
+          });
+
+        console.log("Enviando embed final...");
+
+        await i.update({
+          content: "",
+          components: [],
+          embeds: [embed],
+          ephemeral: false
+        });
+
+        console.log("Adicionando reação...");
+        await i.message.react("🏆");
+
+        console.log("Collector terminado");
+        collector.stop();
+      }
+    });
+
+    collector.on("end", () => {
+      console.log("Collector terminou por timeout");
+    });
+  }
+};
