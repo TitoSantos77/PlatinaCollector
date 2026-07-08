@@ -10,19 +10,20 @@ const userStatsSchema = new mongoose.Schema({
   // 🟩 NOVO — CARREIRA GTA
   totalCarreira: { type: Number, default: 0 },
 
-  categorias: {
-    type: Object,
-    default: {}
+  // 🟩 CORRIGIDO — AGORA SÃO ARRAYS
+  categoriasCarreira: {
+    type: [String],
+    default: []
   },
 
-  subcategorias: {
-    type: Object,
-    default: {}
+  subcategoriasCarreira: {
+    type: [String],
+    default: []
   },
 
   plataformasCarreira: {
-    type: Object,
-    default: {}
+    type: [String],
+    default: []
   },
 
   // ÚLTIMAS AÇÕES
