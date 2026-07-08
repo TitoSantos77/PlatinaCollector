@@ -33,6 +33,17 @@ export async function adicionarPlataforma(nome) {
   await stats.save();
 }
 
+// 🟩 DEVOLVER APENAS AS CHAVES (para autocomplete inteligente)
+export async function obterJogos() {
+  const stats = await garantirStats();
+  return Array.from(stats.jogos.keys()); // <-- LISTA DE STRINGS
+}
+
+export async function obterPlataformas() {
+  const stats = await garantirStats();
+  return Array.from(stats.plataformas.keys()); // <-- LISTA DE STRINGS
+}
+
 /* ============================
    CARREIRA GTA (ARRAYS)
 ============================ */
