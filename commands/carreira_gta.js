@@ -118,13 +118,15 @@ export default {
         )
     );
 
-    await interaction.reply({
+    // 🔥 CORREÇÃO: guardar a mensagem ephemeral
+    const msg = await interaction.reply({
       content: "Escolhe a categoria:",
       components: [categoriaMenu],
       ephemeral: true
     });
 
-    const collector = interaction.channel.createMessageComponentCollector({
+    // 🔥 CORREÇÃO: collector na mensagem, não no canal
+    const collector = msg.createMessageComponentCollector({
       time: 60000
     });
 
@@ -233,31 +235,4 @@ export default {
             { name: "✨ XP Ganho", value: `+${XP_CARREIRA} XP`, inline: true },
             {
               name: "📈 Nível Atual",
-              value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
-              inline: true
-            }
-          )
-          .setAuthor({
-            name: `${interaction.user.username} completou mais um progresso de carreira no GTA Online`,
-            iconURL: interaction.user.displayAvatarURL()
-          })
-          .setImage(imagem.url)
-          .setFooter({
-            text: `#${totalCarreira} progresso de carreira (por utilizador)`
-          });
-
-        await i.update({
-          content: "",
-          components: [],
-          embeds: [embed],
-          ephemeral: false
-        });
-
-        // 🏆 REAÇÃO — AGORA FUNCIONA
-        await i.message.react("🏆");
-
-        collector.stop();
-      }
-    });
-  }
-};
+              value: `Nível ${stats.nivel} — ${stats.xp}/${xpNec
