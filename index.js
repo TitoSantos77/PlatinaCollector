@@ -29,11 +29,12 @@ async function ligarMongo() {
   }
 }
 
-ligarMongo();
-
 // 🟩 FIX GLOBALSTATS (SEM APAGAR NADA)
 import { fixGlobalStats } from "./utils/fixGlobalStats.js";
-fixGlobalStats();
+
+// Ligar Mongo e só depois correr o fix
+await ligarMongo();
+await fixGlobalStats();
 
 // Backup
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
