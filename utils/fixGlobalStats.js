@@ -6,28 +6,42 @@ export async function fixGlobalStats() {
 
   let changed = false;
 
-  // Converter categoriasCarreira
-  if (stats.categoriasCarreira && !Array.isArray(stats.categoriasCarreira)) {
+  // Criar arrays se não existirem
+  if (!stats.categoriasCarreira) {
+    stats.categoriasCarreira = [];
+    changed = true;
+  }
+
+  if (!stats.subcategoriasCarreira) {
+    stats.subcategoriasCarreira = [];
+    changed = true;
+  }
+
+  if (!stats.plataformasCarreira) {
+    stats.plataformasCarreira = [];
+    changed = true;
+  }
+
+  // Converter objetos antigos → arrays
+  if (!Array.isArray(stats.categoriasCarreira)) {
     stats.categoriasCarreira = Object.keys(stats.categoriasCarreira);
     changed = true;
   }
 
-  // Converter subcategoriasCarreira
-  if (stats.subcategoriasCarreira && !Array.isArray(stats.subcategoriasCarreira)) {
+  if (!Array.isArray(stats.subcategoriasCarreira)) {
     stats.subcategoriasCarreira = Object.keys(stats.subcategoriasCarreira);
     changed = true;
   }
 
-  // Converter plataformasCarreira
-  if (stats.plataformasCarreira && !Array.isArray(stats.plataformasCarreira)) {
+  if (!Array.isArray(stats.plataformasCarreira)) {
     stats.plataformasCarreira = Object.keys(stats.plataformasCarreira);
     changed = true;
   }
 
   if (changed) {
     await stats.save();
-    console.log("✔ GlobalStats corrigido sem apagar dados.");
+    console.log("✔ GlobalStats corrigido (campos criados e convertidos).");
   } else {
-    console.log("✔ GlobalStats já está correto.");
+    console.log("✔ GlobalStats já estava correto.");
   }
 }
