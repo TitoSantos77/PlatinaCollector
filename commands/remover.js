@@ -50,8 +50,15 @@ export async function execute(interaction) {
   const user = interaction.options.getUser("user");
   const userId = user.id;
 
+  console.log("=== /REMOVER EXECUTE DEBUG ===");
+  console.log("TIPO:", tipo);
+  console.log("USER:", userId);
+
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
+
+  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
+  console.log("UserStats encontrado:", JSON.stringify(stats, null, 2));
 
   if (!games || !stats) {
     return interaction.reply({
@@ -61,6 +68,8 @@ export async function execute(interaction) {
   }
 
   const lista = tipo === "platina" ? games.platinas : games.carreira;
+
+  console.log("LISTA SELECIONADA:", lista);
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
@@ -81,6 +90,8 @@ export async function execute(interaction) {
     value: `${userId}_${tipo}_${index}`
   }));
 
+  console.log("OPÇÕES DO MENU:", options);
+
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId("remover_escolher_item")
@@ -98,9 +109,17 @@ export async function execute(interaction) {
 // SELECT MENU — REMOVER ITEM
 // ===============================
 export async function handleSelect(interaction) {
-  if (interaction.customId !== "remover_escolher_item") return;
+  console.log("=== /REMOVER HANDLESELECT DEBUG ===");
+  console.log("interaction.customId:", interaction.customId);
+  console.log("interaction.values:", interaction.values);
+
+  if (interaction.customId !== "remover_escolher_item") {
+    console.log("customId inválido:", interaction.customId);
+    return;
+  }
 
   if (!interaction.values || interaction.values.length === 0) {
+    console.log("ERRO: interaction.values vazio");
     return interaction.editReply({
       content: "❌ Erro: o menu não devolveu nenhum valor.",
       components: []
@@ -108,9 +127,13 @@ export async function handleSelect(interaction) {
   }
 
   const raw = interaction.values[0];
+  console.log("RAW VALUE:", raw);
+
   const partes = raw.split("_");
+  console.log("PARTES:", partes);
 
   if (partes.length < 3) {
+    console.log("ERRO: partes inválidas:", partes);
     return interaction.editReply({
       content: "❌ Erro: valor inválido recebido.",
       components: []
@@ -120,13 +143,26 @@ export async function handleSelect(interaction) {
   const [userId, tipo, index] = partes;
   const idx = parseInt(index);
 
+  console.log("USER:", userId);
+  console.log("TIPO:", tipo);
+  console.log("INDEX:", idx);
+
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
+  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
+
   const lista = tipo === "platina" ? games.platinas : games.carreira;
+
+  console.log("LISTA COMPLETA:", lista);
+  console.log("LISTA LENGTH:", lista.length);
+
   const item = lista[idx];
 
+  console.log("ITEM SELECIONADO:", item);
+
   if (!item) {
+    console.log("ERRO: item undefined no índice", idx);
     return interaction.editReply({
       content: "❌ Entrada inválida ou corrompida.",
       components: []
@@ -134,18 +170,22 @@ export async function handleSelect(interaction) {
   }
 
   // ===============================
-  // REMOVER DO MONGO CORRETAMENTE
+  // REMOVER DO MONGO
   // ===============================
+  console.log("A REMOVER ITEM:", item);
+
   if (tipo === "platina") {
     games.platinas.splice(idx, 1);
   } else {
     games.carreira.splice(idx, 1);
   }
 
+  console.log("NOVO ESTADO DE UserGames:", JSON.stringify(games, null, 2));
+
   await games.save();
 
   // ===============================
-  // RECONTAR XP CORRETAMENTE
+  // RECONTAR XP
   // ===============================
   let novoTotalXP = 0;
 
@@ -214,11 +254,12 @@ export async function handleSelect(interaction) {
     components: []
   });
 
-  // Reação opcional
   try {
     const msg = await interaction.fetchReply();
     await msg.react("🗑️");
   } catch (err) {
     console.log("Falha ao reagir:", err);
   }
+
+  console.log("=== /REMOVER HANDLESELECT FIM ===");
 }
