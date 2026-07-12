@@ -16,7 +16,6 @@ export const data = new SlashCommandBuilder()
   .setName("remover")
   .setDescription("Remove platinas ou entradas da carreira GTA de um utilizador (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-
   .addStringOption(opt =>
     opt
       .setName("tipo")
@@ -27,7 +26,6 @@ export const data = new SlashCommandBuilder()
         { name: "Carreira GTA", value: "carreira" }
       )
   )
-
   .addUserOption(opt =>
     opt
       .setName("user")
@@ -81,7 +79,6 @@ export async function execute(interaction) {
     });
   }
 
-  // Criar menu com todas as entradas
   const options = lista.map((item, index) => ({
     label:
       tipo === "platina"
@@ -216,16 +213,23 @@ export async function handleSelect(interaction) {
   await stats.save();
 
   // ===============================
-  // ATUALIZAR ESTATÍSTICAS GLOBAIS
+  // ATUALIZAR ESTATÍSTICAS GLOBAIS — CORRIGIDO
   // ===============================
   const globais = await GlobalStats.findOne() || new GlobalStats();
 
-  globais.jogos = [...new Set(games.platinas.map(p => p.jogo))];
-  globais.plataformas = [...new Set(games.platinas.map(p => p.plataforma))];
+  // PLATINAS — MAPS
+  globais.jogos = new Map();
+  globais.plataformas = new Map();
 
+  for (const p of games.platinas) {
+    globais.jogos.set(p.jogo, (globais.jogos.get(p.jogo) || 0) + 1);
+    globais.plataformas.set(p.plataforma, (globais.plataformas.get(p.plataforma) || 0) + 1);
+  }
+
+  // CARREIRA GTA — ARRAYS
   globais.categoriasCarreira = [...new Set(games.carreira.map(c => c.categoria))];
   globais.subcategoriasCarreira = [...new Set(games.carreira.map(c => c.subcategoria))];
-  globais.plataformasGTA = [...new Set(games.carreira.map(c => c.plataforma))];
+  globais.plataformasCarreira = [...new Set(games.carreira.map(c => c.plataforma))];
 
   await globais.save();
 
