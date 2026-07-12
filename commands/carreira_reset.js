@@ -3,18 +3,14 @@ import {
   PermissionFlagsBits
 } from "discord.js";
 
-import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 
 export const data = new SlashCommandBuilder()
-  .setName("carreira_reset")
-  .setDescription("Apaga TODO o histórico da carreira GTA de um utilizador (ADMIN)")
+  .setName("carreira_reset_stats")
+  .setDescription("Limpa todos os dados da carreira GTA no UserStats (ADMIN)")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addUserOption(opt =>
-    opt
-      .setName("user")
-      .setDescription("Utilizador alvo")
-      .setRequired(true)
+    opt.setName("user").setDescription("Utilizador alvo").setRequired(true)
   );
 
 export async function execute(interaction) {
@@ -28,28 +24,23 @@ export async function execute(interaction) {
   const user = interaction.options.getUser("user");
   const userId = user.id;
 
-  const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  if (!games) {
+  if (!stats) {
     return interaction.reply({
-      content: "❌ Este utilizador não tem UserGames.",
+      content: "❌ Este utilizador não tem UserStats.",
       ephemeral: true
     });
   }
 
-  // APAGAR TODA A CARREIRA GTA
-  games.carreira = [];
-  await games.save();
+  // LIMPAR CAMPOS DA CARREIRA
+  stats.totalCarreira = 0;
+  stats.ultimaCarreira = null;
 
-  // LIMPAR ÚLTIMA CARREIRA DO USERSTATS
-  if (stats) {
-    stats.ultimaCarreira = null;
-    await stats.save();
-  }
+  await stats.save();
 
   return interaction.reply({
-    content: `🗑 Histórico COMPLETO da carreira GTA de **${user.username}** foi apagado.`,
+    content: `🗑 Todos os dados da carreira GTA foram limpos do UserStats de **${user.username}**.`,
     ephemeral: false
   });
 }
