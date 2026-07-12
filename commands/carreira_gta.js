@@ -6,7 +6,6 @@ import {
 } from "discord.js";
 
 import { adicionarXP, xpNecessario } from "../utils/xp.js";
-import { atualizarProgresso } from "../utils/missions.js";
 import { criarBackup } from "../utils/backup.js";
 import { verificarBadges } from "../utils/badges.js";
 
@@ -97,23 +96,18 @@ export default {
     console.log(">>> /carreira_gta chamado");
 
     const sub = interaction.options.getSubcommand();
-    console.log("Subcomando:", sub);
-
     if (sub !== "add") return;
 
     const imagem = interaction.options.getAttachment("imagem");
-    console.log("Imagem recebida:", imagem?.url);
 
     if (!imagem.contentType?.startsWith("image/")) {
-      console.log("Imagem inválida");
       return interaction.reply({
         content: "❌ O ficheiro enviado não é uma imagem válida.",
         ephemeral: true
       });
     }
 
-    console.log("Criando menu de categorias...");
-
+    // MENU DE CATEGORIAS
     const categoriaMenu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("carreira_categoria")
@@ -126,30 +120,21 @@ export default {
         )
     );
 
-    console.log("Enviando primeira mensagem...");
-
     const msg = await interaction.reply({
       content: "Escolhe a categoria:",
       components: [categoriaMenu],
       ephemeral: true
     });
 
-    console.log("Collector criado na mensagem");
-
-    const collector = msg.createMessageComponentCollector({
-      time: 60000
-    });
+    const collector = msg.createMessageComponentCollector({ time: 60000 });
 
     let categoriaEscolhida = null;
     let subcategoriaEscolhida = null;
     let plataformaEscolhida = null;
 
     collector.on("collect", async i => {
-      console.log("Collector recebeu:", i.customId);
-
       if (i.customId === "carreira_categoria") {
         categoriaEscolhida = i.values[0];
-        console.log("Categoria escolhida:", categoriaEscolhida);
 
         const subMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
@@ -172,7 +157,6 @@ export default {
 
       if (i.customId === "carreira_subcategoria") {
         subcategoriaEscolhida = i.values[0];
-        console.log("Subcategoria escolhida:", subcategoriaEscolhida);
 
         const plataformaMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
@@ -195,12 +179,10 @@ export default {
 
       if (i.customId === "carreira_plataforma") {
         plataformaEscolhida = i.values[0];
-        console.log("Plataforma escolhida:", plataformaEscolhida);
 
         const userId = interaction.user.id;
 
-        console.log("Gravando no UserGames...");
-
+        // GRAVAR NO MONGO — CORRIGIDO
         const updated = await UserGames.findOneAndUpdate(
           { userId },
           {
@@ -211,19 +193,17 @@ export default {
                 plataforma: plataformaEscolhida,
                 jogo: "Grand Theft Auto V",
                 imagem: imagem.url,
-                xpGanhos: XP_CARREIRA,
-                data: new Date()
+                xpGanhos: XP_CARREIRA
+                // data vem do schema automaticamente
               }
             }
           },
           { upsert: true, new: true }
         );
 
-        console.log("UserGames atualizado");
-
         const totalCarreira = updated.carreira.length;
 
-        console.log("Atualizando stats do user...");
+        // STATS DO USER
         await atualizarStatsCarreira(
           userId,
           categoriaEscolhida,
@@ -231,27 +211,23 @@ export default {
           plataformaEscolhida
         );
 
-        console.log("Adicionando XP...");
+        // XP
         await adicionarXP(userId, XP_CARREIRA);
 
-        console.log("Atualizando progresso...");
-        await atualizarProgresso(userId, "carreira", true);
-
-        console.log("Atualizando estatísticas globais...");
+        // ESTATÍSTICAS GLOBAIS — CORRIGIDO
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
 
-        console.log("Verificando badges...");
+        // BADGES
         await verificarBadges(userId);
 
         const stats = await UserStats.findOne({ userId });
 
-        console.log("Criando backup...");
+        // BACKUP
         criarBackup();
 
-        console.log("Montando embed final...");
-
+        // EMBED FINAL
         const embed = new EmbedBuilder()
           .setColor("#F5C400")
           .setThumbnail("https://i.imgur.com/2u6hFQv.png")
@@ -276,8 +252,6 @@ export default {
             text: `#${totalCarreira} progresso de carreira (por utilizador)`
           });
 
-        console.log("Enviando embed final...");
-
         await i.update({
           content: "",
           components: [],
@@ -285,10 +259,8 @@ export default {
           ephemeral: false
         });
 
-        console.log("Adicionando reação...");
         await i.message.react("🏆");
 
-        console.log("Collector terminado");
         collector.stop();
       }
     });
