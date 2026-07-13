@@ -3,6 +3,8 @@ import {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   EmbedBuilder
 } from "discord.js";
 
@@ -33,17 +35,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-// ===============================
-// EXECUTAR /REMOVER
-// ===============================
 export async function execute(interaction) {
-  if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({
-      content: "❌ Apenas administradores podem usar este comando.",
-      ephemeral: true
-    });
-  }
-
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
   const userId = user.id;
@@ -53,7 +45,7 @@ export async function execute(interaction) {
 
   if (!games || !stats) {
     return interaction.reply({
-      content: "❌ Este utilizizador não tem registos.",
+      content: "❌ Este utilizador não tem registos.",
       ephemeral: true
     });
   }
@@ -70,154 +62,140 @@ export async function execute(interaction) {
     });
   }
 
-  const options = lista.map((item, index) => ({
-    label:
-      tipo === "platina"
-        ? `${index + 1} — ${item.jogo || "Sem nome"} (${item.plataforma || "??"})`
-        : `${index + 1} — ${item.categoria || "Sem categoria"} / ${item.subcategoria || "Sem subcategoria"} (${item.plataforma || "??"})`,
-    value: `${userId}_${tipo}_${index}`
-  }));
+  let pagina = 0;
+  const porPagina = 25;
+  const totalPaginas = Math.ceil(lista.length / porPagina);
 
-  const row = new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId("remover_escolher_item")
-      .setPlaceholder("Escolhe a entrada que queres remover")
-      .addOptions(options)
-  );
+  const gerarMenu = () => {
+    const inicio = pagina * porPagina;
+    const fim = inicio + porPagina;
+    const slice = lista.slice(inicio, fim);
 
-  await interaction.reply({
+    const options = slice.map((item, index) => {
+      const realIndex = inicio + index;
+
+      return {
+        label:
+          tipo === "platina"
+            ? `${realIndex + 1} — ${item.jogo} (${item.plataforma})`
+            : `${realIndex + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
+        value: `${userId}_${tipo}_${realIndex}`
+      };
+    });
+
+    return new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("remover_escolher_item")
+        .setPlaceholder(`Página ${pagina + 1}/${totalPaginas}`)
+        .addOptions(options)
+    );
+  };
+
+  const gerarBotoes = () => {
+    return new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("remover_prev")
+        .setLabel("⬅️")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === 0),
+
+      new ButtonBuilder()
+        .setCustomId("remover_next")
+        .setLabel("➡️")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === totalPaginas - 1)
+    );
+  };
+
+  const msg = await interaction.reply({
     content: `🗑 Escolhe a entrada de **${tipo}** que queres remover de **${user.username}**:`,
-    components: [row]
-  });
-}
-
-// ===============================
-// SELECT MENU — REMOVER ITEM
-// ===============================
-export async function handleSelect(interaction) {
-  if (interaction.customId !== "remover_escolher_item") return;
-
-  // 🔵 SEMPRE necessário para evitar InteractionNotReplied
-  await interaction.deferUpdate().catch(() => {});
-
-  if (!interaction.values || interaction.values.length === 0) {
-    return interaction.editReply({
-      content: "❌ Erro: o menu não devolveu nenhum valor.",
-      components: []
-    });
-  }
-
-  const raw = interaction.values[0];
-  const partes = raw.split("_");
-
-  if (partes.length < 3) {
-    return interaction.editReply({
-      content: "❌ Erro: valor inválido recebido.",
-      components: []
-    });
-  }
-
-  const [userId, tipo, index] = partes;
-  const idx = parseInt(index);
-
-  const games = await UserGames.findOne({ userId });
-  const stats = await UserStats.findOne({ userId });
-
-  const lista = tipo === "platina" ? games.platinas : games.carreira;
-  const item = lista[idx];
-
-  if (!item) {
-    return interaction.editReply({
-      content: "❌ Entrada inválida ou corrompida.",
-      components: []
-    });
-  }
-
-  // ===============================
-  // REMOVER DO MONGO
-  // ===============================
-  if (tipo === "platina") {
-    games.platinas.splice(idx, 1);
-  } else {
-    games.carreira.splice(idx, 1);
-  }
-
-  await games.save();
-
-  // ===============================
-  // RECONTAR XP
-  // ===============================
-  let novoTotalXP = 0;
-
-  for (const p of games.platinas) novoTotalXP += p.xpGanhos || 100;
-  for (const c of games.carreira) novoTotalXP += c.xpGanhos || 75;
-
-  let nivel = 1;
-  let xpTemp = novoTotalXP;
-
-  while (xpTemp >= xpNecessario(nivel)) {
-    xpTemp -= xpNecessario(nivel);
-    nivel++;
-  }
-
-  stats.totalXP = novoTotalXP;
-  stats.nivel = nivel;
-  stats.xp = xpTemp;
-
-  stats.ultimaPlatina = games.platinas.at(-1) || null;
-  stats.ultimaCarreira = games.carreira.at(-1) || null;
-
-  await verificarBadges(userId);
-  await stats.save();
-
-  // ===============================
-  // ATUALIZAR ESTATÍSTICAS GLOBAIS
-  // ===============================
-  const globais = await GlobalStats.findOne() || new GlobalStats();
-
-  globais.jogos = new Map();
-  globais.plataformas = new Map();
-
-  for (const p of games.platinas) {
-    globais.jogos.set(p.jogo, (globais.jogos.get(p.jogo) || 0) + 1);
-    globais.plataformas.set(p.plataforma, (globais.plataformas.get(p.plataforma) || 0) + 1);
-  }
-
-  globais.categoriasCarreira = [...new Set(games.carreira.map(c => c.categoria))];
-  globais.subcategoriasCarreira = [...new Set(games.carreira.map(c => c.subcategoria))];
-  globais.plataformasCarreira = [...new Set(games.carreira.map(c => c.plataforma))];
-
-  await globais.save();
-
-  // ===============================
-  // EMBED FINAL
-  // ===============================
-  const texto =
-    tipo === "platina"
-      ? `${item.jogo || "Jogo desconhecido"} (${item.plataforma || "??"})`
-      : `${item.categoria || "Categoria desconhecida"} / ${item.subcategoria || "Subcategoria desconhecida"} (${item.plataforma || "??"})`;
-
-  const embed = new EmbedBuilder()
-    .setColor("#FF4444")
-    .setTitle(tipo === "platina" ? "🗑 Platina removida" : "🗑 Carreira GTA removida")
-    .setDescription(`A entrada **${texto}** foi removida.`)
-    .addFields(
-      { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true },
-      { name: "✨ XP Atual", value: `${stats.xp} XP`, inline: true },
-      { name: "📊 XP Total", value: `${stats.totalXP} XP`, inline: true }
-    )
-    .setTimestamp();
-
-  await interaction.editReply({
-    content: "",
-    embeds: [embed],
-    components: []
+    components: [gerarMenu(), gerarBotoes()],
+    fetchReply: true
   });
 
-  try {
-    const msg = await interaction.fetchReply();
-    await msg.react("🗑️");
-  } catch (err) {
-    console.log("Falha ao reagir:", err);
-  }
+  const collector = msg.createMessageComponentCollector({
+    time: 1000 * 60 * 5
+  });
+
+  collector.on("collect", async i => {
+    await i.deferUpdate().catch(() => {});
+
+    if (i.customId === "remover_prev") {
+      pagina--;
+      return i.editReply({
+        components: [gerarMenu(), gerarBotoes()]
+      });
+    }
+
+    if (i.customId === "remover_next") {
+      pagina++;
+      return i.editReply({
+        components: [gerarMenu(), gerarBotoes()]
+      });
+    }
+
+    if (i.customId === "remover_escolher_item") {
+      const raw = i.values[0];
+      const partes = raw.split("_");
+      const idx = parseInt(partes[2]);
+
+      const item = lista[idx];
+      if (!item) {
+        return i.editReply({
+          content: "❌ Entrada inválida.",
+          components: []
+        });
+      }
+
+      // REMOVER
+      if (tipo === "platina") games.platinas.splice(idx, 1);
+      else games.carreira.splice(idx, 1);
+
+      await games.save();
+
+      // XP
+      let novoTotalXP = 0;
+      for (const p of games.platinas) novoTotalXP += p.xpGanhos || 100;
+      for (const c of games.carreira) novoTotalXP += c.xpGanhos || 75;
+
+      let nivel = 1;
+      let xpTemp = novoTotalXP;
+      while (xpTemp >= xpNecessario(nivel)) {
+        xpTemp -= xpNecessario(nivel);
+        nivel++;
+      }
+
+      stats.totalXP = novoTotalXP;
+      stats.nivel = nivel;
+      stats.xp = xpTemp;
+
+      stats.ultimaPlatina = games.platinas.at(-1) || null;
+      stats.ultimaCarreira = games.carreira.at(-1) || null;
+
+      await verificarBadges(userId);
+      await stats.save();
+
+      // EMBED FINAL
+      const texto =
+        tipo === "platina"
+          ? `${item.jogo} (${item.plataforma})`
+          : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
+
+      const embed = new EmbedBuilder()
+        .setColor("#FF4444")
+        .setTitle(tipo === "platina" ? "🗑 Platina removida" : "🗑 Carreira GTA removida")
+        .setDescription(`A entrada **${texto}** foi removida.`)
+        .addFields(
+          { name: "🏅 Novo Nível", value: `${stats.nivel}`, inline: true },
+          { name: "✨ XP Atual", value: `${stats.xp} XP`, inline: true },
+          { name: "📊 XP Total", value: `${stats.totalXP} XP`, inline: true }
+        );
+
+      return i.editReply({
+        content: "",
+        embeds: [embed],
+        components: []
+      });
+    }
+  });
 }
