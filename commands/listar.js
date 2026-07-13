@@ -28,12 +28,21 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
+
+  console.log(">>> /listar chamado");
+
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
 
+  console.log("Tipo:", tipo);
+  console.log("User:", user.id);
+
   const games = await UserGames.findOne({ userId: user.id });
 
+  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
+
   if (!games) {
+    console.log("❌ UserGames não encontrado");
     return interaction.reply({
       content: "❌ Este utilizador ainda não tem registos.",
       ephemeral: true
@@ -42,7 +51,11 @@ export async function execute(interaction) {
 
   const lista = tipo === "platina" ? games.platinas : games.carreira;
 
+  console.log("Lista selecionada:", lista);
+  console.log("Tamanho da lista:", lista?.length);
+
   if (!lista || lista.length === 0) {
+    console.log("❌ Lista vazia");
     return interaction.reply({
       content:
         tipo === "platina"
@@ -52,15 +65,20 @@ export async function execute(interaction) {
     });
   }
 
-  // Paginação
   let pagina = 0;
   const porPagina = 10;
   const totalPaginas = Math.ceil(lista.length / porPagina);
 
+  console.log("Total de páginas:", totalPaginas);
+
   const gerarEmbed = () => {
+    console.log("Gerando embed da página:", pagina);
+
     const inicio = pagina * porPagina;
     const fim = inicio + porPagina;
     const slice = lista.slice(inicio, fim);
+
+    console.log("Slice:", slice);
 
     const texto = slice
       .map((item, i) => {
@@ -71,7 +89,6 @@ export async function execute(interaction) {
           return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`;
         }
 
-        // Carreira GTA
         return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${item.data || "sem data"}`;
       })
       .join("\n");
@@ -101,22 +118,39 @@ export async function execute(interaction) {
       .setDisabled(pagina === totalPaginas - 1)
   );
 
+  console.log("Enviando primeira mensagem...");
+
   const msg = await interaction.reply({
     embeds: [gerarEmbed()],
     components: [row],
     fetchReply: true
   });
 
+  console.log("Mensagem enviada. ID:", msg.id);
+
   const collector = msg.createMessageComponentCollector({
     time: 1000 * 60 * 5
   });
 
+  console.log("Collector criado.");
+
   collector.on("collect", async btn => {
-    if (btn.user.id !== interaction.user.id)
+    console.log("Collector recebeu:", btn.customId);
+    console.log("User que clicou:", btn.user.id);
+
+    if (btn.user.id !== interaction.user.id) {
+      console.log("❌ Clique de outro user");
       return btn.reply({ content: "❌ Não és tu que abriste isto.", ephemeral: true });
+    }
+
+    await btn.deferUpdate().catch(err => {
+      console.log("Erro no deferUpdate:", err);
+    });
 
     if (btn.customId === "anterior" && pagina > 0) pagina--;
     if (btn.customId === "seguinte" && pagina < totalPaginas - 1) pagina++;
+
+    console.log("Nova página:", pagina);
 
     const newRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -132,9 +166,15 @@ export async function execute(interaction) {
         .setDisabled(pagina === totalPaginas - 1)
     );
 
-    await btn.update({
+    await btn.editReply({
       embeds: [gerarEmbed()],
       components: [newRow]
+    }).catch(err => {
+      console.log("Erro no editReply:", err);
     });
+  });
+
+  collector.on("end", () => {
+    console.log("Collector terminou.");
   });
 }
