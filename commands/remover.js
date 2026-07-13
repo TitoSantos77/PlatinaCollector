@@ -40,7 +40,7 @@ export async function execute(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
       content: "❌ Apenas administradores podem usar este comando.",
-      flags: ["Ephemeral"]
+      ephemeral: true
     });
   }
 
@@ -48,26 +48,17 @@ export async function execute(interaction) {
   const user = interaction.options.getUser("user");
   const userId = user.id;
 
-  console.log("=== /REMOVER EXECUTE DEBUG ===");
-  console.log("TIPO:", tipo);
-  console.log("USER:", userId);
-
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
-  console.log("UserStats encontrado:", JSON.stringify(stats, null, 2));
-
   if (!games || !stats) {
     return interaction.reply({
-      content: "❌ Este utilizador não tem registos.",
-      flags: ["Ephemeral"]
+      content: "❌ Este utilizizador não tem registos.",
+      ephemeral: true
     });
   }
 
   const lista = tipo === "platina" ? games.platinas : games.carreira;
-
-  console.log("LISTA SELECIONADA:", lista);
 
   if (!lista || lista.length === 0) {
     return interaction.reply({
@@ -75,7 +66,7 @@ export async function execute(interaction) {
         tipo === "platina"
           ? `📭 O utilizador não tem nenhuma platina.`
           : `📭 O utilizador não tem nenhuma entrada de carreira GTA.`,
-      flags: ["Ephemeral"]
+      ephemeral: true
     });
   }
 
@@ -86,8 +77,6 @@ export async function execute(interaction) {
         : `${index + 1} — ${item.categoria || "Sem categoria"} / ${item.subcategoria || "Sem subcategoria"} (${item.plataforma || "??"})`,
     value: `${userId}_${tipo}_${index}`
   }));
-
-  console.log("OPÇÕES DO MENU:", options);
 
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -106,17 +95,12 @@ export async function execute(interaction) {
 // SELECT MENU — REMOVER ITEM
 // ===============================
 export async function handleSelect(interaction) {
-  console.log("=== /REMOVER HANDLESELECT DEBUG ===");
-  console.log("interaction.customId:", interaction.customId);
-  console.log("interaction.values:", interaction.values);
+  if (interaction.customId !== "remover_escolher_item") return;
 
-  if (interaction.customId !== "remover_escolher_item") {
-    console.log("customId inválido:", interaction.customId);
-    return;
-  }
+  // 🔵 SEMPRE necessário para evitar InteractionNotReplied
+  await interaction.deferUpdate().catch(() => {});
 
   if (!interaction.values || interaction.values.length === 0) {
-    console.log("ERRO: interaction.values vazio");
     return interaction.editReply({
       content: "❌ Erro: o menu não devolveu nenhum valor.",
       components: []
@@ -124,13 +108,9 @@ export async function handleSelect(interaction) {
   }
 
   const raw = interaction.values[0];
-  console.log("RAW VALUE:", raw);
-
   const partes = raw.split("_");
-  console.log("PARTES:", partes);
 
   if (partes.length < 3) {
-    console.log("ERRO: partes inválidas:", partes);
     return interaction.editReply({
       content: "❌ Erro: valor inválido recebido.",
       components: []
@@ -140,26 +120,13 @@ export async function handleSelect(interaction) {
   const [userId, tipo, index] = partes;
   const idx = parseInt(index);
 
-  console.log("USER:", userId);
-  console.log("TIPO:", tipo);
-  console.log("INDEX:", idx);
-
   const games = await UserGames.findOne({ userId });
   const stats = await UserStats.findOne({ userId });
 
-  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
-
   const lista = tipo === "platina" ? games.platinas : games.carreira;
-
-  console.log("LISTA COMPLETA:", lista);
-  console.log("LISTA LENGTH:", lista.length);
-
   const item = lista[idx];
 
-  console.log("ITEM SELECIONADO:", item);
-
   if (!item) {
-    console.log("ERRO: item undefined no índice", idx);
     return interaction.editReply({
       content: "❌ Entrada inválida ou corrompida.",
       components: []
@@ -169,15 +136,11 @@ export async function handleSelect(interaction) {
   // ===============================
   // REMOVER DO MONGO
   // ===============================
-  console.log("A REMOVER ITEM:", item);
-
   if (tipo === "platina") {
     games.platinas.splice(idx, 1);
   } else {
     games.carreira.splice(idx, 1);
   }
-
-  console.log("NOVO ESTADO DE UserGames:", JSON.stringify(games, null, 2));
 
   await games.save();
 
@@ -186,13 +149,8 @@ export async function handleSelect(interaction) {
   // ===============================
   let novoTotalXP = 0;
 
-  for (const p of games.platinas) {
-    novoTotalXP += p.xpGanhos || 100;
-  }
-
-  for (const c of games.carreira) {
-    novoTotalXP += c.xpGanhos || 75;
-  }
+  for (const p of games.platinas) novoTotalXP += p.xpGanhos || 100;
+  for (const c of games.carreira) novoTotalXP += c.xpGanhos || 75;
 
   let nivel = 1;
   let xpTemp = novoTotalXP;
@@ -206,18 +164,17 @@ export async function handleSelect(interaction) {
   stats.nivel = nivel;
   stats.xp = xpTemp;
 
-  stats.ultimaPlatina = games.platinas[games.platinas.length - 1] || null;
-  stats.ultimaCarreira = games.carreira[games.carreira.length - 1] || null;
+  stats.ultimaPlatina = games.platinas.at(-1) || null;
+  stats.ultimaCarreira = games.carreira.at(-1) || null;
 
   await verificarBadges(userId);
   await stats.save();
 
   // ===============================
-  // ATUALIZAR ESTATÍSTICAS GLOBAIS — CORRIGIDO
+  // ATUALIZAR ESTATÍSTICAS GLOBAIS
   // ===============================
   const globais = await GlobalStats.findOne() || new GlobalStats();
 
-  // PLATINAS — MAPS
   globais.jogos = new Map();
   globais.plataformas = new Map();
 
@@ -226,7 +183,6 @@ export async function handleSelect(interaction) {
     globais.plataformas.set(p.plataforma, (globais.plataformas.get(p.plataforma) || 0) + 1);
   }
 
-  // CARREIRA GTA — ARRAYS
   globais.categoriasCarreira = [...new Set(games.carreira.map(c => c.categoria))];
   globais.subcategoriasCarreira = [...new Set(games.carreira.map(c => c.subcategoria))];
   globais.plataformasCarreira = [...new Set(games.carreira.map(c => c.plataforma))];
@@ -264,6 +220,4 @@ export async function handleSelect(interaction) {
   } catch (err) {
     console.log("Falha ao reagir:", err);
   }
-
-  console.log("=== /REMOVER HANDLESELECT FIM ===");
 }
