@@ -80,6 +80,17 @@ export async function execute(interaction) {
   const userId = interaction.user.id;
   const xpGanho = XP_PLATINA;
 
+  // ============================
+  // DATA FORMATADA (13-07-2026 09:11)
+  // ============================
+  const d = new Date();
+  const dataFormatada =
+    `${String(d.getDate()).padStart(2, "0")}-` +
+    `${String(d.getMonth() + 1).padStart(2, "0")}-` +
+    `${d.getFullYear()} ` +
+    `${String(d.getHours()).padStart(2, "0")}:` +
+    `${String(d.getMinutes()).padStart(2, "0")}`;
+
   // 1) Guardar no histórico real
   const updated = await UserGames.findOneAndUpdate(
     { userId },
@@ -90,7 +101,7 @@ export async function execute(interaction) {
           plataforma,
           imagem: imagem.url,
           xpGanhos: xpGanho,
-          data: new Date() // <-- ADICIONADO PARA CONSISTÊNCIA
+          data: dataFormatada
         }
       }
     },
@@ -135,6 +146,11 @@ export async function execute(interaction) {
         name: "📈 Nível Atual",
         value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
         inline: true
+      },
+      {
+        name: "📅 Data",
+        value: dataFormatada,
+        inline: false
       }
     )
     .setFooter({ text: "Boa! Continua a colecionar platinas!" });
@@ -142,7 +158,7 @@ export async function execute(interaction) {
   // Enviar embed
   await interaction.reply({ embeds: [embed] });
 
-  // 🏆 ADICIONAR REAÇÃO AQUI
+  // 🏆 ADICIONAR REAÇÃO
   const msg = await interaction.fetchReply();
   await msg.react("🏆");
 }
