@@ -182,7 +182,18 @@ export default {
 
         const userId = interaction.user.id;
 
-        // GRAVAR NO MONGO — CORRIGIDO
+        // ============================
+        // DATA FORMATADA (13-07-2026 09:11)
+        // ============================
+        const d = new Date();
+        const dataFormatada =
+          `${String(d.getDate()).padStart(2, "0")}-` +
+          `${String(d.getMonth() + 1).padStart(2, "0")}-` +
+          `${d.getFullYear()} ` +
+          `${String(d.getHours()).padStart(2, "0")}:` +
+          `${String(d.getMinutes()).padStart(2, "0")}`;
+
+        // GRAVAR NO MONGO
         const updated = await UserGames.findOneAndUpdate(
           { userId },
           {
@@ -193,8 +204,8 @@ export default {
                 plataforma: plataformaEscolhida,
                 jogo: "Grand Theft Auto V",
                 imagem: imagem.url,
-                xpGanhos: XP_CARREIRA
-                // data vem do schema automaticamente
+                xpGanhos: XP_CARREIRA,
+                data: dataFormatada
               }
             }
           },
@@ -214,7 +225,7 @@ export default {
         // XP
         await adicionarXP(userId, XP_CARREIRA);
 
-        // ESTATÍSTICAS GLOBAIS — CORRIGIDO
+        // ESTATÍSTICAS GLOBAIS
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
@@ -241,6 +252,11 @@ export default {
               name: "📈 Nível Atual",
               value: `Nível ${stats.nivel} — ${stats.xp}/${xpNecessario(stats.nivel)} XP`,
               inline: true
+            },
+            {
+              name: "📅 Data",
+              value: dataFormatada,
+              inline: false
             }
           )
           .setAuthor({
