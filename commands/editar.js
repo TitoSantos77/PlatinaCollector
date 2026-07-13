@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -67,64 +69,116 @@ export async function execute(interaction) {
     });
   }
 
-  const options = lista.map((item, index) => ({
-    label:
-      tipo === "platina"
-        ? `${index + 1} — ${item.jogo} (${item.plataforma})`
-        : `${index + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
-    value: `${userId}_${tipo}_${index}`
-  }));
+  let pagina = 0;
+  const porPagina = 25;
+  const totalPaginas = Math.ceil(lista.length / porPagina);
 
-  const row = new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId("editar_escolher_item")
-      .setPlaceholder("Escolhe a entrada que queres editar")
-      .addOptions(options)
-  );
+  const gerarMenu = () => {
+    const inicio = pagina * porPagina;
+    const fim = inicio + porPagina;
+    const slice = lista.slice(inicio, fim);
 
-  await interaction.reply({
-    content: `Escolhe a entrada de **${tipo}** que queres editar de **${targetUser.username}**:`,
-    ephemeral: true
+    const options = slice.map((item, index) => {
+      const realIndex = inicio + index;
+
+      return {
+        label:
+          tipo === "platina"
+            ? `${realIndex + 1} — ${item.jogo} (${item.plataforma})`
+            : `${realIndex + 1} — ${item.categoria} / ${item.subcategoria} (${item.plataforma})`,
+        value: `${userId}_${tipo}_${realIndex}`
+      };
+    });
+
+    return new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("editar_escolher_item")
+        .setPlaceholder(`Página ${pagina + 1}/${totalPaginas}`)
+        .addOptions(options)
+    );
+  };
+
+  const gerarBotoes = () => {
+    return new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("editar_prev")
+        .setLabel("⬅️")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === 0),
+
+      new ButtonBuilder()
+        .setCustomId("editar_next")
+        .setLabel("➡️")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(pagina === totalPaginas - 1)
+    );
+  };
+
+  const msg = await interaction.reply({
+    content: `✏️ Escolhe a entrada de **${tipo}** que queres editar de **${targetUser.username}**:`,
+    components: [gerarMenu(), gerarBotoes()],
+    fetchReply: true
   });
 
-  await interaction.followUp({
-    content: "Seleciona abaixo:",
-    components: [row],
-    ephemeral: false
+  const collector = msg.createMessageComponentCollector({
+    time: 1000 * 60 * 5
   });
-}
 
-// =========================
-// SELECT MENU 1 — ESCOLHER ITEM
-// =========================
-export async function handleSelect(interaction) {
-  if (interaction.customId !== "editar_escolher_item") return;
+  collector.on("collect", async i => {
+    await i.deferUpdate().catch(() => {});
 
-  const [userId, tipo, index] = interaction.values[0].split("_");
+    if (i.customId === "editar_prev") {
+      pagina--;
+      return i.editReply({
+        components: [gerarMenu(), gerarBotoes()]
+      });
+    }
 
-  const row = new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId(`editar_opcao_${userId}_${tipo}_${index}`)
-      .setPlaceholder("O que queres editar?")
-      .addOptions(
-        tipo === "platina"
-          ? [
-              { label: "Jogo", value: "jogo" },
-              { label: "Plataforma", value: "plataforma" },
-              { label: "Imagem", value: "imagem" }
-            ]
-          : [
-              { label: "Categoria", value: "categoria" },
-              { label: "Subcategoria", value: "subcategoria" },
-              { label: "Plataforma", value: "plataforma" },
-              { label: "Imagem", value: "imagem" }
-            ]
-      )
-  );
+    if (i.customId === "editar_next") {
+      pagina++;
+      return i.editReply({
+        components: [gerarMenu(), gerarBotoes()]
+      });
+    }
 
-  await interaction.update({
-    content: "Escolhe o que queres editar:",
-    components: [row]
+    if (i.customId === "editar_escolher_item") {
+      const raw = i.values[0];
+      const partes = raw.split("_");
+      const idx = parseInt(partes[2]);
+
+      const item = lista[idx];
+      if (!item) {
+        return i.editReply({
+          content: "❌ Entrada inválida.",
+          components: []
+        });
+      }
+
+      const row = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`editar_opcao_${userId}_${tipo}_${idx}`)
+          .setPlaceholder("O que queres editar?")
+          .addOptions(
+            tipo === "platina"
+              ? [
+                  { label: "Jogo", value: "jogo" },
+                  { label: "Plataforma", value: "plataforma" },
+                  { label: "Imagem", value: "imagem" }
+                ]
+              : [
+                  { label: "Categoria", value: "categoria" },
+                  { label: "Subcategoria", value: "subcategoria" },
+                  { label: "Plataforma", value: "plataforma" },
+                  { label: "Imagem", value: "imagem" }
+                ]
+          )
+      );
+
+      return i.editReply({
+        content: "Escolhe o que queres editar:",
+        components: [row]
+      });
+    }
   });
 }
 
@@ -134,6 +188,8 @@ export async function handleSelect(interaction) {
 export async function handleSelectCampo(interaction) {
   if (!interaction.customId.startsWith("editar_opcao_")) return;
 
+  await interaction.deferUpdate().catch(() => {});
+
   const parts = interaction.customId.split("_");
   const userId = parts[2];
   const tipo = parts[3];
@@ -142,7 +198,7 @@ export async function handleSelectCampo(interaction) {
   const campo = interaction.values[0];
 
   if (campo === "imagem") {
-    await interaction.update({
+    await interaction.editReply({
       content: "📸 Vamos atualizar a imagem!",
       components: []
     });
@@ -203,13 +259,12 @@ export async function handleModal(interaction) {
       ? `${item.jogo} (${item.plataforma})`
       : `${item.categoria} / ${item.subcategoria} (${item.plataforma})`;
 
-  // Aplicar edição
   item[campo] = valor;
 
   await games.save();
 
-  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaCarreira = lista[lista.length - 1] || null;
+  if (tipo === "platina") stats.ultimaPlatina = lista.at(-1) || null;
+  else stats.ultimaCarreira = lista.at(-1) || null;
 
   await stats.save();
 
@@ -239,7 +294,6 @@ export async function handleImage(message) {
   try {
     replied = await message.channel.messages.fetch(message.reference.messageId);
   } catch (err) {
-    console.error("Erro ao buscar mensagem original:", err);
     return message.reply("❌ Não consegui encontrar a mensagem original. Tenta novamente.");
   }
 
@@ -269,8 +323,8 @@ export async function handleImage(message) {
 
   await games.save();
 
-  if (tipo === "platina") stats.ultimaPlatina = lista[lista.length - 1] || null;
-  else stats.ultimaCarreira = lista[lista.length - 1] || null;
+  if (tipo === "platina") stats.ultimaPlatina = lista.at(-1) || null;
+  else stats.ultimaCarreira = lista.at(-1) || null;
 
   await stats.save();
 
@@ -280,10 +334,5 @@ export async function handleImage(message) {
     .setDescription(`A imagem da entrada **${index + 1}** foi atualizada.`)
     .setImage(attachment.url);
 
-  try {
-    await message.reply({ embeds: [embed] });
-  } catch (err) {
-    console.error("Erro ao enviar mensagem de imagem:", err);
-    return message.channel.send("❌ Não tenho permissão para enviar mensagens neste canal.");
-  }
+  await message.reply({ embeds: [embed] });
 }
