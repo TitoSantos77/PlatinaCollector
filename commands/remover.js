@@ -10,9 +10,7 @@ import {
 
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
-import GlobalStats from "../models/GlobalStats.js";
 import { xpNecessario } from "../utils/xp.js";
-import { verificarBadges } from "../utils/badges.js";
 
 export const data = new SlashCommandBuilder()
   .setName("remover")
@@ -151,8 +149,6 @@ export async function execute(interaction) {
         });
       }
 
-      // Guardar os itens antes de remover e apagar do índice maior para o menor,
-      // evitando que os índices mudem durante os splices.
       const indicesUnicos = [...new Set(indices)].sort((a, b) => b - a);
       const itensRemovidos = indicesUnicos.map(idx => lista[idx]);
 
@@ -163,7 +159,7 @@ export async function execute(interaction) {
 
       await games.save();
 
-      // XP
+      // Recalcular XP apenas a partir dos sistemas ativos
       let novoTotalXP = 0;
       for (const p of games.platinas) novoTotalXP += p.xpGanhos || 100;
       for (const c of games.carreira) novoTotalXP += c.xpGanhos || 75;
@@ -182,7 +178,6 @@ export async function execute(interaction) {
       stats.ultimaPlatina = games.platinas.at(-1) || null;
       stats.ultimaCarreira = games.carreira.at(-1) || null;
 
-      await verificarBadges(userId);
       await stats.save();
 
       const linhasRemovidas = itensRemovidos
