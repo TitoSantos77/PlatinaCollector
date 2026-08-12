@@ -1,41 +1,32 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import UserStats from "../models/UserStats.js";
 import UserGames from "../models/UserGames.js";
-import UserMissions from "../models/UserMissions.js";
-
-// 🟩 IMPORT CORRIGIDO — sem XP_CONQUISTA
-import { adicionarXP, XP_PLATINA } from "../utils/xp.js";
+import { adicionarXP, XP_PLATINA, XP_CARREIRA } from "../utils/xp.js";
 
 async function calcularXP(userId) {
   const stats = await UserStats.findOne({ userId });
   const games = await UserGames.findOne({ userId });
-  const missions = await UserMissions.findOne({ userId });
 
   if (!stats || !games) return null;
 
   let totalXP = 0;
 
-  // XP por platinas
-  totalXP += (games.platinas?.length || 0) * XP_PLATINA;
-
-  // 🟩 REMOVIDO: XP por conquistas/proezas (estão a dormir)
-
-  // XP por missões concluídas
-  if (missions && Array.isArray(missions.historico)) {
-    for (const m of missions.historico) {
-      if (!m) continue;
-      if (typeof m.recompensa !== "number") continue;
-      totalXP += m.recompensa;
-    }
+  for (const p of games.platinas || []) {
+    totalXP += Number(p.xpGanhos) || XP_PLATINA;
   }
 
-  // Reset XP antes de aplicar o novo total
+  for (const c of games.carreira || []) {
+    totalXP += Number(c.xpGanhos) || XP_CARREIRA;
+  }
+
+  // Proezas antigas continuam fora do sistema ativo.
+  // Missões foram removidas e já não contam para reconstruções de XP.
+
   stats.xp = 0;
   stats.totalXP = 0;
   stats.nivel = 1;
   await stats.save();
 
-  // Aplicar XP real via sistema novo
   await adicionarXP(userId, totalXP);
 
   return totalXP;
@@ -81,7 +72,6 @@ export default {
       );
     }
 
-    // MODO ALL
     const users = await UserStats.find({}, "userId");
 
     let count = 0;
