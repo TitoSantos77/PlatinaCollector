@@ -27,6 +27,27 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+function formatarTimestamp(timestamp) {
+  if (!timestamp) return "sem data";
+
+  const data = new Date(timestamp);
+  if (Number.isNaN(data.getTime())) return "sem data";
+
+  const partes = new Intl.DateTimeFormat("pt-PT", {
+    timeZone: "Europe/Lisbon",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(data);
+
+  const obter = tipo => partes.find(parte => parte.type === tipo)?.value;
+
+  return `${obter("day")}-${obter("month")}-${obter("year")} ${obter("hour")}:${obter("minute")}`;
+}
+
 export async function execute(interaction) {
 
   console.log(">>> /listar chamado");
@@ -84,12 +105,13 @@ export async function execute(interaction) {
       .map((item, i) => {
         const idReal = inicio + i;
         const numero = idReal + 1;
+        const dataItem = item.data || formatarTimestamp(item.timestamp);
 
         if (tipo === "platina") {
-          return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${item.data || "sem data"}`;
+          return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${dataItem}`;
         }
 
-        return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${item.data || "sem data"}`;
+        return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${dataItem}`;
       })
       .join("\n");
 
