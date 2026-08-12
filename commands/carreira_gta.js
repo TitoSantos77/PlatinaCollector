@@ -5,7 +5,7 @@ import {
   StringSelectMenuBuilder
 } from "discord.js";
 
-import { adicionarXP, xpNecessario } from "../utils/xp.js";
+import { adicionarXP, xpNecessario, XP_CARREIRA } from "../utils/xp.js";
 import { criarBackup } from "../utils/backup.js";
 
 import {
@@ -18,8 +18,6 @@ import { atualizarStatsCarreira } from "../utils/userStats.js";
 
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
-
-const XP_CARREIRA = 75;
 
 const categorias = {
   "Missões de Contato": [
@@ -176,7 +174,6 @@ export default {
         plataformaEscolhida = i.values[0];
 
         const userId = interaction.user.id;
-
         const d = new Date();
         const dataFormatada =
           `${String(d.getDate()).padStart(2, "0")}-` +
@@ -258,7 +255,6 @@ export default {
         });
 
         await i.message.react("🏆");
-
         collector.stop();
       }
     });
