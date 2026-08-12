@@ -1,325 +1,137 @@
-# 📘 CERBERO — DOCUMENTAÇÃO OFICIAL DO BOT PLATINACOLLECTOR
+# CERBERO — PlatinaCollector
 
-Este documento descreve **toda a lógica interna** do bot, módulo por módulo, comando por comando, sistema por sistema.
+Documento técnico resumido da arquitetura atual do bot.
 
-O objetivo é:
+## 1. Núcleo do projeto
 
-- entender o bot sem ler código  
-- facilitar manutenção  
-- permitir evolução futura  
-- garantir consistência  
-- evitar bugs  
+O PlatinaCollector trabalha atualmente com dois tipos de registo:
 
----
+- **Platinas**
+- **Carreira GTA Online**
 
-# 🟩 **SECÇÃO 1 — XP Manager (utils/xp.js)**
+Ambos alimentam o sistema de XP e níveis.
 
-O sistema de XP controla:
+Os antigos sistemas de **badges, missões e proezas** foram removidos do código ativo.
 
-- XP atual  
-- XP total  
-- XP ganho por ação  
-- cálculo de nível  
-- badges automáticas por nível  
-- loop de subida de nível  
+## 2. XP e níveis — `utils/xp.js`
 
-O XP é atualizado por:
+Valores base:
 
-- proezas  
-- platinas  
-- missões  
-- comandos administrativos  
+- Platina: **100 XP**
+- Carreira GTA: **75 XP**
 
-O sistema recalcula nível automaticamente sempre que XP muda.
+O XP necessário para subir de nível é calculado por `xpNecessario(nivel)`.
 
----
+O `UserStats` guarda:
 
-# 🟩 **SECÇÃO 2 — UserStats (models/UserStats.js)**
+- `xp` — XP dentro do nível atual
+- `totalXP` — XP total acumulado
+- `nivel` — nível atual
 
-Guarda estatísticas agregadas do jogador:
+## 3. Histórico — `models/UserGames.js`
 
-- userId  
-- xp  
-- totalXP  
-- nivel  
-- totalPlatinas  
-- totalProezas  
-- ultimaPlatina  
-- ultimaProeza  
-- badgesDesbloqueadas  
+Guarda o histórico real de cada utilizador:
 
-É usado pelo /perfil e por todos os sistemas internos.
+### Platinas
 
----
+- jogo
+- plataforma
+- imagem
+- data
+- XP ganho
 
-# 🟩 **SECÇÃO 3 — UserGames (models/UserGames.js)**
+### Carreira GTA
 
-Guarda o **histórico real** do jogador:
+- categoria
+- subcategoria
+- plataforma
+- jogo
+- imagem
+- data
+- timestamp legado
+- XP ganho
 
-- lista de proezas  
-- lista de platinas  
-- cada entrada contém:
-  - jogo  
-  - plataforma  
-  - imagem  
-  - xpGanhos  
+## 4. Estatísticas do utilizador — `models/UserStats.js`
 
-É usado por:
+Guarda apenas os dados agregados necessários ao bot:
 
-- /proeza add  
-- /platina add  
-- /editar  
-- /perfil  
+- total de platinas
+- total de entradas de Carreira GTA
+- última platina
+- última entrada de Carreira GTA
+- XP atual
+- XP total
+- nível
 
----
+## 5. Estatísticas globais — `models/GlobalStats.js` e `utils/globalStats.js`
 
-# 🟩 **SECÇÃO 4 — GlobalStats (utils/globalStats.js)**
+Guarda os jogos, plataformas e dados de Carreira GTA usados para estatísticas e autocomplete.
 
-Guarda estatísticas globais:
+## 6. Comandos principais
 
-- jogos aprendidos  
-- plataformas aprendidas  
-- autocomplete inteligente  
+- `/platina add`
+- `/carreira_gta add`
+- `/perfil`
+- `/nivel`
+- `/listar`
+- `/editar`
+- `/remover`
+- `/rank`
+- `/ranking`
+- `/estatisticas`
 
-É atualizado sempre que o user adiciona:
+## 7. Comandos administrativos
 
-- uma proeza  
-- uma platina  
+- `/backup`
+- `/darxp`
+- `/resetall`
+- `/setcanal`
 
----
+Os antigos comandos de `fix`, `rebuild`, badges e missões já não fazem parte da arquitetura ativa.
 
-# 🟩 **SECÇÃO 5 — Backup System Automático (utils/backup.js)**
-
-Sistema automático:
-
-- cria backups da pasta /data  
-- restaura backups no arranque  
-- protege contra falhas do Render  
-- escrita atómica  
-
-Sistema manual (/backup) é separado.
-
----
-
-# 🟩 **SECÇÃO 6 — Badges System (utils/badges.js)**
-
-Desbloqueia badges:
-
-- por nível  
-- por número de platinas  
-- por número de proezas  
-- por ações especiais  
-
-Usa badges.json.
-
----
-
-# 🟩 **SECÇÃO 7 — Sistema de Missões (utils/missions.js)**
-
-Controla:
-
-- missões semanais  
-- raridade  
-- recompensa XP  
-- progresso automático  
-- conclusão automática  
-- histórico  
-- integração com XP  
-- integração com badges  
-
----
-
-# 🟩 **SECÇÃO 8 — /proeza add**
-
-Fluxo:
-
-1. valida imagem  
-2. guarda no UserGames  
-3. atualiza UserStats  
-4. adiciona XP  
-5. atualiza missões  
-6. atualiza globalstats  
-7. verifica badges  
-8. backup  
-9. embed final (mantido)  
-10. adicionada frase “Jogador X adicionou a proeza nº Y”
-
----
-
-# 🟩 **SECÇÃO 9 — /platina add**
-
-Idêntico ao /proeza add, mas:
-
-- usa XP_PLATINA  
-- atualiza ultimaPlatina  
-- embed mantido  
-- adicionada frase “Jogador X adicionou a platina nº Y”
-
----
-
-# 🟩 **SECÇÃO 10 — /perfil**
-
-Mostra:
-
-- XP  
-- nível  
-- barra de progresso  
-- platinas  
-- proezas  
-- última platina  
-- última proeza  
-- badge principal  
-- rebuild automático se stats estiverem vazios  
-
-Corrigido para usar sempre stats atualizados.
-
----
-
-# 🟩 **SECÇÃO 11 — index.js (Motor do Bot)**
+## 8. `index.js`
 
 Responsável por:
 
-- servidor fake (Render keep-alive)  
-- ligação ao MongoDB  
-- restauração de backup  
-- carregamento dinâmico de comandos  
-- registo de comandos (DEV ou GLOBAL)  
-- listeners:
-  - autocomplete  
-  - select menus  
-  - modals  
-  - slash commands  
-  - mensagens (para /editar)  
-- scheduler de missões  
-- sistema de login com retry  
+- servidor HTTP para o Render
+- ligação ao MongoDB
+- carregamento dinâmico dos comandos
+- registo dos slash commands
+- autocomplete
+- menus e modais
+- tratamento de mensagens para edição de imagens
+- restrição por canais configurados
+- retry de login
 
-É o **cérebro externo** do bot.
+Não existem schedulers de missões nem rotinas automáticas de reparação no arranque.
 
----
+## 9. Configuração de canais
 
-# 🟩 **SECÇÃO 12 — /backup (Sistema Manual de Backups)**
-
-Permite:
-
-- criar backups manuais  
-- restaurar backups manuais  
-- listar backups  
-- limitar a 3 backups  
-- restaurar UserStats diretamente no MongoDB  
-
-Exclusivo para administradores.
-
----
-
-# 🟩 **SECÇÃO 13 — /editar (Sistema de Edição de Platinas e Proezas)**
-
-Sistema multi‑etapas:
-
-1. /editar → escolher tipo e user  
-2. menu → escolher entrada  
-3. menu → escolher campo  
-4. modal → editar texto  
-5. mensagem → editar imagem  
-
-Atualiza:
-
-- UserGames  
-- UserStats (última platina/proeza)  
-
-Permissões:
-
-- users editam as suas  
-- admins editam qualquer uma  
-
----
-
-# 🟩 **SECÇÃO 14 — Scheduler de Missões (missoesScheduler.js)**
-
-Corre a cada 1 minuto.  
-Gera missões semanais:
-
-- terça-feira  
-- 07:00  
-- horário de Portugal  
-
-Para todos os utilizadores com UserStats.
-
----
-
-# 🟩 **SECÇÃO 15 — config.json (Canais Permitidos)**
-
-Controla onde o bot aceita comandos.
-
-Formato atual:
+`data/config.json` usa:
 
 ```json
 {
-  "allowedChannel": null
+  "allowedChannels": null
 }
 ```
 
-Se null → todos os canais permitidos.  
-Se lista → só esses canais podem usar comandos.
+`null` permite todos os canais. O `/setcanal` cria a lista de canais permitidos quando necessário.
 
-Atualizado via /setcanal.
+## 10. Backups
 
----
+`utils/backup.js` guarda cópias locais de:
 
-# 🟩 **SECÇÃO 16 — /listar (Paginação de Platinas e Proezas)**
+- `config.json`
+- `UserGames`
+- `UserStats`
+- `GlobalStats`
 
-Lista:
+A restauração automática só recria a configuração local. As coleções MongoDB não são restauradas automaticamente para evitar substituições destrutivas.
 
-- platinas  
-- proezas  
+## 11. Princípio atual
 
-Com:
+O fluxo principal do bot é:
 
-- paginação  
-- botões  
-- validação  
-- embed limpo  
+**Platinas / Carreira GTA → XP → Nível → Perfil / Rankings / Estatísticas**
 
-Mostra 10 entradas por página.
-
----
-
-# 🟩 **SECÇÃO 17 — Sistema de Missões (utils/missions.js)**
-
-Inclui:
-
-- raridade  
-- probabilidade  
-- recompensa  
-- gerar missão  
-- atualizar progresso  
-- XP semanal  
-- verificar conclusão  
-- histórico  
-- integração com XP e badges  
-
-É um dos módulos mais avançados do bot.
-
----
-
-# 🟧 **FIM DA VERSÃO ATUAL DO CERBERO.md**
-
-Este ficheiro cobre:
-
-✔ XP  
-✔ Stats  
-✔ Jogos  
-✔ GlobalStats  
-✔ Backup  
-✔ Badges  
-✔ Missões  
-✔ Proeza  
-✔ Platina  
-✔ Perfil  
-✔ Index  
-✔ Backup manual  
-✔ Editar  
-✔ Scheduler  
-✔ Config  
-✔ Listar  
-
-O bot está praticamente todo documentado.
+A arquitetura deve manter-se simples e evitar sistemas paralelos ou rotinas de reparação permanentes.
