@@ -7,7 +7,6 @@ import {
 
 import { adicionarXP, xpNecessario } from "../utils/xp.js";
 import { criarBackup } from "../utils/backup.js";
-import { verificarBadges } from "../utils/badges.js";
 
 import {
   adicionarCategoriaCarreira,
@@ -107,7 +106,6 @@ export default {
       });
     }
 
-    // MENU DE CATEGORIAS
     const categoriaMenu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("carreira_categoria")
@@ -122,8 +120,7 @@ export default {
 
     const msg = await interaction.reply({
       content: "Escolhe a categoria:",
-      components: [categoriaMenu],
-      // Resposta pública: o embed final também será público.
+      components: [categoriaMenu]
     });
 
     const collector = msg.createMessageComponentCollector({ time: 60000 });
@@ -150,8 +147,7 @@ export default {
 
         return i.update({
           content: `Categoria escolhida: **${categoriaEscolhida}**\nAgora escolhe a subcategoria:`,
-          components: [subMenu],
-          ephemeral: true
+          components: [subMenu]
         });
       }
 
@@ -172,8 +168,7 @@ export default {
 
         return i.update({
           content: `Subcategoria escolhida: **${subcategoriaEscolhida}**\nAgora escolhe a plataforma:`,
-          components: [plataformaMenu],
-          ephemeral: true
+          components: [plataformaMenu]
         });
       }
 
@@ -182,9 +177,6 @@ export default {
 
         const userId = interaction.user.id;
 
-        // ============================
-        // DATA FORMATADA (13-07-2026 09:11)
-        // ============================
         const d = new Date();
         const dataFormatada =
           `${String(d.getDate()).padStart(2, "0")}-` +
@@ -193,7 +185,6 @@ export default {
           `${String(d.getHours()).padStart(2, "0")}:` +
           `${String(d.getMinutes()).padStart(2, "0")}`;
 
-        // GRAVAR NO MONGO
         const updated = await UserGames.findOneAndUpdate(
           { userId },
           {
@@ -214,7 +205,6 @@ export default {
 
         const totalCarreira = updated.carreira.length;
 
-        // STATS DO USER
         await atualizarStatsCarreira(
           userId,
           categoriaEscolhida,
@@ -222,23 +212,16 @@ export default {
           plataformaEscolhida
         );
 
-        // XP
         await adicionarXP(userId, XP_CARREIRA);
 
-        // ESTATÍSTICAS GLOBAIS
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
 
-        // BADGES
-        await verificarBadges(userId);
-
         const stats = await UserStats.findOne({ userId });
 
-        // BACKUP
         criarBackup();
 
-        // EMBED FINAL
         const embed = new EmbedBuilder()
           .setColor("#F5C400")
           .setThumbnail("https://i.imgur.com/2u6hFQv.png")
@@ -271,8 +254,7 @@ export default {
         await i.update({
           content: "",
           components: [],
-          embeds: [embed],
-          ephemeral: false
+          embeds: [embed]
         });
 
         await i.message.react("🏆");
