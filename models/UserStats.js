@@ -5,26 +5,7 @@ const userStatsSchema = new mongoose.Schema({
 
   // CONTADORES
   totalPlatinas: { type: Number, default: 0 },
-  totalProezas: { type: Number, default: 0 },
-
-  // 🟩 NOVO — CARREIRA GTA
   totalCarreira: { type: Number, default: 0 },
-
-  // 🟩 CORRIGIDO — AGORA SÃO ARRAYS
-  categoriasCarreira: {
-    type: [String],
-    default: []
-  },
-
-  subcategoriasCarreira: {
-    type: [String],
-    default: []
-  },
-
-  plataformasCarreira: {
-    type: [String],
-    default: []
-  },
 
   // ÚLTIMAS AÇÕES
   ultimaPlatina: {
@@ -34,14 +15,6 @@ const userStatsSchema = new mongoose.Schema({
     data: { type: String, default: null }
   },
 
-  ultimaProeza: {
-    jogo: { type: String, default: null },
-    plataforma: { type: String, default: null },
-    imagem: { type: String, default: null },
-    data: { type: String, default: null }
-  },
-
-  // 🟩 NOVO — ÚLTIMA CARREIRA GTA
   ultimaCarreira: {
     categoria: { type: String, default: null },
     subcategoria: { type: String, default: null },
@@ -51,16 +24,10 @@ const userStatsSchema = new mongoose.Schema({
     data: { type: String, default: null }
   },
 
-  // SISTEMA DE XP
+  // XP / NÍVEL
   xp: { type: Number, default: 0 },
   totalXP: { type: Number, default: 0 },
-  nivel: { type: Number, default: 1 },
-
-  // BADGES
-  badgesDesbloqueadas: {
-    type: [String],
-    default: []
-  }
+  nivel: { type: Number, default: 1 }
 });
 
 export default mongoose.model("UserStats", userStatsSchema);
