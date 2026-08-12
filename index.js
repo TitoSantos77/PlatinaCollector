@@ -4,7 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-import { restaurarBackup, criarBackup } from "./utils/backup.js";
+import { criarBackup } from "./utils/backup.js";
+import BotConfig from "./models/BotConfig.js";
 import * as editar from "./commands/editar.js";
 import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
 
@@ -29,10 +30,6 @@ async function ligarMongo() {
 await ligarMongo();
 
 (async () => {
-  restaurarBackup();
-
-  let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
-
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -176,24 +173,24 @@ await ligarMongo();
 
     // SLASH COMMANDS
     if (interaction.isChatInputCommand()) {
-      if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
-        return interaction.reply({
-          content: "Este comando só pode ser usado nos canais permitidos.",
-          ephemeral: true
-        });
-      }
-
       const command = client.commands.get(interaction.commandName);
       if (!command) return;
 
       try {
-        await command.execute(interaction);
+        // /setcanal fica sempre acessível a admins para evitar ficar preso fora dos canais permitidos.
+        if (interaction.commandName !== "setcanal") {
+          const config = await BotConfig.findOne({ chave: "principal" }).lean();
+          const canaisPermitidos = config?.allowedChannels || [];
 
-        if (interaction.commandName === "setcanal") {
-          config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
-          criarBackup();
-          console.log("Lista de canais atualizada:", config.allowedChannels);
+          if (canaisPermitidos.length > 0 && !canaisPermitidos.includes(interaction.channelId)) {
+            return interaction.reply({
+              content: "Este comando só pode ser usado nos canais permitidos.",
+              ephemeral: true
+            });
+          }
         }
+
+        await command.execute(interaction);
       } catch (error) {
         console.error(error);
 
