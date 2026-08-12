@@ -6,8 +6,7 @@ const DATA_FILES = [
   "data/users.json",
   "data/userStats.json",
   "data/globalStats.json",
-  "data/config.json",
-  "data/missions.json"
+  "data/config.json"
 ];
 
 export async function criarBackup() {
@@ -60,5 +59,4 @@ export function restaurarBackup() {
 
   // MongoDB NÃO é restaurado automaticamente
   // porque seria perigoso sobrescrever coleções inteiras.
-  // Se quiseres, posso criar um comando /restore_mongo.
 }
