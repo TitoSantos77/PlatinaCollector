@@ -33,6 +33,7 @@ const carreiraSchema = new mongoose.Schema({
   jogo: { type: String, default: "Grand Theft Auto V" },
   imagem: String,
   xpGanhos: Number,
+  data: String,
   timestamp: { type: Number, default: () => Date.now() }
 });
 
