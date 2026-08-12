@@ -6,6 +6,29 @@ export const data = new SlashCommandBuilder()
   .setName("estatisticas")
   .setDescription("Mostra estatísticas gerais do servidor");
 
+function maisFrequente(lista, fallback = "Nenhum") {
+  if (!Array.isArray(lista) || lista.length === 0) return fallback;
+
+  const contagens = new Map();
+
+  for (const valor of lista) {
+    if (!valor) continue;
+    contagens.set(valor, (contagens.get(valor) || 0) + 1);
+  }
+
+  let vencedor = fallback;
+  let maiorContagem = 0;
+
+  for (const [valor, contagem] of contagens) {
+    if (contagem > maiorContagem) {
+      vencedor = valor;
+      maiorContagem = contagem;
+    }
+  }
+
+  return vencedor;
+}
+
 export async function execute(interaction) {
 
   const stats = await UserStats.find().lean();
@@ -16,41 +39,35 @@ export async function execute(interaction) {
   const totalPlatinas = stats.reduce((acc, u) => acc + (u.totalPlatinas || 0), 0);
   const totalCarreira = stats.reduce((acc, u) => acc + (u.totalCarreira || 0), 0);
 
-  // Jogo mais platinado (já vem com contagens)
+  // Jogo mais platinado (Map com contagens)
   let jogoMaisFeito = "Nenhum";
   if (globalStats?.jogos && Object.keys(globalStats.jogos).length > 0) {
     jogoMaisFeito = Object.entries(globalStats.jogos)
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
-  // Plataforma mais usada (platinas)
+  // Plataforma mais usada nas platinas (Map com contagens)
   let plataformaMaisUsada = "Nenhuma";
   if (globalStats?.plataformas && Object.keys(globalStats.plataformas).length > 0) {
     plataformaMaisUsada = Object.entries(globalStats.plataformas)
       .sort((a, b) => b[1] - a[1])[0][0];
   }
 
-  // Categoria mais feita (carreira)
-  let categoriaMaisFeita = "Nenhuma";
-  if (globalStats?.categoriasCarreira && Object.keys(globalStats.categoriasCarreira).length > 0) {
-    categoriaMaisFeita = Object.entries(globalStats.categoriasCarreira)
-      .sort((a, b) => b[1] - a[1])[0][0];
-  }
+  // Carreira GTA é guardada em arrays. Contar ocorrências reais.
+  const categoriaMaisFeita = maisFrequente(
+    globalStats?.categoriasCarreira,
+    "Nenhuma"
+  );
 
-  // Subcategoria mais feita (carreira)
-  let subcategoriaMaisFeita = "Nenhuma";
-  if (globalStats?.subcategoriasCarreira && Object.keys(globalStats.subcategororiasCarreira ?? globalStats.subcategoriasCarreira).length > 0) {
-    const subObj = globalStats.subcategororiasCarreira ?? globalStats.subcategoriasCarreira;
-    subcategoriaMaisFeita = Object.entries(subObj)
-      .sort((a, b) => b[1] - a[1])[0][0];
-  }
+  const subcategoriaMaisFeita = maisFrequente(
+    globalStats?.subcategoriasCarreira,
+    "Nenhuma"
+  );
 
-  // Plataforma GTA mais usada (campo correto: plataformasCarreira)
-  let plataformaCarreiraMaisUsada = "Nenhuma";
-  if (globalStats?.plataformasCarreira && Object.keys(globalStats.plataformasCarreira).length > 0) {
-    plataformaCarreiraMaisUsada = Object.entries(globalStats.plataformasCarreira)
-      .sort((a, b) => b[1] - a[1])[0][0];
-  }
+  const plataformaCarreiraMaisUsada = maisFrequente(
+    globalStats?.plataformasCarreira,
+    "Nenhuma"
+  );
 
   // Top XP
   let topXP = "Nenhum";
