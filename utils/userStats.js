@@ -16,7 +16,7 @@ async function garantirUser(userId) {
       totalProezas: 0,
       ultimaProeza: null,
 
-      // CARREIRA GTA — NOVO SISTEMA
+      // CARREIRA GTA
       totalCarreira: 0,
       ultimaCarreira: null,
       categorias: {},
@@ -26,10 +26,7 @@ async function garantirUser(userId) {
       // XP / NÍVEL
       xp: 0,
       totalXP: 0,
-      nivel: 1,
-
-      // BADGES
-      badgesDesbloqueadas: []
+      nivel: 1
     });
   }
 
@@ -87,25 +84,18 @@ async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
 }
 
 /* ============================
-   CARREIRA GTA — NOVO SISTEMA
+   CARREIRA GTA
 ============================ */
 async function atualizarStatsCarreira(userId, categoria, subcategoria, plataforma, imagem = null) {
   const user = await garantirUser(userId);
 
-  // Incrementar total
   user.totalCarreira += 1;
 
-  // Atualizar contadores por categoria
   user.categorias[categoria] = (user.categorias[categoria] || 0) + 1;
-
-  // Atualizar contadores por subcategoria
   user.subcategorias[subcategoria] = (user.subcategorias[subcategoria] || 0) + 1;
-
-  // Atualizar contadores por plataforma
   user.plataformasCarreira[plataforma] =
     (user.plataformasCarreira[plataforma] || 0) + 1;
 
-  // Guardar última entrada
   user.ultimaCarreira = {
     categoria,
     subcategoria,
