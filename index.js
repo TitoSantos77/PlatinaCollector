@@ -2,51 +2,33 @@ import { Client, GatewayIntentBits, Collection, REST, Routes, Events } from "dis
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import express from "express";
+import mongoose from "mongoose";
+import { restaurarBackup, criarBackup } from "./utils/backup.js";
+import * as editar from "./commands/editar.js";
+import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
+
 dotenv.config();
 
-// Fake server para o Render
-import express from "express";
+// Servidor HTTP para manter o serviço ativo no Render
 const app = express();
-
 app.get("/", (req, res) => res.send("PlatinaCollector is running"));
 app.listen(process.env.PORT || 10000, () =>
-  console.log("Fake server ativo na porta " + (process.env.PORT || 10000))
+  console.log("Servidor HTTP ativo na porta " + (process.env.PORT || 10000))
 );
-
-// MongoDB
-import mongoose from "mongoose";
 
 async function ligarMongo() {
   try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-
+    await mongoose.connect(process.env.MONGO_URL);
     console.log("MongoDB conectado!");
   } catch (err) {
     console.error("Erro ao ligar ao MongoDB:", err.message);
   }
 }
 
-// 🟩 FIX GLOBALSTATS (SEM APAGAR NADA)
-import { fixGlobalStats } from "./utils/fixGlobalStats.js";
-
-// Ligar Mongo e só depois correr o fix
 await ligarMongo();
-await fixGlobalStats();
-
-// Backup
-import { restaurarBackup, criarBackup } from "./utils/backup.js";
-
-// Handlers do /editar
-import * as editar from "./commands/editar.js";
-
-// Handlers do /backup
-import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
 
 (async () => {
-
   restaurarBackup();
 
   let config = JSON.parse(fs.readFileSync("./data/config.json", "utf8"));
@@ -68,7 +50,6 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
     const commandModule = await import(`file://${filePath}`);
-
     const command = commandModule.default ?? commandModule;
 
     if ("data" in command && "execute" in command) {
@@ -86,7 +67,6 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
     try {
       const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
       const comandosJSON = client.commands.map(cmd => cmd.data.toJSON());
-
       const guild = client.guilds.cache.get(process.env.GUILD_ID);
 
       if (guild) {
@@ -104,17 +84,12 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
         );
         console.log("Comandos globais enviados!");
       }
-
     } catch (err) {
       console.error("Erro ao registar comandos:", err);
     }
   });
 
-  // ============================
-  // INTERACTION CREATE (FINAL)
-  // ============================
   client.on(Events.InteractionCreate, async interaction => {
-
     console.log("INTERACTION RECEBIDA:", interaction.type);
 
     // AUTOCOMPLETE
@@ -131,21 +106,16 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
       return;
     }
 
-    // ============================
     // SELECT MENUS
-    // ============================
     if (interaction.isStringSelectMenu()) {
-
       console.log("SELECT MENU RECEBIDO:", interaction.customId);
       console.log("VALORES:", interaction.values);
 
-      // Estes menus são tratados pelos collectors dos próprios comandos.
+      // Tratados pelos collectors dos próprios comandos
       if (interaction.customId.startsWith("carreira_")) return;
       if (interaction.customId === "remover_escolher_item") return;
 
       try {
-
-        // /backup
         if (interaction.customId === "backup_menu") {
           return handleBackupMenu(interaction);
         }
@@ -154,7 +124,6 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
           return handleRestoreMenu(interaction);
         }
 
-        // /editar
         if (interaction.customId === "editar_escolher_item") {
           return editar.handleSelect(interaction);
         }
@@ -162,7 +131,6 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
         if (interaction.customId.startsWith("editar_opcao_")) {
           return editar.handleSelectCampo(interaction);
         }
-
       } catch (err) {
         console.error("ERRO NO SELECT MENU:", err);
 
@@ -182,11 +150,8 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
       return;
     }
 
-    // ============================
     // MODALS
-    // ============================
     if (interaction.isModalSubmit()) {
-
       try {
         if (interaction.customId.startsWith("editar_modal_")) {
           return editar.handleModal(interaction);
@@ -209,11 +174,8 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
       return;
     }
 
-    // ============================
     // SLASH COMMANDS
-    // ============================
     if (interaction.isChatInputCommand()) {
-
       if (config.allowedChannels && !config.allowedChannels.includes(interaction.channelId)) {
         return interaction.reply({
           content: "Este comando só pode ser usado nos canais permitidos.",
@@ -232,20 +194,24 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
           criarBackup();
           console.log("Lista de canais atualizada:", config.allowedChannels);
         }
-
       } catch (error) {
         console.error(error);
-        await interaction.reply({
-          content: "Ocorreu um erro ao executar este comando.",
-          ephemeral: true
-        });
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "Ocorreu um erro ao executar este comando.",
+            ephemeral: true
+          });
+        } else {
+          await interaction.followUp({
+            content: "Ocorreu um erro ao executar este comando.",
+            ephemeral: true
+          }).catch(() => {});
+        }
       }
     }
   });
 
-  // ============================
-  // MESSAGE CREATE
-  // ============================
   client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
     editar.handleImage(message);
@@ -270,5 +236,4 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
   };
 
   login();
-
 })();
