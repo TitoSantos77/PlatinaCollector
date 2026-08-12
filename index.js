@@ -39,9 +39,6 @@ await fixGlobalStats();
 // Backup
 import { restaurarBackup, criarBackup } from "./utils/backup.js";
 
-// Scheduler
-import { iniciarSchedulerMissoes } from "./scheduler/missoesScheduler.js";
-
 // Handlers do /editar
 import * as editar from "./commands/editar.js";
 
@@ -85,7 +82,6 @@ import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
     console.log("Bot online como " + client.user.tag);
 
     criarBackup();
-    iniciarSchedulerMissoes();
 
     try {
       const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
