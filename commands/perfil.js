@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import UserStats from "../models/UserStats.js";
 import UserGames from "../models/UserGames.js";
-import { readJSON } from "../utils/database.js";
 import { getUserStats } from "../utils/userStats.js";
 import { xpNecessario } from "../utils/xp.js";
 
@@ -23,13 +22,12 @@ export async function execute(interaction) {
       totalXP: 0,
       nivel: 1,
       totalPlatinas: 0,
-      totalCarreira: 0,
-      badgesDesbloqueadas: []
+      totalCarreira: 0
     });
   }
 
   // ============================
-  // 🔵 REBUILD AUTOMÁTICO SE ESTIVER VAZIO
+  // REBUILD AUTOMÁTICO SE ESTIVER VAZIO
   // ============================
   const statsAtualizados = await getUserStats(userId);
 
@@ -77,30 +75,7 @@ export async function execute(interaction) {
   stats = statsAtualizados;
 
   // ============================
-  // 🔵 BADGE PRINCIPAL
-  // ============================
-  const badgesDB = readJSON("data/badges.json") || [];
-  let badgePrincipal = "Nenhuma";
-
-  if (Array.isArray(stats.badgesDesbloqueadas) && stats.badgesDesbloqueadas.length > 0) {
-    const raridadeOrdem = ["Comum", "Incomum", "Rara", "Épica", "Lendária", "Mítica", "Exótica"];
-
-    const desbloqueadasInfo = stats.badgesDesbloqueadas
-      .map(id => badgesDB.find(b => b.id === id))
-      .filter(b => b && b.nome && b.emoji && b.raridade);
-
-    if (desbloqueadasInfo.length > 0) {
-      desbloqueadasInfo.sort(
-        (a, b) => raridadeOrdem.indexOf(b.raridade) - raridadeOrdem.indexOf(a.raridade)
-      );
-
-      const top = desbloqueadasInfo[0];
-      badgePrincipal = `${top.emoji} ${top.nome}`;
-    }
-  }
-
-  // ============================
-  // 🔵 ESTATÍSTICAS DO USER
+  // ESTATÍSTICAS DO USER
   // ============================
   const platinas = stats.totalPlatinas ?? 0;
   const carreira = stats.totalCarreira ?? 0;
@@ -114,7 +89,7 @@ export async function execute(interaction) {
     : "Nenhuma ainda";
 
   // ============================
-  // 🔵 XP E NÍVEL
+  // XP E NÍVEL
   // ============================
   const nivel = stats.nivel;
   const xpAtual = stats.xp;
@@ -129,7 +104,7 @@ export async function execute(interaction) {
   const barra = "▰".repeat(blocosCheios) + "▱".repeat(blocosVazios);
 
   // ============================
-  // 🔵 EMBED FINAL
+  // EMBED FINAL
   // ============================
   const embed = new EmbedBuilder()
     .setColor("#0055FF")
@@ -138,7 +113,6 @@ export async function execute(interaction) {
     .addFields(
       { name: "👤 Jogador", value: interaction.user.username, inline: true },
       { name: "🏅 Nível", value: `${nivel}`, inline: true },
-      { name: "🔰 Badge Principal", value: badgePrincipal, inline: true },
 
       { name: "✨ XP Total", value: `${stats.totalXP} XP`, inline: true },
       { name: "✨ XP Atual", value: `${xpAtual} XP`, inline: true },
