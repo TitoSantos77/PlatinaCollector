@@ -48,9 +48,6 @@ import * as editar from "./commands/editar.js";
 // Handlers do /backup
 import { handleBackupMenu, handleRestoreMenu } from "./commands/backup.js";
 
-// Handler do /remover
-import * as remover from "./commands/remover.js";
-
 (async () => {
 
   restaurarBackup();
@@ -146,8 +143,9 @@ import * as remover from "./commands/remover.js";
       console.log("SELECT MENU RECEBIDO:", interaction.customId);
       console.log("VALORES:", interaction.values);
 
-      // Os menus carreira_* são tratados pelo collector do próprio comando.
+      // Estes menus são tratados pelos collectors dos próprios comandos.
       if (interaction.customId.startsWith("carreira_")) return;
+      if (interaction.customId === "remover_escolher_item") return;
 
       try {
 
@@ -158,11 +156,6 @@ import * as remover from "./commands/remover.js";
 
         if (interaction.customId === "restore_menu") {
           return handleRestoreMenu(interaction);
-        }
-
-        // /remover
-        if (interaction.customId === "remover_escolher_item") {
-          return remover.handleSelect(interaction);
         }
 
         // /editar
