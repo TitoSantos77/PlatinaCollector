@@ -19,11 +19,8 @@ export default {
       return interaction.editReply("❌ Não encontrei UserStats para ti.");
     }
 
-    let alteracoes = [];
+    const alteracoes = [];
 
-    // -----------------------------
-    // FIX: XP e totalXP
-    // -----------------------------
     if (isNaN(stats.xp)) {
       stats.xp = 0;
       alteracoes.push("XP corrigido (NaN → 0)");
@@ -34,44 +31,24 @@ export default {
       alteracoes.push("totalXP corrigido (NaN → 0)");
     }
 
-    // -----------------------------
-    // FIX: nível
-    // -----------------------------
     if (isNaN(stats.nivel) || stats.nivel < 1) {
       stats.nivel = 1;
       alteracoes.push("Nível corrigido (inválido → 1)");
     }
 
-    // -----------------------------
-    // FIX: categoriasCarreira
-    // -----------------------------
     if (!Array.isArray(stats.categoriasCarreira)) {
       stats.categoriasCarreira = [];
       alteracoes.push("categoriasCarreira convertido para array");
     }
 
-    // -----------------------------
-    // FIX: subcategoriasCarreira
-    // -----------------------------
     if (!Array.isArray(stats.subcategoriasCarreira)) {
       stats.subcategoriasCarreira = [];
       alteracoes.push("subcategoriasCarreira convertido para array");
     }
 
-    // -----------------------------
-    // FIX: plataformasCarreira
-    // -----------------------------
     if (!Array.isArray(stats.plataformasCarreira)) {
       stats.plataformasCarreira = [];
       alteracoes.push("plataformasCarreira convertido para array");
-    }
-
-    // -----------------------------
-    // FIX: badges
-    // -----------------------------
-    if (!Array.isArray(stats.badgesDesbloqueadas)) {
-      stats.badgesDesbloqueadas = [];
-      alteracoes.push("badgesDesbloqueadas convertido para array");
     }
 
     await stats.save();
