@@ -1,10 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { XP_PLATINA, adicionarXP, xpNecessario } from "../utils/xp.js";
-import { atualizarProgresso } from "../utils/missions.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsPlatina } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
-import { verificarBadges } from "../utils/badges.js";
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 
@@ -116,23 +114,17 @@ export async function execute(interaction) {
   // 3) XP
   await adicionarXP(userId, xpGanho);
 
-  // 4) Missões
-  await atualizarProgresso(userId, "platina", true);
-
-  // 5) Stats globais
+  // 4) Stats globais
   await adicionarJogo(jogo);
   await adicionarPlataforma(plataforma);
 
-  // 6) Badges
-  await verificarBadges(userId);
-
-  // 7) Buscar stats atualizados
+  // 5) Buscar stats atualizados
   const stats = await UserStats.findOne({ userId });
 
-  // 8) Backup final
+  // 6) Backup final
   criarBackup();
 
-  // 9) EMBED — sem duplicação
+  // 7) EMBED
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
     .setTitle(`🏆 ${interaction.user.username} adicionou a platina nº ${totalPlatinas}!`)
@@ -155,10 +147,8 @@ export async function execute(interaction) {
     )
     .setFooter({ text: "Boa! Continua a colecionar platinas!" });
 
-  // Enviar embed
   await interaction.reply({ embeds: [embed] });
 
-  // 🏆 ADICIONAR REAÇÃO
   const msg = await interaction.fetchReply();
   await msg.react("🏆");
 }
