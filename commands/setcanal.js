@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import fs from "fs";
-import path from "path";
+import BotConfig from "../models/BotConfig.js";
 
 export const data = new SlashCommandBuilder()
   .setName("setcanal")
@@ -11,10 +10,9 @@ export const data = new SlashCommandBuilder()
       .setDescription("Escolhe o canal permitido")
       .setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator); // Só admins
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
-  // Verificação extra (caso o Discord falhe)
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
     return interaction.reply({
       content: "❌ Apenas administradores podem usar este comando.",
@@ -24,26 +22,15 @@ export async function execute(interaction) {
 
   const canal = interaction.options.getChannel("canal");
 
-  const configPath = path.join(process.cwd(), "data", "config.json");
+  const config = await BotConfig.findOneAndUpdate(
+    { chave: "principal" },
+    { $addToSet: { allowedChannels: canal.id } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
-  // Ler config atual
-  let config = {};
-  if (fs.existsSync(configPath)) {
-    config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-  }
+  const canais = config.allowedChannels.map(id => `<#${id}>`).join(", ");
 
-  // Garantir que existe a lista
-  if (!Array.isArray(config.allowedChannels)) {
-    config.allowedChannels = [];
-  }
-
-  // Adicionar canal se ainda não existir
-  if (!config.allowedChannels.includes(canal.id)) {
-    config.allowedChannels.push(canal.id);
-  }
-
-  // Guardar
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-
-  await interaction.reply(`✔ Canal adicionado à lista: <#${canal.id}>`);
+  await interaction.reply(
+    `✔ Canal adicionado à lista: <#${canal.id}>\n📌 Canais permitidos: ${canais}`
+  );
 }
