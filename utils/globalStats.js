@@ -1,8 +1,8 @@
 import GlobalStats from "../models/GlobalStats.js";
 
-// Garantir documento único
 async function garantirStats() {
   let stats = await GlobalStats.findOne();
+
   if (!stats) {
     stats = await GlobalStats.create({
       jogos: {},
@@ -12,13 +12,11 @@ async function garantirStats() {
       plataformasCarreira: []
     });
   }
+
   return stats;
 }
 
-/* ============================
-   PLATINAS (MAP)
-============================ */
-
+// PLATINAS
 export async function adicionarJogo(nome) {
   if (!nome) return;
   const stats = await garantirStats();
@@ -33,21 +31,17 @@ export async function adicionarPlataforma(nome) {
   await stats.save();
 }
 
-// 🟩 DEVOLVER APENAS AS CHAVES (para autocomplete inteligente)
 export async function obterJogos() {
   const stats = await garantirStats();
-  return Array.from(stats.jogos.keys()); // <-- LISTA DE STRINGS
+  return Array.from(stats.jogos.keys());
 }
 
 export async function obterPlataformas() {
   const stats = await garantirStats();
-  return Array.from(stats.plataformas.keys()); // <-- LISTA DE STRINGS
+  return Array.from(stats.plataformas.keys());
 }
 
-/* ============================
-   CARREIRA GTA (ARRAYS)
-============================ */
-
+// CARREIRA GTA
 export async function adicionarCategoriaCarreira(nome) {
   if (!nome) return;
   const stats = await garantirStats();
@@ -67,40 +61,4 @@ export async function adicionarPlataformaCarreira(nome) {
   const stats = await garantirStats();
   stats.plataformasCarreira.push(nome);
   await stats.save();
-}
-
-export async function removerCategoriaCarreira(nome) {
-  if (!nome) return;
-  const stats = await garantirStats();
-  stats.categoriasCarreira = stats.categoriasCarreira.filter(c => c !== nome);
-  await stats.save();
-}
-
-export async function removerSubcategoriaCarreira(nome) {
-  if (!nome) return;
-  const stats = await garantirStats();
-  stats.subcategoriasCarreira = stats.subcategoriasCarreira.filter(s => s !== nome);
-  await stats.save();
-}
-
-export async function removerPlataformaCarreira(nome) {
-  if (!nome) return;
-  const stats = await garantirStats();
-  stats.plataformasCarreira = stats.plataformasCarreira.filter(p => p !== nome);
-  await stats.save();
-}
-
-export async function obterCategoriasCarreira() {
-  const stats = await garantirStats();
-  return stats.categoriasCarreira;
-}
-
-export async function obterSubcategoriasCarreira() {
-  const stats = await garantirStats();
-  return stats.subcategoriasCarreira;
-}
-
-export async function obterPlataformasCarreira() {
-  const stats = await garantirStats();
-  return stats.plataformasCarreira;
 }
