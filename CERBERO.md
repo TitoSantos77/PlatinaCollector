@@ -105,28 +105,31 @@ Responsável por:
 
 Não existem schedulers de missões nem rotinas automáticas de reparação no arranque.
 
-## 9. Configuração de canais
+## 9. Configuração de canais — `models/BotConfig.js`
 
-`data/config.json` usa:
+Os canais onde o bot pode ser utilizado são guardados de forma persistente no MongoDB.
 
-```json
-{
-  "allowedChannels": null
-}
-```
+O `/setcanal` adiciona o ID do canal à lista `allowedChannels` do documento principal de `BotConfig`.
 
-`null` permite todos os canais. O `/setcanal` cria a lista de canais permitidos quando necessário.
+Regras atuais:
 
-## 10. Backups
+- se não existirem canais configurados, o bot pode ser usado em qualquer canal;
+- quando existe pelo menos um canal configurado, os restantes comandos só funcionam nesses canais;
+- `/setcanal` continua acessível a administradores fora dos canais permitidos, evitando bloquear o acesso à configuração;
+- a configuração mantém-se após reinícios e novos deploys do Render.
 
-`utils/backup.js` guarda cópias locais de:
+O antigo `data/config.json` deixou de fazer parte da configuração ativa.
 
-- `config.json`
+## 10. Backups — `utils/backup.js`
+
+O sistema de backup cria cópias locais dos dados atuais do MongoDB:
+
 - `UserGames`
 - `UserStats`
 - `GlobalStats`
+- `BotConfig`
 
-A restauração automática só recria a configuração local. As coleções MongoDB não são restauradas automaticamente para evitar substituições destrutivas.
+As coleções MongoDB não são restauradas automaticamente para evitar substituições destrutivas de dados.
 
 ## 11. Princípio atual
 
