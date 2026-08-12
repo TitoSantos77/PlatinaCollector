@@ -11,33 +11,40 @@ export default {
   async execute(interaction) {
     await interaction.reply("🔧 A reconstruir UserStats...");
 
-    const usersGames = await UserGames.find({}, "userId platinas proezas conquistas");
+    const usersGames = await UserGames.find({}, "userId platinas proezas conquistas carreira");
 
     let criados = 0;
     let atualizados = 0;
 
     for (const u of usersGames) {
       const totalPlatinas = u.platinas?.length || 0;
-      const totalProezas = u.proezas?.length || 0;
-      const totalConquistas = u.conquistas?.length || 0;
+      const totalProezas = (u.proezas?.length || 0) + (u.conquistas?.length || 0);
+      const totalCarreira = u.carreira?.length || 0;
+
+      const ultimaPlatina = totalPlatinas > 0 ? u.platinas.at(-1) : null;
+      const ultimaCarreira = totalCarreira > 0 ? u.carreira.at(-1) : null;
 
       let stats = await UserStats.findOne({ userId: u.userId });
 
       if (!stats) {
         await UserStats.create({
           userId: u.userId,
-          platinas: totalPlatinas,
-          conquistas: totalProezas + totalConquistas,
+          totalPlatinas,
+          totalProezas,
+          totalCarreira,
+          ultimaPlatina,
+          ultimaCarreira,
           xp: 0,
           totalXP: 0,
-          nivel: 1,
-          badge: "⚪ Iniciante",
-          badgesDesbloqueadas: ["⚪ Iniciante"]
+          nivel: 1
         });
         criados++;
       } else {
-        stats.platinas = totalPlatinas;
-        stats.conquistas = totalProezas + totalConquistas;
+        stats.totalPlatinas = totalPlatinas;
+        stats.totalProezas = totalProezas;
+        stats.totalCarreira = totalCarreira;
+        stats.ultimaPlatina = ultimaPlatina;
+        stats.ultimaCarreira = ultimaCarreira;
         await stats.save();
         atualizados++;
       }
