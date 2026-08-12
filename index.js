@@ -146,6 +146,9 @@ import * as remover from "./commands/remover.js";
       console.log("SELECT MENU RECEBIDO:", interaction.customId);
       console.log("VALORES:", interaction.values);
 
+      // Os menus carreira_* são tratados pelo collector do próprio comando.
+      if (interaction.customId.startsWith("carreira_")) return;
+
       try {
 
         // /backup
