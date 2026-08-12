@@ -123,7 +123,7 @@ export default {
     const msg = await interaction.reply({
       content: "Escolhe a categoria:",
       components: [categoriaMenu],
-      ephemeral: true
+      // Resposta pública: o embed final também será público.
     });
 
     const collector = msg.createMessageComponentCollector({ time: 60000 });
