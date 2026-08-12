@@ -6,7 +6,6 @@ import {
 
 import UserStats from "../models/UserStats.js";
 import { xpNecessario } from "../utils/xp.js";
-import { verificarBadges } from "../utils/badges.js"; // <-- CORRIGIDO
 
 export const data = new SlashCommandBuilder()
   .setName("darxp")
@@ -43,7 +42,7 @@ export async function execute(interaction) {
     });
   }
 
-  let stats = await UserStats.findOne({ userId: user.id });
+  const stats = await UserStats.findOne({ userId: user.id });
 
   if (!stats) {
     return interaction.reply({
@@ -52,14 +51,11 @@ export async function execute(interaction) {
     });
   }
 
-  // XP antes
   const xpAntes = stats.totalXP;
   const nivelAntes = stats.nivel;
 
-  // Adicionar XP
   stats.totalXP += quantidade;
 
-  // Recalcular nível
   let nivel = 1;
   let xpTemp = stats.totalXP;
 
@@ -72,9 +68,6 @@ export async function execute(interaction) {
   stats.xp = xpTemp;
 
   await stats.save();
-
-  // Atualizar badges (Mongo)
-  await verificarBadges(user.id); // <-- CORRIGIDO
 
   const embed = new EmbedBuilder()
     .setColor("#00FF88")
