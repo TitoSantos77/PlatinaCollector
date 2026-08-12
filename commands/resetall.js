@@ -1,10 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-
-import User from "../models/User.js";
 import UserStats from "../models/UserStats.js";
 import GlobalStats from "../models/GlobalStats.js";
 import UserGames from "../models/UserGames.js";
-
 import { criarBackup } from "../utils/backup.js";
 
 export const data = new SlashCommandBuilder()
@@ -20,7 +17,6 @@ export async function execute(interaction) {
     });
   }
 
-  await User.deleteMany({});
   await UserStats.deleteMany({});
   await GlobalStats.deleteMany({});
   await UserGames.deleteMany({});
@@ -34,7 +30,6 @@ export async function execute(interaction) {
       "Todos os dados de **todos os utilizadores** foram apagados:\n\n" +
       "• XP e níveis\n" +
       "• Platinas\n" +
-      "• Proezas antigas\n" +
       "• Carreira GTA\n" +
       "• Estatísticas globais\n" +
       "• Histórico completo\n\n" +
