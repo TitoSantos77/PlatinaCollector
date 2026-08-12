@@ -1,47 +1,24 @@
 import UserStats from "../models/UserStats.js";
 
-// Garantir que o user existe e tem todos os campos necessários
 async function garantirUser(userId) {
   let user = await UserStats.findOne({ userId });
 
   if (!user) {
     user = await UserStats.create({
       userId,
-
-      // PLATINAS
       totalPlatinas: 0,
       ultimaPlatina: null,
-
-      // PROEZAS (LEGADO)
-      totalProezas: 0,
-      ultimaProeza: null,
-
-      // CARREIRA GTA
       totalCarreira: 0,
       ultimaCarreira: null,
-      categorias: {},
-      subcategorias: {},
-      plataformasCarreira: {},
-
-      // XP / NÍVEL
       xp: 0,
       totalXP: 0,
       nivel: 1
     });
   }
 
-  // Garantir campos novos em users antigos
-  user.totalCarreira = user.totalCarreira || 0;
-  user.categorias = user.categorias || {};
-  user.subcategorias = user.subcategorias || {};
-  user.plataformasCarreira = user.plataformasCarreira || {};
-
   return user;
 }
 
-/* ============================
-   PLATINA
-============================ */
 async function atualizarStatsPlatina(userId, jogo, plataforma, imagem = null) {
   await garantirUser(userId);
 
@@ -61,20 +38,19 @@ async function atualizarStatsPlatina(userId, jogo, plataforma, imagem = null) {
   );
 }
 
-/* ============================
-   PROEZA (LEGADO)
-============================ */
-async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
+async function atualizarStatsCarreira(userId, categoria, subcategoria, plataforma, imagem = null) {
   await garantirUser(userId);
 
   await UserStats.findOneAndUpdate(
     { userId },
     {
-      $inc: { totalProezas: 1 },
+      $inc: { totalCarreira: 1 },
       $set: {
-        ultimaProeza: {
-          jogo: jogo || "Não especificado",
-          plataforma: plataforma || "Não especificado",
+        ultimaCarreira: {
+          categoria,
+          subcategoria,
+          plataforma,
+          jogo: "Grand Theft Auto V",
           imagem,
           data: new Date().toISOString()
         }
@@ -83,42 +59,13 @@ async function atualizarStatsProeza(userId, jogo, plataforma, imagem = null) {
   );
 }
 
-/* ============================
-   CARREIRA GTA
-============================ */
-async function atualizarStatsCarreira(userId, categoria, subcategoria, plataforma, imagem = null) {
-  const user = await garantirUser(userId);
-
-  user.totalCarreira += 1;
-
-  user.categorias[categoria] = (user.categorias[categoria] || 0) + 1;
-  user.subcategorias[subcategoria] = (user.subcategorias[subcategoria] || 0) + 1;
-  user.plataformasCarreira[plataforma] =
-    (user.plataformasCarreira[plataforma] || 0) + 1;
-
-  user.ultimaCarreira = {
-    categoria,
-    subcategoria,
-    plataforma,
-    jogo: "Grand Theft Auto V",
-    imagem,
-    data: new Date().toISOString()
-  };
-
-  await user.save();
-}
-
-/* ============================
-   OBTER STATS
-============================ */
 async function getUserStats(userId) {
   await garantirUser(userId);
-  return await UserStats.findOne({ userId });
+  return UserStats.findOne({ userId });
 }
 
 export {
   atualizarStatsPlatina,
-  atualizarStatsProeza,
   atualizarStatsCarreira,
   getUserStats
 };
