@@ -27,6 +27,8 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+const POR_PAGINA = 10;
+
 function formatarTimestamp(timestamp) {
   if (!timestamp) return "sem data";
 
@@ -48,22 +50,57 @@ function formatarTimestamp(timestamp) {
   return `${obter("day")}-${obter("month")}-${obter("year")} ${obter("hour")}:${obter("minute")}`;
 }
 
+function gerarEmbed(lista, tipo, username, pagina) {
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+  const paginaSegura = Math.min(Math.max(0, pagina), totalPaginas - 1);
+  const inicio = paginaSegura * POR_PAGINA;
+  const slice = lista.slice(inicio, inicio + POR_PAGINA);
+
+  const texto = slice
+    .map((item, i) => {
+      const numero = inicio + i + 1;
+      const dataItem = item.data || formatarTimestamp(item.timestamp);
+
+      if (tipo === "platina") {
+        return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${dataItem}`;
+      }
+
+      return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${dataItem}`;
+    })
+    .join("\n");
+
+  return new EmbedBuilder()
+    .setColor("#00A3FF")
+    .setTitle(
+      tipo === "platina"
+        ? `📘 Platinas de ${username}`
+        : `🚗 Carreira GTA de ${username}`
+    )
+    .setDescription(texto || "Sem registos nesta página.")
+    .setFooter({ text: `Página ${paginaSegura + 1} de ${totalPaginas}` });
+}
+
+function gerarBotoes(ownerId, targetId, tipo, pagina, totalPaginas) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`listar_pagina_${ownerId}_${targetId}_${tipo}_${Math.max(0, pagina - 1)}`)
+      .setLabel("⬅️ Anterior")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(pagina <= 0),
+    new ButtonBuilder()
+      .setCustomId(`listar_pagina_${ownerId}_${targetId}_${tipo}_${Math.min(totalPaginas - 1, pagina + 1)}`)
+      .setLabel("Seguinte ➡️")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(pagina >= totalPaginas - 1)
+  );
+}
+
 export async function execute(interaction) {
-
-  console.log(">>> /listar chamado");
-
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
-
-  console.log("Tipo:", tipo);
-  console.log("User:", user.id);
-
   const games = await UserGames.findOne({ userId: user.id });
 
-  console.log("UserGames encontrado:", JSON.stringify(games, null, 2));
-
   if (!games) {
-    console.log("❌ UserGames não encontrado");
     return interaction.reply({
       content: "❌ Este utilizador ainda não tem registos.",
       ephemeral: true
@@ -72,131 +109,74 @@ export async function execute(interaction) {
 
   const lista = tipo === "platina" ? games.platinas : games.carreira;
 
-  console.log("Lista selecionada:", lista);
-  console.log("Tamanho da lista:", lista?.length);
-
   if (!lista || lista.length === 0) {
-    console.log("❌ Lista vazia");
     return interaction.reply({
       content:
         tipo === "platina"
-          ? `📭 O utilizador não tem nenhuma platina.`
-          : `📭 O utilizador não tem nenhuma entrada de carreira GTA.`,
+          ? "📭 O utilizador não tem nenhuma platina."
+          : "📭 O utilizador não tem nenhuma entrada de carreira GTA.",
       ephemeral: true
     });
   }
 
-  let pagina = 0;
-  const porPagina = 10;
-  const totalPaginas = Math.ceil(lista.length / porPagina);
+  const pagina = 0;
+  const totalPaginas = Math.ceil(lista.length / POR_PAGINA);
 
-  console.log("Total de páginas:", totalPaginas);
+  return interaction.reply({
+    embeds: [gerarEmbed(lista, tipo, user.username, pagina)],
+    components: [gerarBotoes(interaction.user.id, user.id, tipo, pagina, totalPaginas)]
+  });
+}
 
-  const gerarEmbed = () => {
-    console.log("Gerando embed da página:", pagina);
-
-    const inicio = pagina * porPagina;
-    const fim = inicio + porPagina;
-    const slice = lista.slice(inicio, fim);
-
-    console.log("Slice:", slice);
-
-    const texto = slice
-      .map((item, i) => {
-        const idReal = inicio + i;
-        const numero = idReal + 1;
-        const dataItem = item.data || formatarTimestamp(item.timestamp);
-
-        if (tipo === "platina") {
-          return `**${numero}** — ${item.jogo} (${item.plataforma}) — ${dataItem}`;
-        }
-
-        return `**${numero}** — ${item.categoria} / ${item.subcategoria} (${item.plataforma}) — ${dataItem}`;
-      })
-      .join("\n");
-
-    return new EmbedBuilder()
-      .setColor("#00A3FF")
-      .setTitle(
-        tipo === "platina"
-          ? `📘 Platinas de ${user.username}`
-          : `🚗 Carreira GTA de ${user.username}`
-      )
-      .setDescription(texto)
-      .setFooter({ text: `Página ${pagina + 1} de ${totalPaginas}` });
-  };
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("anterior")
-      .setLabel("⬅️ Anterior")
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(pagina === 0),
-
-    new ButtonBuilder()
-      .setCustomId("seguinte")
-      .setLabel("Seguinte ➡️")
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(pagina === totalPaginas - 1)
+export async function handleButton(interaction) {
+  const match = interaction.customId.match(
+    /^listar_pagina_(\d+)_(\d+)_(platina|carreira)_(\d+)$/
   );
 
-  console.log("Enviando primeira mensagem...");
+  if (!match) return;
 
-  const msg = await interaction.reply({
-    embeds: [gerarEmbed()],
-    components: [row],
-    fetchReply: true
-  });
+  const [, ownerId, targetId, tipo, paginaTexto] = match;
 
-  console.log("Mensagem enviada. ID:", msg.id);
-
-  const collector = msg.createMessageComponentCollector({
-    time: 1000 * 60 * 5
-  });
-
-  console.log("Collector criado.");
-
-  collector.on("collect", async btn => {
-    console.log("Collector recebeu:", btn.customId);
-    console.log("User que clicou:", btn.user.id);
-
-    if (btn.user.id !== interaction.user.id) {
-      console.log("❌ Clique de outro user");
-      return btn.reply({ content: "❌ Não és tu que abriste isto.", ephemeral: true });
-    }
-
-    await btn.deferUpdate().catch(err => {
-      console.log("Erro no deferUpdate:", err);
+  if (interaction.user.id !== ownerId) {
+    return interaction.reply({
+      content: "❌ Não és tu que abriste esta lista.",
+      ephemeral: true
     });
+  }
 
-    if (btn.customId === "anterior" && pagina > 0) pagina--;
-    if (btn.customId === "seguinte" && pagina < totalPaginas - 1) pagina++;
+  await interaction.deferUpdate();
 
-    console.log("Nova página:", pagina);
+  const [games, targetUser] = await Promise.all([
+    UserGames.findOne({ userId: targetId }),
+    interaction.client.users.fetch(targetId).catch(() => null)
+  ]);
 
-    const newRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("anterior")
-        .setLabel("⬅️ Anterior")
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pagina === 0),
-
-      new ButtonBuilder()
-        .setCustomId("seguinte")
-        .setLabel("Seguinte ➡️")
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(pagina === totalPaginas - 1)
-    );
-
-    await btn.editReply({
-      embeds: [gerarEmbed()],
-      components: [newRow]
-    }).catch(err => {
-      console.log("Erro no editReply:", err);
+  if (!games) {
+    return interaction.editReply({
+      content: "❌ Os registos deste utilizador já não existem.",
+      embeds: [],
+      components: []
     });
-  });
+  }
 
-  collector.on("end", () => {
-    console.log("Collector terminou.");
+  const lista = tipo === "platina" ? games.platinas : games.carreira;
+
+  if (!lista || lista.length === 0) {
+    return interaction.editReply({
+      content: "📭 Esta lista já não tem registos.",
+      embeds: [],
+      components: []
+    });
+  }
+
+  const totalPaginas = Math.ceil(lista.length / POR_PAGINA);
+  const paginaPedida = Number(paginaTexto) || 0;
+  const pagina = Math.min(Math.max(0, paginaPedida), totalPaginas - 1);
+  const username = targetUser?.username || "utilizador";
+
+  return interaction.editReply({
+    content: "",
+    embeds: [gerarEmbed(lista, tipo, username, pagina)],
+    components: [gerarBotoes(ownerId, targetId, tipo, pagina, totalPaginas)]
   });
 }
