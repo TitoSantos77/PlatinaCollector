@@ -24,7 +24,12 @@ Suporta:
 - sorteios por **nova Platina**, **Carreira GTA** e **subida de nível**, com chances configuráveis;
 - cooldown configurável por utilizador;
 - botão para o responsável marcar prémios manuais como entregues;
-- todos os prémios pendentes e apenas os **10 últimos prémios entregues** no histórico.
+- todos os prémios pendentes e apenas os **10 últimos prémios entregues** no histórico;
+- **Eventos de Prémios** disparados por administradores, com nome personalizado e duração configurável de 24 horas por defeito;
+- uma participação por membro em cada evento, através de botão público, com prémio aleatório garantido;
+- eventos independentes do estado ligado/desligado dos sorteios normais.
+
+Ao lançar um evento, a lista e os pesos dos prémios ficam congelados para esse evento. Apenas um evento pode estar ativo por servidor e o administrador pode consultá-lo ou encerrá-lo antecipadamente.
 
 Os canais permitidos são configurados com `/setcanal` e guardados de forma persistente no MongoDB, mantendo a configuração após reinícios e novos deploys.
 
