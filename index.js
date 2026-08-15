@@ -242,8 +242,10 @@ await ligarMongo();
       if (!command) return;
 
       try {
-        // /setcanal fica sempre acessível a admins para evitar ficar preso fora dos canais permitidos.
-        if (interaction.commandName !== "setcanal") {
+        // Comandos administrativos de configuração/publicação ficam acessíveis fora dos canais permitidos.
+        const comandosLivres = ["setcanal", "patchnotes", "publicarcomandos"];
+
+        if (!comandosLivres.includes(interaction.commandName)) {
           const config = await BotConfig.findOne({ chave: "principal" }).lean();
           const canaisPermitidos = config?.allowedChannels || [];
 
