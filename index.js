@@ -103,6 +103,28 @@ await ligarMongo();
       return;
     }
 
+    // BOTÕES
+    if (interaction.isButton()) {
+      try {
+        if (interaction.customId.startsWith("premios_")) {
+          const premios = client.commands.get("premios");
+          if (typeof premios?.handleButton === "function") {
+            return premios.handleButton(interaction);
+          }
+        }
+      } catch (err) {
+        console.error("ERRO NO BOTÃO:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar o botão.",
+            ephemeral: true
+          });
+        }
+      }
+      return;
+    }
+
     // SELECT MENUS
     if (interaction.isStringSelectMenu()) {
       console.log("SELECT MENU RECEBIDO:", interaction.customId);
@@ -113,6 +135,13 @@ await ligarMongo();
       if (interaction.customId === "remover_escolher_item") return;
 
       try {
+        if (interaction.customId.startsWith("premios_")) {
+          const premios = client.commands.get("premios");
+          if (typeof premios?.handleSelect === "function") {
+            return premios.handleSelect(interaction);
+          }
+        }
+
         if (interaction.customId === "backup_menu") {
           return handleBackupMenu(interaction);
         }
@@ -147,9 +176,38 @@ await ligarMongo();
       return;
     }
 
+    // USER SELECT MENUS
+    if (interaction.isUserSelectMenu()) {
+      try {
+        if (interaction.customId.startsWith("premios_")) {
+          const premios = client.commands.get("premios");
+          if (typeof premios?.handleUserSelect === "function") {
+            return premios.handleUserSelect(interaction);
+          }
+        }
+      } catch (err) {
+        console.error("ERRO NO USER SELECT:", err);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ Erro ao processar a seleção de utilizador.",
+            ephemeral: true
+          });
+        }
+      }
+      return;
+    }
+
     // MODALS
     if (interaction.isModalSubmit()) {
       try {
+        if (interaction.customId.startsWith("premios_")) {
+          const premios = client.commands.get("premios");
+          if (typeof premios?.handleModal === "function") {
+            return premios.handleModal(interaction);
+          }
+        }
+
         if (interaction.customId.startsWith("editar_modal_")) {
           return editar.handleModal(interaction);
         }
