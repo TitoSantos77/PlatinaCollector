@@ -17,22 +17,22 @@ function eAdmin(interaction) {
   return interaction.member?.permissions?.has(PermissionFlagsBits.Administrator) ?? false;
 }
 
-async function negarAdmin(interaction) {
+function negarAdmin(interaction) {
   return interaction.reply({
     content: "❌ Apenas administradores podem gerir eventos de prémios.",
     ephemeral: true
   });
 }
 
-function eventoDentroDoPrazo(evento) {
+function estaAtivo(evento) {
   return Boolean(evento?.ativo && new Date(evento.terminaEm).getTime() > Date.now());
 }
 
-async function obterEventoAtual(guildId) {
+async function obterEvento(guildId) {
   const evento = await PremioEvento.findOne({ guildId });
   if (!evento) return null;
 
-  if (evento.ativo && !eventoDentroDoPrazo(evento)) {
+  if (evento.ativo && !estaAtivo(evento)) {
     evento.ativo = false;
     evento.encerradoEm = evento.encerradoEm || evento.terminaEm || new Date();
     await evento.save();
@@ -41,7 +41,7 @@ async function obterEventoAtual(guildId) {
   return evento;
 }
 
-function botaoParticipar(evento, desativado = false) {
+function linhaParticipar(evento, desativado = false) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`premios_evento_participar_${evento.token}`)
@@ -52,7 +52,7 @@ function botaoParticipar(evento, desativado = false) {
   );
 }
 
-function embedEvento(evento, estado = "ativo") {
+function embedEvento(evento, estado = "ativo", mostrarContagem = true) {
   const termina = Math.floor(new Date(evento.terminaEm).getTime() / 1000);
   const criado = Math.floor(new Date(evento.criadoEm).getTime() / 1000);
 
@@ -69,20 +69,29 @@ function embedEvento(evento, estado = "ativo") {
     cor = "#777777";
   }
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(cor)
     .setTitle(`🎉 ${evento.nome}`)
     .setDescription(descricao)
     .addFields(
-      { name: "🎁 Participações", value: `${evento.participantes.length}`, inline: true },
       { name: "⏳ Termina", value: `<t:${termina}:R>`, inline: true },
-      { name: "📅 Prazo", value: `<t:${termina}:f>`, inline: false },
+      { name: "📅 Prazo", value: `<t:${termina}:f>`, inline: true },
       { name: "👤 Criado por", value: `<@${evento.criadoPor}> · <t:${criado}:f>`, inline: false }
     );
+
+  if (mostrarContagem) {
+    embed.addFields({
+      name: "🎁 Participações",
+      value: `${evento.participantes.length}`,
+      inline: true
+    });
+  }
+
+  return embed;
 }
 
-async function atualizarMensagemEvento(client, evento, estado) {
-  if (!evento.canalId || !evento.mensagemId) return;
+async function atualizarMensagem(client, evento, estado) {
+  if (!evento?.canalId || !evento?.mensagemId) return;
 
   try {
     const canal = await client.channels.fetch(evento.canalId);
@@ -90,8 +99,8 @@ async function atualizarMensagemEvento(client, evento, estado) {
 
     const mensagem = await canal.messages.fetch(evento.mensagemId);
     await mensagem.edit({
-      embeds: [embedEvento(evento, estado)],
-      components: [botaoParticipar(evento, true)]
+      embeds: [embedEvento(evento, estado, true)],
+      components: [linhaParticipar(evento, true)]
     });
   } catch (err) {
     console.error("Não foi possível atualizar a mensagem do evento de prémios:", err.message);
@@ -101,8 +110,8 @@ async function atualizarMensagemEvento(client, evento, estado) {
 export async function abrirPainelEvento(interaction) {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
-  const evento = await obterEventoAtual(interaction.guildId);
-  const ativo = eventoDentroDoPrazo(evento);
+  const evento = await obterEvento(interaction.guildId);
+  const ativo = estaAtivo(evento);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -131,20 +140,16 @@ export async function abrirPainelEvento(interaction) {
         .setTitle("🎉 Evento de Prémios")
         .setDescription("Não existe nenhum evento de prémios ativo neste momento.");
 
-  return interaction.reply({
-    embeds: [embed],
-    components: [row],
-    ephemeral: true
-  });
+  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
 }
 
-async function abrirModalCriarEvento(interaction) {
+async function abrirModalCriar(interaction) {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
-  const evento = await obterEventoAtual(interaction.guildId);
-  if (eventoDentroDoPrazo(evento)) {
+  const atual = await obterEvento(interaction.guildId);
+  if (estaAtivo(atual)) {
     return interaction.reply({
-      content: `❌ Já existe um evento ativo: **${evento.nome}**. Encerra-o antes de criar outro.`,
+      content: `❌ Já existe um evento ativo: **${atual.nome}**. Encerra-o antes de criar outro.`,
       ephemeral: true
     });
   }
@@ -157,8 +162,7 @@ async function abrirModalCriarEvento(interaction) {
     });
   }
 
-  const temManual = config.premios.some(p => p.tipo === "personalizado");
-  if (temManual && !config.responsavelId) {
+  if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
     return interaction.reply({
       content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
       ephemeral: true
@@ -193,28 +197,25 @@ async function abrirModalCriarEvento(interaction) {
   return interaction.showModal(modal);
 }
 
-async function mostrarEventoAtual(interaction) {
+async function mostrarAtual(interaction) {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
-  const evento = await obterEventoAtual(interaction.guildId);
-  if (!eventoDentroDoPrazo(evento)) {
+  const evento = await obterEvento(interaction.guildId);
+  if (!estaAtivo(evento)) {
     return interaction.reply({
       content: "📋 Não existe nenhum evento de prémios ativo.",
       ephemeral: true
     });
   }
 
-  return interaction.reply({
-    embeds: [embedEvento(evento)],
-    ephemeral: true
-  });
+  return interaction.reply({ embeds: [embedEvento(evento)], ephemeral: true });
 }
 
-async function encerrarEvento(interaction) {
+async function encerrar(interaction) {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
-  const evento = await obterEventoAtual(interaction.guildId);
-  if (!eventoDentroDoPrazo(evento)) {
+  const evento = await obterEvento(interaction.guildId);
+  if (!estaAtivo(evento)) {
     return interaction.reply({
       content: "❌ Não existe nenhum evento ativo para encerrar.",
       ephemeral: true
@@ -224,7 +225,7 @@ async function encerrarEvento(interaction) {
   evento.ativo = false;
   evento.encerradoEm = new Date();
   await evento.save();
-  await atualizarMensagemEvento(interaction.client, evento, "encerrado");
+  await atualizarMensagem(interaction.client, evento, "encerrado");
   criarBackup();
 
   return interaction.reply({
@@ -233,17 +234,16 @@ async function encerrarEvento(interaction) {
   });
 }
 
-function numeroInteiro(valor) {
+function inteiro(valor) {
   const texto = String(valor || "").trim();
-  if (!/^\d+$/.test(texto)) return null;
-  return Number(texto);
+  return /^\d+$/.test(texto) ? Number(texto) : null;
 }
 
 async function guardarEvento(interaction) {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
   const nome = interaction.fields.getTextInputValue("nome_evento").trim();
-  const duracaoHoras = numeroInteiro(interaction.fields.getTextInputValue("duracao_horas"));
+  const duracaoHoras = inteiro(interaction.fields.getTextInputValue("duracao_horas"));
 
   if (!nome) {
     return interaction.reply({ content: "❌ O nome do evento não pode ficar vazio.", ephemeral: true });
@@ -256,8 +256,8 @@ async function guardarEvento(interaction) {
     });
   }
 
-  const atual = await obterEventoAtual(interaction.guildId);
-  if (eventoDentroDoPrazo(atual)) {
+  const atual = await obterEvento(interaction.guildId);
+  if (estaAtivo(atual)) {
     return interaction.reply({
       content: `❌ Já existe um evento ativo: **${atual.nome}**.`,
       ephemeral: true
@@ -267,13 +267,12 @@ async function guardarEvento(interaction) {
   const config = await obterConfigPremios(interaction.guildId);
   if (config.premios.length === 0) {
     return interaction.reply({
-      content: "❌ Já não existem prémios configurados. Adiciona pelo menos um antes de criar o evento.",
+      content: "❌ Já não existem prémios configurados.",
       ephemeral: true
     });
   }
 
-  const temManual = config.premios.some(p => p.tipo === "personalizado");
-  if (temManual && !config.responsavelId) {
+  if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
     return interaction.reply({
       content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
       ephemeral: true
@@ -282,7 +281,6 @@ async function guardarEvento(interaction) {
 
   const agora = new Date();
   const terminaEm = new Date(agora.getTime() + duracaoHoras * 60 * 60 * 1000);
-  const token = randomUUID();
   const premios = config.premios.map(p => ({
     tipo: p.tipo,
     nome: p.nome,
@@ -294,7 +292,7 @@ async function guardarEvento(interaction) {
     { guildId: interaction.guildId },
     {
       $set: {
-        token,
+        token: randomUUID(),
         nome,
         ativo: true,
         criadoPor: interaction.user.id,
@@ -313,10 +311,9 @@ async function guardarEvento(interaction) {
 
   try {
     const mensagem = await interaction.channel.send({
-      embeds: [embedEvento(evento)],
-      components: [botaoParticipar(evento)]
+      embeds: [embedEvento(evento, "ativo", false)],
+      components: [linhaParticipar(evento)]
     });
-
     evento.mensagemId = mensagem.id;
     await evento.save();
   } catch (err) {
@@ -335,46 +332,34 @@ async function guardarEvento(interaction) {
   });
 }
 
-async function participarEvento(interaction) {
+async function participar(interaction) {
   const token = interaction.customId.replace("premios_evento_participar_", "");
   const agora = new Date();
   const atual = await PremioEvento.findOne({ guildId: interaction.guildId });
 
   if (!atual || atual.token !== token) {
-    return interaction.reply({
-      content: "❌ Este evento já não é o evento ativo.",
-      ephemeral: true
-    });
+    return interaction.reply({ content: "❌ Este evento já não é o evento ativo.", ephemeral: true });
   }
 
   if (!atual.ativo) {
-    return interaction.reply({
-      content: "⛔ Este evento já foi encerrado.",
-      ephemeral: true
-    });
+    return interaction.reply({ content: "⛔ Este evento já foi encerrado.", ephemeral: true });
   }
 
   if (new Date(atual.terminaEm).getTime() <= agora.getTime()) {
     atual.ativo = false;
     atual.encerradoEm = atual.encerradoEm || atual.terminaEm || agora;
     await atual.save();
-    criarBackup();
 
-    try {
-      await interaction.update({
-        embeds: [embedEvento(atual, "terminado")],
-        components: [botaoParticipar(atual, true)]
-      });
-      return interaction.followUp({
-        content: "⌛ O prazo deste evento terminou.",
-        ephemeral: true
-      });
-    } catch {
-      return interaction.reply({
-        content: "⌛ O prazo deste evento terminou.",
-        ephemeral: true
-      }).catch(() => {});
+    await interaction.update({
+      embeds: [embedEvento(atual, "terminado", true)],
+      components: [linhaParticipar(atual, true)]
+    }).catch(() => {});
+
+    if (interaction.replied || interaction.deferred) {
+      return interaction.followUp({ content: "⌛ O prazo deste evento terminou.", ephemeral: true });
     }
+
+    return interaction.reply({ content: "⌛ O prazo deste evento terminou.", ephemeral: true });
   }
 
   if (atual.participantes.includes(interaction.user.id)) {
@@ -398,7 +383,7 @@ async function participarEvento(interaction) {
 
   if (!evento) {
     return interaction.reply({
-      content: "🎁 Não foi possível registar a participação. Se já participaste, só tens uma tentativa neste evento.",
+      content: "🎁 Esta participação já foi usada ou o evento terminou.",
       ephemeral: true
     });
   }
@@ -407,10 +392,7 @@ async function participarEvento(interaction) {
 
   const entregue = await entregarPremioEvento(
     interaction,
-    {
-      premios: evento.premios,
-      responsavelId: evento.responsavelId
-    },
+    { premios: evento.premios, responsavelId: evento.responsavelId },
     interaction.user.id,
     evento.nome
   );
@@ -422,23 +404,16 @@ async function participarEvento(interaction) {
       ephemeral: true
     });
   }
-
-  criarBackup();
 }
 
 export async function handleEventoButton(interaction) {
   if (interaction.customId === "premios_evento_painel") return abrirPainelEvento(interaction);
-  if (interaction.customId === "premios_evento_criar") return abrirModalCriarEvento(interaction);
-  if (interaction.customId === "premios_evento_atual") return mostrarEventoAtual(interaction);
-  if (interaction.customId === "premios_evento_encerrar") return encerrarEvento(interaction);
-
-  if (interaction.customId.startsWith("premios_evento_participar_")) {
-    return participarEvento(interaction);
-  }
+  if (interaction.customId === "premios_evento_criar") return abrirModalCriar(interaction);
+  if (interaction.customId === "premios_evento_atual") return mostrarAtual(interaction);
+  if (interaction.customId === "premios_evento_encerrar") return encerrar(interaction);
+  if (interaction.customId.startsWith("premios_evento_participar_")) return participar(interaction);
 }
 
 export async function handleEventoModal(interaction) {
-  if (interaction.customId === "premios_evento_modal_criar") {
-    return guardarEvento(interaction);
-  }
+  if (interaction.customId === "premios_evento_modal_criar") return guardarEvento(interaction);
 }
