@@ -1,0 +1,27 @@
+{
+  "versao": "2.1.0",
+  "data": "15/08/2026",
+  "titulo": "Sistema de Prémios",
+  "correcaoBugs": [
+    {
+      "bug": "Os botões Anterior e Seguinte do /listar podiam deixar de responder.",
+      "correcao": "A navegação foi refeita para continuar funcional normalmente."
+    }
+  ],
+  "sistemas": [
+    "Platinas, progresso na Carreira GTA e subidas de nível podem agora ativar sorteios de prémios."
+  ],
+  "novosSistemas": [
+    "Novo Sistema de Prémios totalmente aleatórios, com XP PlatinaCollector e prémios personalizados.",
+    "Os prémios personalizados podem incluir VAG$ para a economia do Discord, VAG$ no YouTube, recompensas especiais ou até prémios troll como \"Parabéns, ganhaste absolutamente nada.\"",
+    "Novos Eventos de Prémios: durante um período definido, cada membro pode participar uma vez e receber um prémio aleatório."
+  ],
+  "conteudoDados": [
+    "Corrigido um nome incorreto na categoria Missões de Contacto: KnoWay Out."
+  ],
+  "interface": [
+    "O menu /premios ganhou navegação com botão Voltar.",
+    "A configuração dos prémios passou a usar \"Chance no sorteio\" em vez de \"Peso no sorteio\", tornando a opção mais clara."
+  ],
+  "outras": []
+}
