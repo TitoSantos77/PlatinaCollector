@@ -534,8 +534,8 @@ export async function handleSelect(interaction) {
 
       const peso = new TextInputBuilder()
         .setCustomId("peso")
-        .setLabel("Peso no sorteio")
-        .setPlaceholder("Ex.: 10")
+        .setLabel("Chance no sorteio")
+        .setPlaceholder("Maior valor = maior chance. Ex.: 10")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
@@ -554,8 +554,8 @@ export async function handleSelect(interaction) {
 
       const peso = new TextInputBuilder()
         .setCustomId("peso")
-        .setLabel("Peso no sorteio")
-        .setPlaceholder("Ex.: 10")
+        .setLabel("Chance no sorteio")
+        .setPlaceholder("Maior valor = maior chance. Ex.: 10")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
@@ -631,7 +631,7 @@ async function guardarPremio(interaction, tipo) {
   const peso = numeroInteiro(interaction.fields.getTextInputValue("peso"));
   if (!peso || peso < 1 || peso > 1000) {
     return interaction.reply({
-      content: "❌ O peso deve ser um número entre 1 e 1000.",
+      content: "❌ A chance no sorteio deve ser um número entre 1 e 1000.",
       components: [linhaVoltar()],
       ephemeral: true
     });
@@ -675,7 +675,7 @@ async function guardarPremio(interaction, tipo) {
   criarBackup();
 
   return interaction.reply({
-    content: `✅ Prémio adicionado: **${nome}** · peso ${peso}`,
+    content: `✅ Prémio adicionado: **${nome}** · chance ${peso}`,
     components: [linhaVoltar()],
     ephemeral: true
   });
