@@ -106,6 +106,13 @@ await ligarMongo();
     // BOTÕES
     if (interaction.isButton()) {
       try {
+        if (interaction.customId.startsWith("listar_")) {
+          const listar = client.commands.get("listar");
+          if (typeof listar?.handleButton === "function") {
+            return listar.handleButton(interaction);
+          }
+        }
+
         if (interaction.customId.startsWith("premios_")) {
           const premios = client.commands.get("premios");
           if (typeof premios?.handleButton === "function") {
