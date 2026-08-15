@@ -3,6 +3,7 @@ import { XP_PLATINA, adicionarXP, xpNecessario } from "../utils/xp.js";
 import { adicionarJogo, adicionarPlataforma, obterJogos, obterPlataformas } from "../utils/globalStats.js";
 import { atualizarStatsPlatina } from "../utils/userStats.js";
 import { criarBackup } from "../utils/backup.js";
+import { processarSorteiosPremios } from "../utils/premios.js";
 import UserGames from "../models/UserGames.js";
 import UserStats from "../models/UserStats.js";
 
@@ -111,20 +112,17 @@ export async function execute(interaction) {
   // 2) Atualizar stats do user
   await atualizarStatsPlatina(userId, jogo, plataforma, imagem.url);
 
-  // 3) XP
-  await adicionarXP(userId, xpGanho);
+  // 3) XP e deteção de subida de nível
+  const statsAntesXP = await UserStats.findOne({ userId }).lean();
+  const nivelAntes = Number(statsAntesXP?.nivel) || 1;
+  const stats = await adicionarXP(userId, xpGanho);
+  const nivelSubiu = stats.nivel > nivelAntes;
 
   // 4) Stats globais
   await adicionarJogo(jogo);
   await adicionarPlataforma(plataforma);
 
-  // 5) Buscar stats atualizados
-  const stats = await UserStats.findOne({ userId });
-
-  // 6) Backup final
-  criarBackup();
-
-  // 7) EMBED
+  // 5) EMBED
   const embed = new EmbedBuilder()
     .setColor("#00A3FF")
     .setTitle(`🏆 ${interaction.user.username} adicionou a platina nº ${totalPlatinas}!`)
@@ -151,4 +149,18 @@ export async function execute(interaction) {
 
   const msg = await interaction.fetchReply();
   await msg.react("🏆");
+
+  // 6) Prémios opcionais. Uma falha aqui nunca invalida a platina já registada.
+  try {
+    await processarSorteiosPremios(interaction, {
+      userId,
+      gatilhoPrincipal: "platina",
+      nivelSubiu
+    });
+  } catch (err) {
+    console.error("ERRO NO SISTEMA DE PRÉMIOS (PLATINA):", err);
+  }
+
+  // 7) Backup final
+  criarBackup();
 }
