@@ -60,19 +60,18 @@ export async function execute(interaction) {
     });
   }
 
-  await interaction.deferReply({ ephemeral: true });
-
   try {
-    const canal = interaction.channel;
-
-    if (!canal?.isTextBased()) {
-      return interaction.editReply("❌ Este comando só pode ser usado num canal de texto.");
-    }
-
-    await canal.send({ embeds: [criarEmbed()] });
-    return interaction.editReply("✅ Lista de comandos úteis publicada neste canal.");
+    return await interaction.reply({
+      embeds: [criarEmbed()]
+    });
   } catch (err) {
     console.error("ERRO AO PUBLICAR LISTA DE COMANDOS:", err);
-    return interaction.editReply("❌ Não foi possível publicar a lista de comandos.");
+
+    if (!interaction.replied && !interaction.deferred) {
+      return interaction.reply({
+        content: "❌ Não foi possível publicar a lista de comandos.",
+        ephemeral: true
+      });
+    }
   }
 }
