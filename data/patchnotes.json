@@ -1,27 +1,22 @@
 {
-  "versao": "2.1.0",
+  "versao": "2.1.1",
   "data": "15/08/2026",
-  "titulo": "Sistema de Prémios",
+  "titulo": "Correções e estabilidade",
   "correcaoBugs": [
     {
-      "bug": "Os botões Anterior e Seguinte do /listar podiam deixar de responder.",
-      "correcao": "A navegação foi refeita para continuar funcional normalmente."
+      "bug": "O /publicarcomandos podia falhar ao tentar publicar a mensagem permanente no canal.",
+      "correcao": "A publicação passou a usar diretamente a resposta pública do comando, mantendo a mensagem permanente no canal."
+    },
+    {
+      "bug": "O /remover podia apagar XP ganho através de prémios, comandos administrativos ou outras fontes ao recalcular o XP do utilizador.",
+      "correcao": "O recálculo agora preserva todo o XP extra e remove apenas o XP associado aos registos eliminados."
     }
   ],
-  "sistemas": [
-    "Platinas, progresso na Carreira GTA e subidas de nível podem agora ativar sorteios de prémios."
-  ],
-  "novosSistemas": [
-    "Novo Sistema de Prémios totalmente aleatórios, com XP PlatinaCollector e prémios personalizados.",
-    "Os prémios personalizados podem incluir VAG$ para a economia do Discord, VAG$ no YouTube, recompensas especiais ou até prémios troll como \"Parabéns, ganhaste absolutamente nada.\"",
-    "Novos Eventos de Prémios: durante um período definido, cada membro pode participar uma vez e receber um prémio aleatório."
-  ],
-  "conteudoDados": [
-    "Corrigido um nome incorreto na categoria Missões de Contacto: KnoWay Out."
-  ],
+  "sistemas": [],
+  "novosSistemas": [],
+  "conteudoDados": [],
   "interface": [
-    "O menu /premios ganhou navegação com botão Voltar.",
-    "A configuração dos prémios passou a usar \"Chance no sorteio\" em vez de \"Peso no sorteio\", tornando a opção mais clara."
+    "O resultado do /remover passa a indicar quando existe XP extra preservado."
   ],
   "outras": []
 }
