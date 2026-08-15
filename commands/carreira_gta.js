@@ -30,7 +30,7 @@ const categorias = {
     "Lowriders",
     "San Andreas Mercenaries",
     "Operação João e Maria",
-    "Vida Super Late"
+    "Vida Super Iate"
   ],
 
   "Esquemas": [
@@ -49,6 +49,7 @@ const categorias = {
   ],
 
   "Golpes": [
+    "O Golpe do Kortz Center",
     "Golpe de Cayo Perico",
     "Golpe do Cassino Diamond",
     "O Golpe do Juízo Final",
