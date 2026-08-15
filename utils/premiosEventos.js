@@ -52,6 +52,26 @@ function linhaParticipar(evento, desativado = false) {
   );
 }
 
+function linhaVoltarPrincipal() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("premios_voltar_menu")
+      .setLabel("Voltar")
+      .setEmoji("⬅️")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
+function linhaVoltarEvento() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("premios_evento_painel")
+      .setLabel("Voltar ao Evento")
+      .setEmoji("⬅️")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
 function embedEvento(evento, estado = "ativo", mostrarContagem = true) {
   const termina = Math.floor(new Date(evento.terminaEm).getTime() / 1000);
   const criado = Math.floor(new Date(evento.criadoEm).getTime() / 1000);
@@ -107,13 +127,8 @@ async function atualizarMensagem(client, evento, estado) {
   }
 }
 
-export async function abrirPainelEvento(interaction) {
-  if (!eAdmin(interaction)) return negarAdmin(interaction);
-
-  const evento = await obterEvento(interaction.guildId);
-  const ativo = estaAtivo(evento);
-
-  const row = new ActionRowBuilder().addComponents(
+function linhaControloEvento(ativo) {
+  return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("premios_evento_criar")
       .setLabel("Disparar evento")
@@ -132,6 +147,13 @@ export async function abrirPainelEvento(interaction) {
       .setStyle(ButtonStyle.Danger)
       .setDisabled(!ativo)
   );
+}
+
+export async function abrirPainelEvento(interaction) {
+  if (!eAdmin(interaction)) return negarAdmin(interaction);
+
+  const evento = await obterEvento(interaction.guildId);
+  const ativo = estaAtivo(evento);
 
   const embed = ativo
     ? embedEvento(evento)
@@ -140,7 +162,11 @@ export async function abrirPainelEvento(interaction) {
         .setTitle("🎉 Evento de Prémios")
         .setDescription("Não existe nenhum evento de prémios ativo neste momento.");
 
-  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  return interaction.update({
+    content: "",
+    embeds: [embed],
+    components: [linhaControloEvento(ativo), linhaVoltarPrincipal()]
+  });
 }
 
 async function abrirModalCriar(interaction) {
@@ -148,24 +174,27 @@ async function abrirModalCriar(interaction) {
 
   const atual = await obterEvento(interaction.guildId);
   if (estaAtivo(atual)) {
-    return interaction.reply({
+    return interaction.update({
       content: `❌ Já existe um evento ativo: **${atual.nome}**. Encerra-o antes de criar outro.`,
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltarEvento()]
     });
   }
 
   const config = await obterConfigPremios(interaction.guildId);
   if (config.premios.length === 0) {
-    return interaction.reply({
+    return interaction.update({
       content: "❌ Adiciona pelo menos um prémio antes de disparar um evento.",
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltarEvento()]
     });
   }
 
   if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
-    return interaction.reply({
+    return interaction.update({
       content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltarEvento()]
     });
   }
 
@@ -202,13 +231,18 @@ async function mostrarAtual(interaction) {
 
   const evento = await obterEvento(interaction.guildId);
   if (!estaAtivo(evento)) {
-    return interaction.reply({
+    return interaction.update({
       content: "📋 Não existe nenhum evento de prémios ativo.",
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltarEvento()]
     });
   }
 
-  return interaction.reply({ embeds: [embedEvento(evento)], ephemeral: true });
+  return interaction.update({
+    content: "",
+    embeds: [embedEvento(evento)],
+    components: [linhaVoltarEvento()]
+  });
 }
 
 async function encerrar(interaction) {
@@ -216,9 +250,10 @@ async function encerrar(interaction) {
 
   const evento = await obterEvento(interaction.guildId);
   if (!estaAtivo(evento)) {
-    return interaction.reply({
+    return interaction.update({
       content: "❌ Não existe nenhum evento ativo para encerrar.",
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltarEvento()]
     });
   }
 
@@ -228,9 +263,10 @@ async function encerrar(interaction) {
   await atualizarMensagem(interaction.client, evento, "encerrado");
   criarBackup();
 
-  return interaction.reply({
+  return interaction.update({
     content: `⛔ Evento **${evento.nome}** encerrado. Participações finais: **${evento.participantes.length}**.`,
-    ephemeral: true
+    embeds: [],
+    components: [linhaVoltarEvento()]
   });
 }
 
@@ -246,12 +282,17 @@ async function guardarEvento(interaction) {
   const duracaoHoras = inteiro(interaction.fields.getTextInputValue("duracao_horas"));
 
   if (!nome) {
-    return interaction.reply({ content: "❌ O nome do evento não pode ficar vazio.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ O nome do evento não pode ficar vazio.",
+      components: [linhaVoltarEvento()],
+      ephemeral: true
+    });
   }
 
   if (!duracaoHoras || duracaoHoras < 1 || duracaoHoras > 168) {
     return interaction.reply({
       content: "❌ A duração deve estar entre 1 e 168 horas.",
+      components: [linhaVoltarEvento()],
       ephemeral: true
     });
   }
@@ -260,6 +301,7 @@ async function guardarEvento(interaction) {
   if (estaAtivo(atual)) {
     return interaction.reply({
       content: `❌ Já existe um evento ativo: **${atual.nome}**.`,
+      components: [linhaVoltarEvento()],
       ephemeral: true
     });
   }
@@ -268,6 +310,7 @@ async function guardarEvento(interaction) {
   if (config.premios.length === 0) {
     return interaction.reply({
       content: "❌ Já não existem prémios configurados.",
+      components: [linhaVoltarEvento()],
       ephemeral: true
     });
   }
@@ -275,6 +318,7 @@ async function guardarEvento(interaction) {
   if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
     return interaction.reply({
       content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
+      components: [linhaVoltarEvento()],
       ephemeral: true
     });
   }
@@ -328,6 +372,7 @@ async function guardarEvento(interaction) {
   const termina = Math.floor(terminaEm.getTime() / 1000);
   return interaction.reply({
     content: `✅ Evento **${nome}** disparado neste canal. Termina <t:${termina}:R>.`,
+    components: [linhaVoltarEvento()],
     ephemeral: true
   });
 }
