@@ -30,7 +30,7 @@ O `UserStats` guarda:
 
 ## 3. Histórico — `models/UserGames.js`
 
-Guarda o histórico real de cada utilizador:
+Guarda o histórico real de cada utilizador.
 
 ### Platinas
 
@@ -67,7 +67,54 @@ Guarda apenas os dados agregados necessários ao bot:
 
 Guarda os jogos, plataformas e dados de Carreira GTA usados para estatísticas e autocomplete.
 
-## 6. Comandos principais
+## 6. Sistema opcional de prémios
+
+O sistema de prémios é independente do núcleo e fica **desligado por defeito**.
+
+Ficheiros principais:
+
+- `commands/premios.js` — painel e configuração através de `/premios`;
+- `models/PremiosConfig.js` — configuração por servidor;
+- `models/PremioRegisto.js` — prémios pendentes e histórico;
+- `utils/premios.js` — sorteio, cooldown e entrega.
+
+Tipos de prémio:
+
+- **XP PlatinaCollector** — entrega automática;
+- **Prémio personalizado** — entrega manual.
+
+Gatilhos configuráveis:
+
+- nova Platina;
+- novo progresso de Carreira GTA;
+- subida de nível provocada pelo XP normal de Platina ou Carreira.
+
+O XP recebido como prémio pode subir o nível do utilizador, mas não cria um novo sorteio, evitando ciclos de prémios.
+
+Cada gatilho tem uma chance configurável. Depois de um sorteio bem-sucedido, o prémio é escolhido com base no peso definido para cada opção.
+
+O cooldown é aplicado por utilizador e por servidor entre ações elegíveis. Os gatilhos da mesma ação, por exemplo Platina + subida de nível, podem ser avaliados no mesmo processamento.
+
+### Entrega manual
+
+Os prémios personalizados ficam com estado `pendente` e notificam o responsável configurado.
+
+A mensagem inclui um botão **Marcar como entregue**. Apenas o responsável associado ao prémio pode confirmar a entrega.
+
+Ao confirmar são guardados:
+
+- vencedor;
+- prémio;
+- responsável;
+- data e hora de entrega.
+
+Todos os pendentes permanecem guardados. Entre os prémios entregues são mantidos apenas os **10 mais recentes por servidor**.
+
+### Segurança do núcleo
+
+`/platina` e `/carreira_gta` chamam o sistema de prémios apenas depois de o registo principal estar concluído. Erros no módulo de prémios são isolados e não anulam uma Platina ou progresso de Carreira já registados.
+
+## 7. Comandos principais
 
 - `/platina add`
 - `/carreira_gta add`
@@ -79,33 +126,38 @@ Guarda os jogos, plataformas e dados de Carreira GTA usados para estatísticas e
 - `/rank`
 - `/ranking`
 - `/estatisticas`
+- `/premios`
 
-## 7. Comandos administrativos
+## 8. Comandos administrativos
 
 - `/backup`
 - `/darxp`
 - `/resetall`
 - `/setcanal`
 
+As funções administrativas de `/premios` são validadas dentro do próprio painel.
+
 Os antigos comandos de `fix`, `rebuild`, badges e missões já não fazem parte da arquitetura ativa.
 
-## 8. `index.js`
+## 9. `index.js`
 
 Responsável por:
 
-- servidor HTTP para o Render
-- ligação ao MongoDB
-- carregamento dinâmico dos comandos
-- registo dos slash commands
-- autocomplete
-- menus e modais
-- tratamento de mensagens para edição de imagens
-- restrição por canais configurados
-- retry de login
+- servidor HTTP para o Render;
+- ligação ao MongoDB;
+- carregamento dinâmico dos comandos;
+- registo dos slash commands;
+- autocomplete;
+- botões, select menus e modais;
+- tratamento de mensagens para edição de imagens;
+- restrição por canais configurados;
+- retry de login.
+
+As interações com prefixo `premios_` são encaminhadas para o módulo `/premios`.
 
 Não existem schedulers de missões nem rotinas automáticas de reparação no arranque.
 
-## 9. Configuração de canais — `models/BotConfig.js`
+## 10. Configuração de canais — `models/BotConfig.js`
 
 Os canais onde o bot pode ser utilizado são guardados de forma persistente no MongoDB.
 
@@ -115,12 +167,10 @@ Regras atuais:
 
 - se não existirem canais configurados, o bot pode ser usado em qualquer canal;
 - quando existe pelo menos um canal configurado, os restantes comandos só funcionam nesses canais;
-- `/setcanal` continua acessível a administradores fora dos canais permitidos, evitando bloquear o acesso à configuração;
+- `/setcanal` continua acessível a administradores fora dos canais permitidos;
 - a configuração mantém-se após reinícios e novos deploys do Render.
 
-O antigo `data/config.json` deixou de fazer parte da configuração ativa.
-
-## 10. Backups — `utils/backup.js`
+## 11. Backups — `utils/backup.js`
 
 O sistema de backup cria cópias locais dos dados atuais do MongoDB:
 
@@ -128,13 +178,15 @@ O sistema de backup cria cópias locais dos dados atuais do MongoDB:
 - `UserStats`
 - `GlobalStats`
 - `BotConfig`
+- `PremiosConfig`
+- `PremioRegisto`
 
 As coleções MongoDB não são restauradas automaticamente para evitar substituições destrutivas de dados.
 
-## 11. Princípio atual
+## 12. Princípio atual
 
-O fluxo principal do bot é:
+O fluxo principal do bot continua a ser:
 
 **Platinas / Carreira GTA → XP → Nível → Perfil / Rankings / Estatísticas**
 
-A arquitetura deve manter-se simples e evitar sistemas paralelos ou rotinas de reparação permanentes.
+O sistema de prémios é uma camada opcional e não deve tornar-se dependência obrigatória do núcleo.
