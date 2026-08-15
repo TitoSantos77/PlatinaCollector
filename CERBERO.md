@@ -76,7 +76,9 @@ Ficheiros principais:
 - `commands/premios.js` — painel e configuração através de `/premios`;
 - `models/PremiosConfig.js` — configuração por servidor;
 - `models/PremioRegisto.js` — prémios pendentes e histórico;
-- `utils/premios.js` — sorteio, cooldown e entrega.
+- `models/PremioEvento.js` — evento atual/último por servidor, participantes e fotografia da tabela de prémios;
+- `utils/premios.js` — sorteio, cooldown e entrega;
+- `utils/premiosEventos.js` — criação, participação e encerramento dos eventos de prémios.
 
 Tipos de prémio:
 
@@ -110,9 +112,32 @@ Ao confirmar são guardados:
 
 Todos os pendentes permanecem guardados. Entre os prémios entregues são mantidos apenas os **10 mais recentes por servidor**.
 
+### Eventos de Prémios
+
+Os administradores podem abrir `/premios` e usar **Evento** para disparar um evento manual.
+
+Regras:
+
+- o administrador escolhe o nome do evento;
+- duração predefinida de **24 horas**, editável entre 1 e 168 horas;
+- apenas um evento pode estar ativo por servidor;
+- o evento pode funcionar mesmo quando os sorteios normais estão desligados;
+- cada membro pode participar uma única vez através do botão público **Receber prémio aleatório**;
+- uma participação válida recebe sempre um prémio escolhido pela tabela de pesos;
+- o evento guarda no MongoDB os utilizadores que já participaram, sobrevivendo a reinícios do bot;
+- o administrador pode consultar o evento atual e encerrá-lo antes do prazo;
+- quando o prazo termina, novas participações são recusadas e o botão é desativado quando a mensagem volta a ser processada;
+- ao criar o evento é guardada uma fotografia dos prémios e respetivos pesos, evitando alterações das regras a meio do evento;
+- o responsável pelos prémios manuais também fica associado ao evento no momento da criação;
+- `PremioEvento` reutiliza um único documento por servidor, em vez de acumular um histórico ilimitado de eventos.
+
+Os prémios obtidos por evento usam o mesmo fluxo de entrega e o mesmo histórico dos restantes prémios. `PremioRegisto` identifica estes casos com `gatilho = evento` e guarda também o nome do evento.
+
 ### Segurança do núcleo
 
 `/platina` e `/carreira_gta` chamam o sistema de prémios apenas depois de o registo principal estar concluído. Erros no módulo de prémios são isolados e não anulam uma Platina ou progresso de Carreira já registados.
+
+Os Eventos de Prémios são independentes do fluxo de registo de Platinas/Carreira e não usam o cooldown normal.
 
 ## 7. Comandos principais
 
@@ -135,7 +160,7 @@ Todos os pendentes permanecem guardados. Entre os prémios entregues são mantid
 - `/resetall`
 - `/setcanal`
 
-As funções administrativas de `/premios` são validadas dentro do próprio painel.
+As funções administrativas de `/premios`, incluindo a criação e encerramento de eventos, são validadas dentro do próprio painel.
 
 Os antigos comandos de `fix`, `rebuild`, badges e missões já não fazem parte da arquitetura ativa.
 
@@ -153,7 +178,7 @@ Responsável por:
 - restrição por canais configurados;
 - retry de login.
 
-As interações com prefixo `premios_` são encaminhadas para o módulo `/premios`.
+As interações com prefixo `premios_`, incluindo os botões dos Eventos de Prémios, são encaminhadas para o módulo `/premios`.
 
 Não existem schedulers de missões nem rotinas automáticas de reparação no arranque.
 
@@ -180,8 +205,11 @@ O sistema de backup cria cópias locais dos dados atuais do MongoDB:
 - `BotConfig`
 - `PremiosConfig`
 - `PremioRegisto`
+- `PremioEvento`
 
 As coleções MongoDB não são restauradas automaticamente para evitar substituições destrutivas de dados.
+
+Durante um Evento de Prémios não é criado um backup local a cada clique dos participantes. As participações e prémios ficam imediatamente persistidos no MongoDB, evitando concorrência desnecessária nos ficheiros temporários do backup.
 
 ## 12. Princípio atual
 
