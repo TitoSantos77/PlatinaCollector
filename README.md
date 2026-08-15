@@ -1,6 +1,6 @@
 # PlatinaCollector
 
-Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, com sistema de **XP, níveis, perfil, rankings, estatísticas, edição, remoção e backups**.
+Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, com sistema de **XP, níveis, perfil, rankings, estatísticas, edição, remoção, prémios opcionais e backups**.
 
 ## Núcleo atual
 
@@ -10,7 +10,21 @@ Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, c
 - `/listar` — lista platinas ou entradas da Carreira GTA.
 - `/editar` e `/remover` — manutenção dos registos.
 - `/rank`, `/ranking` e `/estatisticas` — rankings e estatísticas.
+- `/premios` — painel opcional e configurável de prémios.
 - `/backup`, `/darxp`, `/resetall` e `/setcanal` — ferramentas administrativas.
+
+## Prémios
+
+O sistema de prémios fica **desligado por defeito** e é configurado por servidor através de `/premios`.
+
+Suporta:
+
+- **XP PlatinaCollector**, entregue automaticamente;
+- **prémios personalizados**, entregues manualmente pelo responsável configurado;
+- sorteios por **nova Platina**, **Carreira GTA** e **subida de nível**, com chances configuráveis;
+- cooldown configurável por utilizador;
+- botão para o responsável marcar prémios manuais como entregues;
+- todos os prémios pendentes e apenas os **10 últimos prémios entregues** no histórico.
 
 Os canais permitidos são configurados com `/setcanal` e guardados de forma persistente no MongoDB, mantendo a configuração após reinícios e novos deploys.
 
