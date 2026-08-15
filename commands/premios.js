@@ -11,7 +11,6 @@ import {
   TextInputStyle,
   UserSelectMenuBuilder
 } from "discord.js";
-import PremiosConfig from "../models/PremiosConfig.js";
 import PremioRegisto from "../models/PremioRegisto.js";
 import { obterConfigPremios, limparHistoricoPremios } from "../utils/premios.js";
 import { abrirPainelEvento, handleEventoButton, handleEventoModal } from "../utils/premiosEventos.js";
@@ -77,6 +76,16 @@ function painelAdmin() {
   );
 }
 
+function linhaVoltar() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("premios_voltar_menu")
+      .setLabel("Voltar")
+      .setEmoji("⬅️")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
 function resumoConfig(config) {
   const responsavel = config.responsavelId ? `<@${config.responsavelId}>` : "Não definido";
 
@@ -94,18 +103,48 @@ function resumoConfig(config) {
     );
 }
 
+function componentesMenuPrincipal(interaction) {
+  const components = [painelPublico()];
+  if (eAdmin(interaction)) components.push(painelAdmin());
+  return components;
+}
+
+function linhaConfig(config) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("premios_toggle")
+      .setLabel(config.ativo ? "Desligar" : "Ligar")
+      .setStyle(config.ativo ? ButtonStyle.Danger : ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("premios_definir_responsavel")
+      .setLabel("Responsável")
+      .setEmoji("👤")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("premios_definir_chances")
+      .setLabel("Chances / Cooldown")
+      .setEmoji("🎲")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
 export async function execute(interaction) {
   const config = await obterConfigPremios(interaction.guildId);
-  const components = [painelPublico()];
 
-  if (eAdmin(interaction)) {
-    components.push(painelAdmin());
-  }
-
-  await interaction.reply({
+  return interaction.reply({
     embeds: [resumoConfig(config)],
-    components,
+    components: componentesMenuPrincipal(interaction),
     ephemeral: true
+  });
+}
+
+async function voltarMenuPrincipal(interaction) {
+  const config = await obterConfigPremios(interaction.guildId);
+
+  return interaction.update({
+    content: "",
+    embeds: [resumoConfig(config)],
+    components: componentesMenuPrincipal(interaction)
   });
 }
 
@@ -113,7 +152,11 @@ async function mostrarLista(interaction) {
   const config = await obterConfigPremios(interaction.guildId);
 
   if (config.premios.length === 0) {
-    return interaction.reply({ content: "🎁 Ainda não existem prémios configurados.", ephemeral: true });
+    return interaction.update({
+      content: "🎁 Ainda não existem prémios configurados.",
+      embeds: [],
+      components: [linhaVoltar()]
+    });
   }
 
   const linhas = config.premios.map((premio, index) => {
@@ -123,14 +166,15 @@ async function mostrarLista(interaction) {
     return `**${index + 1}.** ${premio.nome} · entrega manual`;
   });
 
-  return interaction.reply({
+  return interaction.update({
+    content: "",
     embeds: [
       new EmbedBuilder()
         .setColor("#FFD54A")
         .setTitle("🎁 Prémios disponíveis")
         .setDescription(linhas.join("\n"))
     ],
-    ephemeral: true
+    components: [linhaVoltar()]
   });
 }
 
@@ -144,7 +188,11 @@ async function mostrarHistorico(interaction) {
     .lean();
 
   if (historico.length === 0) {
-    return interaction.reply({ content: "🕘 Ainda não existem prémios entregues.", ephemeral: true });
+    return interaction.update({
+      content: "🕘 Ainda não existem prémios entregues.",
+      embeds: [],
+      components: [linhaVoltar()]
+    });
   }
 
   const linhas = historico.map(item => {
@@ -162,14 +210,15 @@ async function mostrarHistorico(interaction) {
     return `• <@${item.userId}> · **${item.nome}** · ${entrega}${evento} · <t:${timestamp}:f>`;
   });
 
-  return interaction.reply({
+  return interaction.update({
+    content: "",
     embeds: [
       new EmbedBuilder()
         .setColor("#8EA7FF")
         .setTitle("🕘 Últimos 10 prémios entregues")
         .setDescription(linhas.join("\n"))
     ],
-    ephemeral: true
+    components: [linhaVoltar()]
   });
 }
 
@@ -178,9 +227,10 @@ async function abrirAdicionar(interaction) {
 
   const config = await obterConfigPremios(interaction.guildId);
   if (config.premios.length >= 25) {
-    return interaction.reply({
+    return interaction.update({
       content: "❌ O limite é 25 prémios configurados por servidor.",
-      ephemeral: true
+      embeds: [],
+      components: [linhaVoltar()]
     });
   }
 
@@ -202,10 +252,10 @@ async function abrirAdicionar(interaction) {
       }
     );
 
-  return interaction.reply({
+  return interaction.update({
     content: "Escolhe o tipo de prémio que queres adicionar:",
-    components: [new ActionRowBuilder().addComponents(menu)],
-    ephemeral: true
+    embeds: [],
+    components: [new ActionRowBuilder().addComponents(menu), linhaVoltar()]
   });
 }
 
@@ -214,7 +264,11 @@ async function abrirRemover(interaction) {
 
   const config = await obterConfigPremios(interaction.guildId);
   if (config.premios.length === 0) {
-    return interaction.reply({ content: "❌ Não existem prémios para remover.", ephemeral: true });
+    return interaction.update({
+      content: "❌ Não existem prémios para remover.",
+      embeds: [],
+      components: [linhaVoltar()]
+    });
   }
 
   const menu = new StringSelectMenuBuilder()
@@ -228,41 +282,22 @@ async function abrirRemover(interaction) {
       }))
     );
 
-  return interaction.reply({
+  return interaction.update({
     content: "Escolhe o prémio que queres remover:",
-    components: [new ActionRowBuilder().addComponents(menu)],
-    ephemeral: true
+    embeds: [],
+    components: [new ActionRowBuilder().addComponents(menu), linhaVoltar()]
   });
 }
 
-async function abrirConfig(interaction) {
+async function abrirConfig(interaction, mensagem = "") {
   if (!eAdmin(interaction)) return negarAdmin(interaction);
 
   const config = await obterConfigPremios(interaction.guildId);
-  const toggleLabel = config.ativo ? "Desligar" : "Ligar";
-  const toggleStyle = config.ativo ? ButtonStyle.Danger : ButtonStyle.Success;
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("premios_toggle")
-      .setLabel(toggleLabel)
-      .setStyle(toggleStyle),
-    new ButtonBuilder()
-      .setCustomId("premios_definir_responsavel")
-      .setLabel("Responsável")
-      .setEmoji("👤")
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("premios_definir_chances")
-      .setLabel("Chances / Cooldown")
-      .setEmoji("🎲")
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  return interaction.reply({
+  return interaction.update({
+    content: mensagem,
     embeds: [resumoConfig(config)],
-    components: [row],
-    ephemeral: true
+    components: [linhaConfig(config), linhaVoltar()]
   });
 }
 
@@ -291,7 +326,11 @@ async function mostrarPendentes(interaction) {
     .lean();
 
   if (pendentes.length === 0) {
-    return interaction.reply({ content: "📦 Não existem prémios pendentes.", ephemeral: true });
+    return interaction.update({
+      content: "📦 Não existem prémios pendentes.",
+      embeds: [],
+      components: [linhaVoltar()]
+    });
   }
 
   const linhas = pendentes.map(item => {
@@ -304,14 +343,15 @@ async function mostrarPendentes(interaction) {
 
   const rodape = total > 10 ? `\n\nA mostrar os 10 mais recentes de **${total}** pendentes.` : "";
 
-  return interaction.reply({
+  return interaction.update({
+    content: "",
     embeds: [
       new EmbedBuilder()
         .setColor("#FFD54A")
         .setTitle("📦 Prémios pendentes")
         .setDescription(linhas.join("\n") + rodape)
     ],
-    ephemeral: true
+    components: [linhaVoltar()]
   });
 }
 
@@ -341,10 +381,10 @@ async function alternarSistema(interaction) {
   await config.save();
   criarBackup();
 
-  return interaction.reply({
-    content: config.ativo ? "✅ Sistema de prémios ligado." : "⛔ Sistema de prémios desligado.",
-    ephemeral: true
-  });
+  return abrirConfig(
+    interaction,
+    config.ativo ? "✅ Sistema de prémios ligado." : "⛔ Sistema de prémios desligado."
+  );
 }
 
 async function escolherResponsavel(interaction) {
@@ -356,10 +396,10 @@ async function escolherResponsavel(interaction) {
     .setMinValues(1)
     .setMaxValues(1);
 
-  return interaction.reply({
+  return interaction.update({
     content: "Escolhe quem será notificado e poderá marcar os prémios manuais como entregues:",
-    components: [new ActionRowBuilder().addComponents(menu)],
-    ephemeral: true
+    embeds: [],
+    components: [new ActionRowBuilder().addComponents(menu), linhaVoltar()]
   });
 }
 
@@ -457,6 +497,8 @@ async function marcarEntregue(interaction) {
 }
 
 export async function handleButton(interaction) {
+  if (interaction.customId === "premios_voltar_menu") return voltarMenuPrincipal(interaction);
+
   if (interaction.customId.startsWith("premios_evento_")) {
     return handleEventoButton(interaction);
   }
@@ -544,7 +586,8 @@ export async function handleSelect(interaction) {
 
     return interaction.update({
       content: `✅ Prémio removido: **${nome}**`,
-      components: []
+      embeds: [],
+      components: [linhaVoltar()]
     });
   }
 }
@@ -559,9 +602,11 @@ export async function handleUserSelect(interaction) {
   await config.save();
   criarBackup();
 
+  const atualizado = await obterConfigPremios(interaction.guildId);
   return interaction.update({
     content: `✅ Responsável pelos prémios manuais definido: <@${responsavelId}>`,
-    components: [],
+    embeds: [resumoConfig(atualizado)],
+    components: [linhaConfig(atualizado), linhaVoltar()],
     allowedMentions: { parse: [] }
   });
 }
@@ -576,12 +621,20 @@ async function guardarPremio(interaction, tipo) {
 
   const config = await obterConfigPremios(interaction.guildId);
   if (config.premios.length >= 25) {
-    return interaction.reply({ content: "❌ O limite é 25 prémios por servidor.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ O limite é 25 prémios por servidor.",
+      components: [linhaVoltar()],
+      ephemeral: true
+    });
   }
 
   const peso = numeroInteiro(interaction.fields.getTextInputValue("peso"));
   if (!peso || peso < 1 || peso > 1000) {
-    return interaction.reply({ content: "❌ O peso deve ser um número entre 1 e 1000.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ O peso deve ser um número entre 1 e 1000.",
+      components: [linhaVoltar()],
+      ephemeral: true
+    });
   }
 
   let nome;
@@ -590,19 +643,31 @@ async function guardarPremio(interaction, tipo) {
   if (tipo === "xp") {
     quantidade = numeroInteiro(interaction.fields.getTextInputValue("quantidade"));
     if (!quantidade || quantidade < 1 || quantidade > 100000) {
-      return interaction.reply({ content: "❌ A quantidade de XP deve estar entre 1 e 100000.", ephemeral: true });
+      return interaction.reply({
+        content: "❌ A quantidade de XP deve estar entre 1 e 100000.",
+        components: [linhaVoltar()],
+        ephemeral: true
+      });
     }
     nome = `+${quantidade} XP PlatinaCollector`;
   } else {
     nome = interaction.fields.getTextInputValue("nome").trim();
     if (!nome) {
-      return interaction.reply({ content: "❌ O nome do prémio não pode ficar vazio.", ephemeral: true });
+      return interaction.reply({
+        content: "❌ O nome do prémio não pode ficar vazio.",
+        components: [linhaVoltar()],
+        ephemeral: true
+      });
     }
   }
 
   const duplicado = config.premios.some(p => p.nome.toLowerCase() === nome.toLowerCase());
   if (duplicado) {
-    return interaction.reply({ content: "❌ Já existe um prémio com esse nome.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ Já existe um prémio com esse nome.",
+      components: [linhaVoltar()],
+      ephemeral: true
+    });
   }
 
   config.premios.push({ tipo, nome, quantidade, peso });
@@ -611,6 +676,7 @@ async function guardarPremio(interaction, tipo) {
 
   return interaction.reply({
     content: `✅ Prémio adicionado: **${nome}** · peso ${peso}`,
+    components: [linhaVoltar()],
     ephemeral: true
   });
 }
@@ -625,11 +691,19 @@ async function guardarChances(interaction) {
 
   const chances = [chancePlatina, chanceCarreira, chanceNivel];
   if (chances.some(valor => valor === null || valor < 0 || valor > 100)) {
-    return interaction.reply({ content: "❌ As chances têm de estar entre 0 e 100.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ As chances têm de estar entre 0 e 100.",
+      components: [linhaVoltar()],
+      ephemeral: true
+    });
   }
 
   if (cooldown === null || cooldown < 0 || cooldown > 600) {
-    return interaction.reply({ content: "❌ O cooldown deve estar entre 0 e 600 segundos.", ephemeral: true });
+    return interaction.reply({
+      content: "❌ O cooldown deve estar entre 0 e 600 segundos.",
+      components: [linhaVoltar()],
+      ephemeral: true
+    });
   }
 
   const config = await obterConfigPremios(interaction.guildId);
@@ -642,6 +716,7 @@ async function guardarChances(interaction) {
 
   return interaction.reply({
     content: `✅ Configuração atualizada. Platina ${chancePlatina}% · Carreira ${chanceCarreira}% · Nível ${chanceNivel}% · Cooldown ${cooldown}s`,
+    components: [linhaVoltar()],
     ephemeral: true
   });
 }
