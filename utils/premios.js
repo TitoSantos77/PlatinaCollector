@@ -28,10 +28,12 @@ function chanceDoGatilho(config, gatilho) {
   return 0;
 }
 
-function nomeGatilho(gatilho) {
+function nomeGatilho(gatilho, eventoNome = null) {
   if (gatilho === "platina") return "Nova Platina";
   if (gatilho === "carreira") return "Carreira GTA";
-  return "Subida de nível";
+  if (gatilho === "nivel") return "Subida de nível";
+  if (gatilho === "evento") return eventoNome ? `Evento: ${eventoNome}` : "Evento de Prémios";
+  return "Prémio";
 }
 
 function sortearPremio(premios) {
@@ -69,7 +71,7 @@ export async function limparHistoricoPremios(guildId) {
   });
 }
 
-async function entregarXP(interaction, premio, userId, gatilho) {
+async function entregarXP(interaction, premio, userId, gatilho, eventoNome = null) {
   const antes = await UserStats.findOne({ userId }).lean();
   const nivelAntes = Number(antes?.nivel) || 1;
   const quantidade = Math.max(1, Number(premio.quantidade) || 0);
@@ -83,6 +85,7 @@ async function entregarXP(interaction, premio, userId, gatilho) {
     nome: premio.nome,
     quantidade,
     gatilho,
+    eventoNome,
     estado: "entregue",
     entregueEm: new Date(),
     entreguePor: "automatico"
@@ -95,7 +98,7 @@ async function entregarXP(interaction, premio, userId, gatilho) {
     .setTitle("🎁 Prémio Aleatório!")
     .setDescription(`<@${userId}> ganhou **+${quantidade} XP PlatinaCollector**`)
     .addFields(
-      { name: "🎯 Gatilho", value: nomeGatilho(gatilho), inline: true },
+      { name: "🎯 Gatilho", value: nomeGatilho(gatilho, eventoNome), inline: true },
       { name: "📈 Nível", value: `${stats.nivel}`, inline: true },
       { name: "⭐ XP Total", value: `${stats.totalXP} XP`, inline: true },
       {
@@ -122,7 +125,7 @@ async function entregarXP(interaction, premio, userId, gatilho) {
   await interaction.followUp({ embeds: [embed] });
 }
 
-async function criarPremioManual(interaction, config, premio, userId, gatilho) {
+async function criarPremioManual(interaction, config, premio, userId, gatilho, eventoNome = null) {
   const registo = await PremioRegisto.create({
     guildId: interaction.guildId,
     userId,
@@ -130,6 +133,7 @@ async function criarPremioManual(interaction, config, premio, userId, gatilho) {
     nome: premio.nome,
     quantidade: 0,
     gatilho,
+    eventoNome,
     estado: "pendente",
     responsavelId: config.responsavelId || null
   });
@@ -139,7 +143,7 @@ async function criarPremioManual(interaction, config, premio, userId, gatilho) {
     .setTitle("🎁 Prémio Aleatório!")
     .setDescription(`<@${userId}> ganhou **${premio.nome}**`)
     .addFields(
-      { name: "🎯 Gatilho", value: nomeGatilho(gatilho), inline: true },
+      { name: "🎯 Gatilho", value: nomeGatilho(gatilho, eventoNome), inline: true },
       { name: "📦 Estado", value: "Pendente", inline: true },
       {
         name: "👤 Responsável",
@@ -171,6 +175,14 @@ async function criarPremioManual(interaction, config, premio, userId, gatilho) {
   });
 }
 
+async function entregarPremio(interaction, config, premio, userId, gatilho, eventoNome = null) {
+  if (premio.tipo === "xp") {
+    await entregarXP(interaction, premio, userId, gatilho, eventoNome);
+  } else {
+    await criarPremioManual(interaction, config, premio, userId, gatilho, eventoNome);
+  }
+}
+
 async function executarSorteio(interaction, config, userId, gatilho) {
   const chance = Number(chanceDoGatilho(config, gatilho)) || 0;
   if (chance <= 0 || Math.random() * 100 >= chance) return false;
@@ -178,11 +190,22 @@ async function executarSorteio(interaction, config, userId, gatilho) {
   const premio = sortearPremio(config.premios);
   if (!premio) return false;
 
-  if (premio.tipo === "xp") {
-    await entregarXP(interaction, premio, userId, gatilho);
-  } else {
-    await criarPremioManual(interaction, config, premio, userId, gatilho);
-  }
+  await entregarPremio(interaction, config, premio, userId, gatilho);
+  return true;
+}
+
+export async function entregarPremioEvento(interaction, configEvento, userId, eventoNome) {
+  const premio = sortearPremio(configEvento.premios || []);
+  if (!premio) return false;
+
+  await entregarPremio(
+    interaction,
+    configEvento,
+    premio,
+    userId,
+    "evento",
+    eventoNome
+  );
 
   return true;
 }
