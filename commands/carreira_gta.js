@@ -21,7 +21,7 @@ import UserStats from "../models/UserStats.js";
 
 const categorias = {
   "Missões de Contato": [
-    "A Safehouse in the Hills",
+    "KnoWay Out",
     "Oscar Guzman Decolando de Novo",
     "Invasão ao Aviário Cluckin’ Bell",
     "A Saideira de Gerald",
