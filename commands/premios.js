@@ -14,6 +14,7 @@ import {
 import PremiosConfig from "../models/PremiosConfig.js";
 import PremioRegisto from "../models/PremioRegisto.js";
 import { obterConfigPremios, limparHistoricoPremios } from "../utils/premios.js";
+import { abrirPainelEvento, handleEventoButton, handleEventoModal } from "../utils/premiosEventos.js";
 import { criarBackup } from "../utils/backup.js";
 
 export const data = new SlashCommandBuilder()
@@ -67,7 +68,12 @@ function painelAdmin() {
       .setCustomId("premios_pendentes")
       .setLabel("Pendentes")
       .setEmoji("📦")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("premios_evento_painel")
+      .setLabel("Evento")
+      .setEmoji("🎉")
+      .setStyle(ButtonStyle.Primary)
   );
 }
 
@@ -149,8 +155,11 @@ async function mostrarHistorico(interaction) {
       : item.entreguePor
         ? `por <@${item.entreguePor}>`
         : "entregue";
+    const evento = item.gatilho === "evento" && item.eventoNome
+      ? ` · 🎉 ${item.eventoNome}`
+      : "";
 
-    return `• <@${item.userId}> · **${item.nome}** · ${entrega} · <t:${timestamp}:f>`;
+    return `• <@${item.userId}> · **${item.nome}** · ${entrega}${evento} · <t:${timestamp}:f>`;
   });
 
   return interaction.reply({
@@ -287,7 +296,10 @@ async function mostrarPendentes(interaction) {
 
   const linhas = pendentes.map(item => {
     const timestamp = Math.floor(new Date(item.criadoEm).getTime() / 1000);
-    return `• <@${item.userId}> · **${item.nome}** · <t:${timestamp}:f>`;
+    const evento = item.gatilho === "evento" && item.eventoNome
+      ? ` · 🎉 ${item.eventoNome}`
+      : "";
+    return `• <@${item.userId}> · **${item.nome}**${evento} · <t:${timestamp}:f>`;
   });
 
   const rodape = total > 10 ? `\n\nA mostrar os 10 mais recentes de **${total}** pendentes.` : "";
@@ -433,6 +445,10 @@ async function marcarEntregue(interaction) {
       { name: "📅 Entregue em", value: `<t:${timestamp}:f>`, inline: false }
     );
 
+  if (registo.gatilho === "evento" && registo.eventoNome) {
+    embed.addFields({ name: "🎉 Evento", value: registo.eventoNome, inline: false });
+  }
+
   return interaction.update({
     content: "",
     embeds: [embed],
@@ -441,6 +457,10 @@ async function marcarEntregue(interaction) {
 }
 
 export async function handleButton(interaction) {
+  if (interaction.customId.startsWith("premios_evento_")) {
+    return handleEventoButton(interaction);
+  }
+
   if (interaction.customId === "premios_lista") return mostrarLista(interaction);
   if (interaction.customId === "premios_historico") return mostrarHistorico(interaction);
   if (interaction.customId === "premios_adicionar") return abrirAdicionar(interaction);
@@ -627,6 +647,10 @@ async function guardarChances(interaction) {
 }
 
 export async function handleModal(interaction) {
+  if (interaction.customId.startsWith("premios_evento_modal_")) {
+    return handleEventoModal(interaction);
+  }
+
   if (interaction.customId === "premios_modal_add_xp") {
     return guardarPremio(interaction, "xp");
   }
