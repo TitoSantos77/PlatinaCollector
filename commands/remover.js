@@ -33,6 +33,20 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+function calcularXPRegistos(games) {
+  let total = 0;
+
+  for (const p of games.platinas || []) {
+    total += Number(p.xpGanhos) || 100;
+  }
+
+  for (const c of games.carreira || []) {
+    total += Number(c.xpGanhos) || 75;
+  }
+
+  return total;
+}
+
 export async function execute(interaction) {
   const tipo = interaction.options.getString("tipo");
   const user = interaction.options.getUser("user");
@@ -152,6 +166,12 @@ export async function execute(interaction) {
       const indicesUnicos = [...new Set(indices)].sort((a, b) => b - a);
       const itensRemovidos = indicesUnicos.map(idx => lista[idx]);
 
+      // Separar o XP ganho por platinas/carreira do XP extra obtido por
+      // prémios, comandos administrativos ou outras fontes.
+      const xpRegistosAntes = calcularXPRegistos(games);
+      const xpTotalAntes = Number(stats.totalXP) || 0;
+      const xpExtra = Math.max(0, xpTotalAntes - xpRegistosAntes);
+
       for (const idx of indicesUnicos) {
         if (tipo === "platina") games.platinas.splice(idx, 1);
         else games.carreira.splice(idx, 1);
@@ -159,10 +179,9 @@ export async function execute(interaction) {
 
       await games.save();
 
-      // Recalcular XP apenas a partir dos sistemas ativos
-      let novoTotalXP = 0;
-      for (const p of games.platinas) novoTotalXP += p.xpGanhos || 100;
-      for (const c of games.carreira) novoTotalXP += c.xpGanhos || 75;
+      // Recalcular apenas o XP dos registos e preservar todo o XP extra.
+      const xpRegistosDepois = calcularXPRegistos(games);
+      const novoTotalXP = xpRegistosDepois + xpExtra;
 
       let nivel = 1;
       let xpTemp = novoTotalXP;
@@ -207,6 +226,14 @@ export async function execute(interaction) {
           { name: "✨ XP Atual", value: `${stats.xp} XP`, inline: true },
           { name: "📊 XP Total", value: `${stats.totalXP} XP`, inline: true }
         );
+
+      if (xpExtra > 0) {
+        embed.addFields({
+          name: "🎁 XP extra preservado",
+          value: `${xpExtra} XP`,
+          inline: false
+        });
+      }
 
       collector.stop();
 
