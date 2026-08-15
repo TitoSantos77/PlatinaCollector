@@ -7,6 +7,7 @@ import {
 
 import { adicionarXP, xpNecessario, XP_CARREIRA } from "../utils/xp.js";
 import { criarBackup } from "../utils/backup.js";
+import { processarSorteiosPremios } from "../utils/premios.js";
 
 import {
   adicionarCategoriaCarreira,
@@ -210,15 +211,14 @@ export default {
           plataformaEscolhida
         );
 
-        await adicionarXP(userId, XP_CARREIRA);
+        const statsAntesXP = await UserStats.findOne({ userId }).lean();
+        const nivelAntes = Number(statsAntesXP?.nivel) || 1;
+        const stats = await adicionarXP(userId, XP_CARREIRA);
+        const nivelSubiu = stats.nivel > nivelAntes;
 
         await adicionarCategoriaCarreira(categoriaEscolhida);
         await adicionarSubcategoriaCarreira(subcategoriaEscolhida);
         await adicionarPlataformaCarreira(plataformaEscolhida);
-
-        const stats = await UserStats.findOne({ userId });
-
-        criarBackup();
 
         const embed = new EmbedBuilder()
           .setColor("#F5C400")
@@ -256,6 +256,19 @@ export default {
         });
 
         await i.message.react("🏆");
+
+        // Prémios opcionais. Uma falha aqui nunca invalida o progresso já registado.
+        try {
+          await processarSorteiosPremios(i, {
+            userId,
+            gatilhoPrincipal: "carreira",
+            nivelSubiu
+          });
+        } catch (err) {
+          console.error("ERRO NO SISTEMA DE PRÉMIOS (CARREIRA):", err);
+        }
+
+        criarBackup();
         collector.stop();
       }
     });
