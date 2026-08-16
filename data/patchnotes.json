@@ -1,22 +1,18 @@
 {
-  "versao": "2.1.1",
-  "data": "15/08/2026",
-  "titulo": "Correções e estabilidade",
+  "versao": "2.1.2",
+  "data": "16/08/2026",
+  "titulo": "Correção de eventos de prémios",
   "correcaoBugs": [
     {
-      "bug": "O /publicarcomandos podia falhar ao tentar publicar a mensagem permanente no canal.",
-      "correcao": "A publicação passou a usar diretamente a resposta pública do comando, mantendo a mensagem permanente no canal."
-    },
-    {
-      "bug": "O /remover podia apagar XP ganho através de prémios, comandos administrativos ou outras fontes ao recalcular o XP do utilizador.",
-      "correcao": "O recálculo agora preserva todo o XP extra e remove apenas o XP associado aos registos eliminados."
+      "bug": "Depois de um Evento de Prémios terminar, a mensagem continuava a apresentar o campo como \"Termina\".",
+      "correcao": "O estado do evento passa agora a mostrar \"Terminou\" quando o prazo expira e \"Encerrado\" quando é fechado manualmente por um administrador."
     }
   ],
   "sistemas": [],
   "novosSistemas": [],
   "conteudoDados": [],
   "interface": [
-    "O resultado do /remover passa a indicar quando existe XP extra preservado."
+    "A mensagem dos Eventos de Prémios distingue agora claramente eventos ativos, terminados e encerrados."
   ],
   "outras": []
 }
