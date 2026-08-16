@@ -1,6 +1,33 @@
 # PlatinaCollector — Changelog Interno
 
-Este ficheiro regista versões e correções internas do bot. O Patch Notes público continua separado em `data/patchnotes.json` e só é atualizado quando houver uma versão que valha a pena anunciar à comunidade.
+Este ficheiro regista versões e correções internas do bot. O Patch Notes usado por `/patchnotes` fica em `data/patchnotes.json` e acompanha a versão atual real do bot, mesmo quando uma microversão não é anunciada manualmente à comunidade.
+
+## V2.1.2 — 16/08/2026 — Interna
+
+### 🐞 Correção de Bugs
+
+- **Bug:** depois de um Evento de Prémios terminar, a mensagem continuava a apresentar o campo como `Termina`.
+- **Correção:** eventos ativos mostram `Termina`, eventos expirados mostram `Terminou` e eventos fechados manualmente mostram `Encerrado`.
+
+### ⚙️ Sistemas
+
+- Nenhuma alteração.
+
+### ✨ Novos Sistemas
+
+- Nenhuma alteração.
+
+### 📝 Conteúdo / Dados
+
+- Nenhuma alteração.
+
+### 🎨 Interface / Qualidade de Vida
+
+- O estado temporal dos Eventos de Prémios ficou mais claro para os membros.
+
+### 📌 Outras Alterações
+
+- `README.md`, `package.json` e Patch Notes alinhados com a versão V2.1.2.
 
 ## V2.1.1 — 15/08/2026 — Interna
 
@@ -27,9 +54,7 @@ Este ficheiro regista versões e correções internas do bot. O Patch Notes púb
 
 ### 📌 Outras Alterações
 
-- Nenhuma alteração.
-
-> Esta versão é apenas interna e não altera o Patch Notes público V2.1.0.
+- Correção do `/publicarcomandos` para usar uma resposta pública permanente do slash command.
 
 ## V2.1.0 — 15/08/2026 — Pública
 
