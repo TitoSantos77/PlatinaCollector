@@ -1,6 +1,6 @@
 {
   "name": "platina-collector",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Bot Discord para platinas, carreira GTA, XP e rankings",
   "main": "index.js",
   "type": "module",
