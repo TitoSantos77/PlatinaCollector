@@ -1,6 +1,8 @@
 # PlatinaCollector
 
-Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, com sistema de **XP, níveis, perfil, rankings, estatísticas, edição, remoção, prémios opcionais e backups**.
+**Versão atual: V2.1.2**
+
+Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, com sistema de **XP, níveis, perfil, rankings, estatísticas, edição, remoção, prémios opcionais, eventos e backups**.
 
 ## Núcleo atual
 
@@ -8,9 +10,11 @@ Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, c
 - `/carreira_gta add` — adiciona progresso da Carreira GTA Online.
 - `/perfil` e `/nivel` — mostram XP, nível e progresso.
 - `/listar` — lista platinas ou entradas da Carreira GTA.
-- `/editar` e `/remover` — manutenção dos registos.
+- `/editar` e `/remover` — manutenção dos registos. O `/remover` preserva XP extra ganho através de prémios, `/darxp` ou outras fontes.
 - `/rank`, `/ranking` e `/estatisticas` — rankings e estatísticas.
 - `/premios` — painel opcional e configurável de prémios.
+- `/patchnotes` — publica o Patch Notes da versão atual.
+- `/publicarcomandos` — publica uma mensagem permanente com os principais comandos úteis para os membros.
 - `/backup`, `/darxp`, `/resetall` e `/setcanal` — ferramentas administrativas.
 
 ## Prémios
@@ -19,7 +23,7 @@ O sistema de prémios fica **desligado por defeito** e é configurado por servid
 
 Suporta:
 
-- **XP PlatinaCollector**, entregue automaticamente;
+- **XP PlatinaCollector**, entregue automaticamente e integrado no XP total do utilizador;
 - **prémios personalizados**, entregues manualmente pelo responsável configurado;
 - sorteios por **nova Platina**, **Carreira GTA** e **subida de nível**, com chances configuráveis;
 - cooldown configurável por utilizador;
@@ -29,8 +33,20 @@ Suporta:
 - uma participação por membro em cada evento, através de botão público, com prémio aleatório garantido;
 - eventos independentes do estado ligado/desligado dos sorteios normais.
 
-Ao lançar um evento, a lista e os pesos dos prémios ficam congelados para esse evento. Apenas um evento pode estar ativo por servidor e o administrador pode consultá-lo ou encerrá-lo antecipadamente.
+Ao lançar um evento, a lista e as chances relativas dos prémios ficam congeladas para esse evento. Apenas um evento pode estar ativo por servidor e o administrador pode consultá-lo ou encerrá-lo antecipadamente.
+
+As mensagens dos eventos distinguem o estado atual: **Termina** enquanto o evento está ativo, **Terminou** quando o prazo expira e **Encerrado** quando um administrador o fecha manualmente.
+
+## Canais e publicação
 
 Os canais permitidos são configurados com `/setcanal` e guardados de forma persistente no MongoDB, mantendo a configuração após reinícios e novos deploys.
 
+Os comandos administrativos `/setcanal`, `/patchnotes` e `/publicarcomandos` podem ser usados fora dos canais permitidos para permitir configuração e publicação em canais de informação ou anúncios.
+
+O `/patchnotes` lê a versão atual guardada em `data/patchnotes.json`. Alterar esse ficheiro não modifica mensagens de Patch Notes que já tenham sido publicadas no Discord; apenas futuras publicações usam a nova versão.
+
+## Estado do projeto
+
 Os antigos sistemas de **badges, missões e proezas** foram removidos do código ativo.
+
+A arquitetura técnica resumida do bot está documentada em `CERBERO.md` e o histórico de versões internas em `CHANGELOG_INTERNO.md`.
