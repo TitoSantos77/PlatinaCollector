@@ -80,13 +80,16 @@ function embedEvento(evento, estado = "ativo", mostrarContagem = true) {
     "Clica no botão abaixo para receber **um prémio aleatório**.\n" +
     "Cada membro pode participar **uma única vez** neste evento.";
   let cor = "#F5C400";
+  let nomePrazo = "⏳ Termina";
 
   if (estado === "terminado") {
     descricao = "⌛ Este evento terminou. Já não aceita novas participações.";
     cor = "#777777";
+    nomePrazo = "⌛ Terminou";
   } else if (estado === "encerrado") {
     descricao = "⛔ Este evento foi encerrado por um administrador.";
     cor = "#777777";
+    nomePrazo = "⛔ Encerrado";
   }
 
   const embed = new EmbedBuilder()
@@ -94,7 +97,7 @@ function embedEvento(evento, estado = "ativo", mostrarContagem = true) {
     .setTitle(`🎉 ${evento.nome}`)
     .setDescription(descricao)
     .addFields(
-      { name: "⏳ Termina", value: `<t:${termina}:R>`, inline: true },
+      { name: nomePrazo, value: `<t:${termina}:R>`, inline: true },
       { name: "📅 Prazo", value: `<t:${termina}:f>`, inline: true },
       { name: "👤 Criado por", value: `<@${evento.criadoPor}> · <t:${criado}:f>`, inline: false }
     );
