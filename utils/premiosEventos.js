@@ -300,84 +300,108 @@ async function guardarEvento(interaction) {
     });
   }
 
-  const atual = await obterEvento(interaction.guildId);
-  if (estaAtivo(atual)) {
-    return interaction.reply({
-      content: `❌ Já existe um evento ativo: **${atual.nome}**.`,
-      components: [linhaVoltarEvento()],
-      ephemeral: true
-    });
-  }
-
-  const config = await obterConfigPremios(interaction.guildId);
-  if (config.premios.length === 0) {
-    return interaction.reply({
-      content: "❌ Já não existem prémios configurados.",
-      components: [linhaVoltarEvento()],
-      ephemeral: true
-    });
-  }
-
-  if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
-    return interaction.reply({
-      content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
-      components: [linhaVoltarEvento()],
-      ephemeral: true
-    });
-  }
-
-  const agora = new Date();
-  const terminaEm = new Date(agora.getTime() + duracaoHoras * 60 * 60 * 1000);
-  const premios = config.premios.map(p => ({
-    tipo: p.tipo,
-    nome: p.nome,
-    quantidade: Number(p.quantidade) || 0,
-    peso: Number(p.peso) || 1
-  }));
-
-  const evento = await PremioEvento.findOneAndUpdate(
-    { guildId: interaction.guildId },
-    {
-      $set: {
-        token: randomUUID(),
-        nome,
-        ativo: true,
-        criadoPor: interaction.user.id,
-        responsavelId: config.responsavelId || null,
-        canalId: interaction.channelId,
-        mensagemId: null,
-        criadoEm: agora,
-        terminaEm,
-        encerradoEm: null,
-        participantes: [],
-        premios
-      }
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  await interaction.deferReply({ ephemeral: true });
 
   try {
-    const mensagem = await interaction.channel.send({
-      embeds: [embedEvento(evento, "ativo", false)],
-      components: [linhaParticipar(evento)]
+    const atual = await obterEvento(interaction.guildId);
+    if (estaAtivo(atual)) {
+      return interaction.editReply({
+        content: `❌ Já existe um evento ativo: **${atual.nome}**.`,
+        components: [linhaVoltarEvento()]
+      });
+    }
+
+    const config = await obterConfigPremios(interaction.guildId);
+    if (config.premios.length === 0) {
+      return interaction.editReply({
+        content: "❌ Já não existem prémios configurados.",
+        components: [linhaVoltarEvento()]
+      });
+    }
+
+    if (config.premios.some(p => p.tipo === "personalizado") && !config.responsavelId) {
+      return interaction.editReply({
+        content: "❌ Define primeiro o responsável pelos prémios de entrega manual.",
+        components: [linhaVoltarEvento()]
+      });
+    }
+
+    const canal = interaction.channel;
+    if (!canal?.isTextBased()) {
+      return interaction.editReply({
+        content: "❌ Este evento só pode ser publicado num canal de texto.",
+        components: [linhaVoltarEvento()]
+      });
+    }
+
+    const agora = new Date();
+    const terminaEm = new Date(agora.getTime() + duracaoHoras * 60 * 60 * 1000);
+    const premios = config.premios.map(p => ({
+      tipo: p.tipo,
+      nome: p.nome,
+      quantidade: Number(p.quantidade) || 0,
+      peso: Number(p.peso) || 1
+    }));
+
+    const evento = await PremioEvento.findOneAndUpdate(
+      { guildId: interaction.guildId },
+      {
+        $set: {
+          token: randomUUID(),
+          nome,
+          ativo: true,
+          criadoPor: interaction.user.id,
+          responsavelId: config.responsavelId || null,
+          canalId: interaction.channelId,
+          mensagemId: null,
+          criadoEm: agora,
+          terminaEm,
+          encerradoEm: null,
+          participantes: [],
+          premios
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    try {
+      const mensagem = await canal.send({
+        embeds: [embedEvento(evento, "ativo", false)],
+        components: [linhaParticipar(evento)]
+      });
+
+      evento.mensagemId = mensagem.id;
+      await evento.save();
+    } catch (err) {
+      evento.ativo = false;
+      evento.encerradoEm = new Date();
+      await evento.save();
+
+      console.error("Não foi possível publicar o evento no canal:", err);
+
+      return interaction.editReply({
+        content:
+          "❌ Não consegui publicar o evento neste canal. " +
+          "Confirma se o PlatinaCollector tem permissão para **Enviar Mensagens** e **Incorporar Links** aqui.",
+        components: [linhaVoltarEvento()]
+      });
+    }
+
+    criarBackup();
+
+    const termina = Math.floor(terminaEm.getTime() / 1000);
+    return interaction.editReply({
+      content: `✅ Evento **${nome}** disparado neste canal. Termina <t:${termina}:R>.`,
+      components: [linhaVoltarEvento()]
     });
-    evento.mensagemId = mensagem.id;
-    await evento.save();
   } catch (err) {
-    evento.ativo = false;
-    evento.encerradoEm = new Date();
-    await evento.save();
-    throw err;
+    console.error("ERRO AO CRIAR EVENTO DE PRÉMIOS:", err);
+
+    return interaction.editReply({
+      content: "❌ Não foi possível criar o evento de prémios. Tenta novamente.",
+      components: [linhaVoltarEvento()]
+    });
   }
-
-  criarBackup();
-
-  const termina = Math.floor(terminaEm.getTime() / 1000);
-  return interaction.reply({
-    content: `✅ Evento **${nome}** disparado neste canal. Termina <t:${termina}:R>.`,
-    components: [linhaVoltarEvento()],
-    ephemeral: true
-  });
 }
 
 async function participar(interaction) {
