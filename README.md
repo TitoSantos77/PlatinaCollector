@@ -1,6 +1,6 @@
 # PlatinaCollector
 
-**Versão atual: V2.1.2**
+**Versão atual: V2.1.3**
 
 Bot Discord para registar **platinas** e progresso da **Carreira GTA Online**, com sistema de **XP, níveis, perfil, rankings, estatísticas, edição, remoção, prémios opcionais, eventos e backups**.
 
@@ -36,6 +36,8 @@ Suporta:
 Ao lançar um evento, a lista e as chances relativas dos prémios ficam congeladas para esse evento. Apenas um evento pode estar ativo por servidor e o administrador pode consultá-lo ou encerrá-lo antecipadamente.
 
 As mensagens dos eventos distinguem o estado atual: **Termina** enquanto o evento está ativo, **Terminou** quando o prazo expira e **Encerrado** quando um administrador o fecha manualmente.
+
+Um Evento de Prémios pode ser disparado num canal diferente do canal habitual do bot. Para publicar corretamente, o PlatinaCollector precisa de ter nesse canal as permissões **Enviar Mensagens** e **Incorporar Links**. Se a publicação falhar, o bot mostra agora um aviso claro ao administrador em vez da mensagem genérica do Discord.
 
 ## Canais e publicação
 
