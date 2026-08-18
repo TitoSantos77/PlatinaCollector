@@ -131,6 +131,10 @@ Regras:
 - o responsável pelos prémios manuais também fica associado ao evento no momento da criação;
 - `PremioEvento` reutiliza um único documento por servidor, em vez de acumular um histórico ilimitado de eventos.
 
+Os Eventos de Prémios podem ser disparados em canais diferentes do canal habitual do bot. Para publicar a mensagem pública do evento, o PlatinaCollector precisa de ter no canal de destino as permissões **Enviar Mensagens** e **Incorporar Links**.
+
+O envio do modal de criação é confirmado imediatamente antes das operações de MongoDB e publicação da mensagem. Isto evita timeouts do Discord com a mensagem genérica `Algo deu errado`. Se a publicação no canal falhar, o bot devolve uma mensagem administrativa clara a indicar as permissões que devem ser verificadas.
+
 Os prémios obtidos por evento usam o mesmo fluxo de entrega e o mesmo histórico dos restantes prémios. `PremioRegisto` identifica estes casos com `gatilho = evento` e guarda também o nome do evento.
 
 ### Segurança do núcleo
@@ -159,6 +163,8 @@ Os Eventos de Prémios são independentes do fluxo de registo de Platinas/Carrei
 - `/darxp`
 - `/resetall`
 - `/setcanal`
+- `/patchnotes`
+- `/publicarcomandos`
 
 As funções administrativas de `/premios`, incluindo a criação e encerramento de eventos, são validadas dentro do próprio painel.
 
@@ -192,8 +198,10 @@ Regras atuais:
 
 - se não existirem canais configurados, o bot pode ser usado em qualquer canal;
 - quando existe pelo menos um canal configurado, os restantes comandos só funcionam nesses canais;
-- `/setcanal` continua acessível a administradores fora dos canais permitidos;
+- `/setcanal`, `/patchnotes` e `/publicarcomandos` continuam acessíveis a administradores fora dos canais permitidos;
 - a configuração mantém-se após reinícios e novos deploys do Render.
+
+A lista de canais permitidos do PlatinaCollector e as permissões nativas do Discord são sistemas diferentes. Um canal pode aceitar o painel administrativo e, ainda assim, impedir a publicação de um Evento de Prémios se o bot não tiver **Enviar Mensagens** e **Incorporar Links** nesse canal.
 
 ## 11. Backups — `utils/backup.js`
 
