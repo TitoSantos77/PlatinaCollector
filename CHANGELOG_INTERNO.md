@@ -2,6 +2,34 @@
 
 Este ficheiro regista versões e correções internas do bot. O Patch Notes usado por `/patchnotes` fica em `data/patchnotes.json` e acompanha a versão atual real do bot, mesmo quando uma microversão não é anunciada manualmente à comunidade.
 
+## V2.1.3 — 18/08/2026 — Interna
+
+### 🐞 Correção de Bugs
+
+- **Bug:** ao disparar um Evento de Prémios num canal onde o PlatinaCollector não conseguia publicar, o envio do modal podia terminar com a mensagem genérica do Discord `Algo deu errado`.
+- **Correção:** o modal passa a ser confirmado imediatamente e o bot devolve um erro claro quando não consegue publicar a mensagem do evento.
+
+### ⚙️ Sistemas
+
+- Nenhuma alteração ao funcionamento dos sorteios ou à escolha dos prémios.
+
+### ✨ Novos Sistemas
+
+- Nenhuma alteração.
+
+### 📝 Conteúdo / Dados
+
+- Nenhuma alteração.
+
+### 🎨 Interface / Qualidade de Vida
+
+- A mensagem de erro identifica agora as permissões necessárias no canal: **Enviar Mensagens** e **Incorporar Links**.
+
+### 📌 Outras Alterações
+
+- Confirmado em teste real que Eventos de Prémios podem ser lançados em canais diferentes; o problema observado era falta de permissões do bot no canal de destino.
+- `README.md`, `CERBERO.md`, `package.json` e Patch Notes alinhados com a V2.1.3.
+
 ## V2.1.2 — 16/08/2026 — Interna
 
 ### 🐞 Correção de Bugs
